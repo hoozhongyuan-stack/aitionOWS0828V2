@@ -59,7 +59,12 @@ export async function saveCategory(input: CategoryInput) {
   await prisma.categoryTranslation.deleteMany({ where: { categoryId: category.id } });
   for (const t of input.translations.filter((t) => t.name.trim())) {
     await prisma.categoryTranslation.create({
-      data: { categoryId: category.id, locale: t.locale, name: t.name, description: t.description ?? null },
+      data: {
+        categoryId: category.id,
+        locale: t.locale,
+        name: t.name,
+        description: t.description ?? null,
+      },
     });
   }
   await invalidateNavCache();
@@ -88,7 +93,8 @@ export async function listSubmittableCategories(locale: string) {
   return cats.map((c) => ({
     id: c.id,
     slug: c.slug,
-    name: c.translations.find((t) => t.locale === locale)?.name ?? c.translations[0]?.name ?? c.slug,
+    name:
+      c.translations.find((t) => t.locale === locale)?.name ?? c.translations[0]?.name ?? c.slug,
   }));
 }
 
@@ -163,9 +169,7 @@ export async function listContentsAdmin(q: ContentListQuery) {
     ...(q.categoryId ? { categoryId: q.categoryId } : {}),
     ...(q.status ? { status: q.status } : {}),
     ...(q.source ? { source: q.source } : {}),
-    ...(q.keyword
-      ? { translations: { some: { title: { contains: q.keyword } } } }
-      : {}),
+    ...(q.keyword ? { translations: { some: { title: { contains: q.keyword } } } } : {}),
     ...(createdAt ? { createdAt } : {}),
   };
   const [total, items] = await Promise.all([
@@ -191,6 +195,7 @@ export interface ContentInput {
   status: ContentStatus;
   authorName: string; // 作者显示名(后台必填;UGC 投稿由 submitUserContent 自动取昵称,不经此入口)
   coverUrl: string | null;
+  formId?: number | null; // 挂载到详情页底部的表单
   publishAt: string | null; // ISO 字符串
   translations: {
     locale: string;
@@ -204,7 +209,11 @@ export interface ContentInput {
 }
 
 /** 新建/更新内容(后台) */
-export async function saveContent(input: ContentInput, source: string = CONTENT_SOURCE.ADMIN, authorUserId?: number) {
+export async function saveContent(
+  input: ContentInput,
+  source: string = CONTENT_SOURCE.ADMIN,
+  authorUserId?: number
+) {
   const withTitle = input.translations.filter((t) => t.title.trim());
   if (withTitle.length === 0) throw new Error("至少填写一种语言的标题");
   const authorName = input.authorName?.trim();
@@ -227,6 +236,7 @@ export async function saveContent(input: ContentInput, source: string = CONTENT_
     status,
     authorName,
     coverUrl: input.coverUrl || null,
+    formId: input.formId ?? null,
     publishAt,
     ...(input.id ? {} : { source, authorUserId: authorUserId ?? null }),
   };
@@ -267,11 +277,19 @@ export async function deleteContent(id: number) {
 // ---------------- 内容(前台) ----------------
 
 /** 栏目页列表(仅已发布) */
-export async function listPublishedByCategory(categorySlug: string, locale: string, page = 1, pageSize = 12) {
+export async function listPublishedByCategory(
+  categorySlug: string,
+  locale: string,
+  page = 1,
+  pageSize = 12
+) {
   await promoteScheduled();
   const category = await prisma.category.findUnique({
     where: { slug: categorySlug },
-    include: { translations: true, children: { where: { visible: true }, include: { translations: true } } },
+    include: {
+      translations: true,
+      children: { where: { visible: true }, include: { translations: true } },
+    },
   });
   if (!category || !category.visible) return null;
 
@@ -294,12 +312,16 @@ export async function listPublishedByCategory(categorySlug: string, locale: stri
       slug: category.slug,
       moduleType: category.moduleType,
       allowSubmit: category.allowSubmit,
-      name: category.translations.find((t) => t.locale === locale)?.name ?? category.translations[0]?.name ?? category.slug,
+      name:
+        category.translations.find((t) => t.locale === locale)?.name ??
+        category.translations[0]?.name ??
+        category.slug,
       description:
         category.translations.find((t) => t.locale === locale)?.description ??
         category.translations[0]?.description ??
         null,
-      seo: category.translations.find((t) => t.locale === locale) ?? category.translations[0] ?? null,
+      seo:
+        category.translations.find((t) => t.locale === locale) ?? category.translations[0] ?? null,
     },
     total,
     page,
@@ -323,6 +345,7 @@ export async function getPublishedBySlug(slug: string, locale: string) {
     id: content.id,
     slug: content.slug,
     coverUrl: content.coverUrl,
+    formId: content.formId,
     authorName: content.authorName,
     viewCount: content.viewCount,
     likeCount: content.likeCount,
@@ -366,7 +389,10 @@ export async function listForSitemap() {
       where: { status: CONTENT_STATUS.PUBLISHED },
       select: { slug: true, updatedAt: true },
     }),
-    prisma.category.findMany({ where: { visible: true, externalUrl: null }, select: { slug: true } }),
+    prisma.category.findMany({
+      where: { visible: true, externalUrl: null },
+      select: { slug: true },
+    }),
   ]);
   return { contents, categories };
 }

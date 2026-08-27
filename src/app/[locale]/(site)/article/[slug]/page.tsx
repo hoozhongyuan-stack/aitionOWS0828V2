@@ -3,12 +3,15 @@ import Link from "next/link";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getPublishedBySlug } from "@/server/content";
+import { getForm } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { InteractionBar } from "@/components/site/interaction-bar";
 import { CommentsSection } from "@/components/site/comments-section";
 import { ViewTracker } from "@/components/site/view-tracker";
 import { ArticleJsonLd } from "@/components/seo/json-ld";
+import { FormRenderer } from "@/components/site/form-renderer";
+import type { FormField } from "@/types/form";
 import { Eye, UserRound } from "lucide-react";
 
 /**
@@ -51,6 +54,17 @@ export default async function ArticlePage({ params }: Props) {
   if (!content) notFound();
 
   const date = new Date(content.publishedAt);
+
+  // 编辑器「所属表单」挂载:表单已删除或被停用则自动不渲染(应用层一致性)
+  const attachedForm = content.formId ? await getForm(content.formId) : null;
+  let attachedFields: FormField[] = [];
+  if (attachedForm && attachedForm.enabled) {
+    try {
+      attachedFields = JSON.parse(attachedForm.schema) as FormField[];
+    } catch {
+      attachedFields = [];
+    }
+  }
 
   return (
     <main className="container max-w-3xl py-10">
@@ -99,8 +113,22 @@ export default async function ArticlePage({ params }: Props) {
         )}
 
         {/* 渲染端兜底消毒:正文可能来自 UGC 投稿,防存储型 XSS */}
-        <div className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(content.body) }} />
+        <div
+          className="rich-content"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(content.body) }}
+        />
       </article>
+
+      {/* 编辑器挂载的获客表单(可选) */}
+      {attachedForm && attachedForm.enabled && attachedFields.length > 0 && (
+        <section className="mt-8">
+          <FormRenderer
+            slug={attachedForm.slug}
+            title={attachedForm.name}
+            fields={attachedFields}
+          />
+        </section>
+      )}
 
       {/* 点赞/转发(总开关控制,需求 4.8) */}
       {(features.like || features.share) && (

@@ -150,6 +150,7 @@ model Content {
   coverUrl     String? // 封面图 URL(/uploads/...,资产已在 MediaAsset 登记)
   authorUserId Int? // UGC 投稿人(前台用户)
   authorName   String? // 作者显示名:后台发布时单独设置(必填);UGC 投稿自动取投稿人昵称
+  formId       Int? // 关联表单(可选):非空且表单启用时,文章详情页底部渲染该表单;无外键,应用层维护一致性
   publishAt    DateTime? // 定时发布时间
   // —— 互动统计计数(后台可手动改/清零)——
   viewCount    Int       @default(0)

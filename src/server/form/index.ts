@@ -48,12 +48,17 @@ export async function saveForm(input: FormInput) {
 }
 
 export async function deleteForm(id: number) {
-  await prisma.form.delete({ where: { id } }); // 提交数据级联删除
+  // 先解除文章挂载(formId 无外键,应用层维护一致性),再删表单(提交数据级联删除)
+  await prisma.content.updateMany({ where: { formId: id }, data: { formId: null } });
+  await prisma.form.delete({ where: { id } });
 }
 
 /** 前台:按关联键取启用的表单(场景化获客) */
 export async function getFormByRelatedKey(relatedKey: string) {
-  const form = await prisma.form.findFirst({ where: { relatedKey, enabled: true }, orderBy: { id: "desc" } });
+  const form = await prisma.form.findFirst({
+    where: { relatedKey, enabled: true },
+    orderBy: { id: "desc" },
+  });
   if (!form) return null;
   return { id: form.id, slug: form.slug, name: form.name, fields: parseFormFields(form.schema) };
 }
@@ -160,7 +165,12 @@ export async function submitForm(input: {
 
 // ---------------- 数据管理 ----------------
 
-export async function listSubmissions(opts: { formId: number; page?: number; from?: string; to?: string }) {
+export async function listSubmissions(opts: {
+  formId: number;
+  page?: number;
+  from?: string;
+  to?: string;
+}) {
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = 20;
   const where = {
@@ -191,7 +201,9 @@ export async function deleteSubmission(id: number) {
 }
 
 /** CSV 导出(带 BOM,Excel 中文不乱码) */
-export async function exportSubmissionsCsv(formId: number): Promise<{ filename: string; csv: string }> {
+export async function exportSubmissionsCsv(
+  formId: number
+): Promise<{ filename: string; csv: string }> {
   const form = await prisma.form.findUnique({ where: { id: formId } });
   if (!form) throw new Error("表单不存在");
   const fields = parseFormFields(form.schema);
@@ -209,7 +221,9 @@ export async function exportSubmissionsCsv(formId: number): Promise<{ filename: 
     } catch {
       /* 忽略脏数据 */
     }
-    return [r.createdAt.toLocaleString("zh-CN"), ...fields.map((f) => data[f.id]), r.ip ?? ""].map(esc).join(",");
+    return [r.createdAt.toLocaleString("zh-CN"), ...fields.map((f) => data[f.id]), r.ip ?? ""]
+      .map(esc)
+      .join(",");
   });
   return {
     filename: `${form.name}-数据导出.csv`,

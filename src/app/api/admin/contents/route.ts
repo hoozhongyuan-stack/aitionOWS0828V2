@@ -29,6 +29,7 @@ const putSchema = z.object({
   ]),
   authorName: z.string().trim().min(1, "请填写作者"),
   coverUrl: z.string().nullable(),
+  formId: z.number().int().nullable().optional(),
   publishAt: z.string().nullable(),
   translations: z.array(
     z.object({

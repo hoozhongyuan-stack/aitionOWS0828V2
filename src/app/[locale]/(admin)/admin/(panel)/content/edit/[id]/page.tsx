@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { UploadField } from "@/components/admin/upload-field";
@@ -61,6 +67,8 @@ export default function ContentEditPage() {
 
   const [locales, setLocales] = useState<string[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
+  const [forms, setForms] = useState<{ id: number; name: string; enabled: boolean }[]>([]);
+  const [formId, setFormId] = useState<number | null>(null); // 挂载到详情页底部的表单(可选)
   const [slug, setSlug] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [status, setStatus] = useState("DRAFT");
@@ -74,13 +82,15 @@ export default function ContentEditPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [locData, catData] = await Promise.all([
+        const [locData, catData, formData] = await Promise.all([
           apiGet<{ locales: { code: string }[] }>("/api/admin/locales"),
           apiGet<Category[]>("/api/admin/categories"),
+          apiGet<{ id: number; name: string; enabled: boolean }[]>("/api/admin/forms"),
         ]);
         const codes = locData.locales.map((l) => l.code);
         setLocales(codes);
         setCats(catData);
+        setForms(formData);
 
         if (!isNew) {
           const c = await apiGet<{
@@ -90,10 +100,12 @@ export default function ContentEditPage() {
             authorName: string | null;
             coverUrl: string | null;
             publishAt: string | null;
+            formId: number | null;
             translations: Partial<Translation>[];
           }>(`/api/admin/contents?id=${id}`);
           setSlug(c.slug);
           setCategoryId(c.categoryId);
+          setFormId(c.formId ?? null);
           setStatus(c.status === "PENDING" || c.status === "REJECTED" ? c.status : c.status);
           setAuthorName(c.authorName ?? "");
           setCoverUrl(c.coverUrl ?? "");
@@ -145,6 +157,7 @@ export default function ContentEditPage() {
         id: isNew ? undefined : Number(id),
         slug,
         categoryId,
+        formId: formId ?? null,
         status: st === "PENDING" || st === "REJECTED" ? "DRAFT" : st,
         authorName: authorName.trim(),
         coverUrl: coverUrl || null,
@@ -173,7 +186,7 @@ export default function ContentEditPage() {
     setTrans({ ...trans, [code]: { ...trans[code], ...patch } });
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -227,6 +240,27 @@ export default function ContentEditPage() {
             />
           </div>
           <div className="space-y-2">
+            <Label>所属表单(可选,挂载到文章详情页底部)</Label>
+            <Select
+              value={formId ? String(formId) : "none"}
+              onValueChange={(v) => setFormId(v === "none" ? null : Number(v))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="不挂载" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">不挂载</SelectItem>
+                {forms
+                  .filter((f) => f.enabled)
+                  .map((f) => (
+                    <SelectItem key={f.id} value={String(f.id)}>
+                      {f.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>发布状态</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger>
@@ -244,7 +278,11 @@ export default function ContentEditPage() {
           {status === "SCHEDULED" && (
             <div className="space-y-2">
               <Label>定时发布时间</Label>
-              <Input type="datetime-local" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={publishAt}
+                onChange={(e) => setPublishAt(e.target.value)}
+              />
             </div>
           )}
           <div className="space-y-2 sm:col-span-2">
@@ -277,15 +315,24 @@ export default function ContentEditPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>标题</Label>
-                  <Input value={trans[l]?.title ?? ""} onChange={(e) => setT(l, { title: e.target.value })} />
+                  <Input
+                    value={trans[l]?.title ?? ""}
+                    onChange={(e) => setT(l, { title: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>摘要(列表卡片展示)</Label>
-                  <Textarea value={trans[l]?.summary ?? ""} onChange={(e) => setT(l, { summary: e.target.value })} />
+                  <Textarea
+                    value={trans[l]?.summary ?? ""}
+                    onChange={(e) => setT(l, { summary: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>正文</Label>
-                  <RichTextEditor value={trans[l]?.body ?? ""} onChange={(html) => setT(l, { body: html })} />
+                  <RichTextEditor
+                    value={trans[l]?.body ?? ""}
+                    onChange={(html) => setT(l, { body: html })}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -296,7 +343,10 @@ export default function ContentEditPage() {
               <CardContent className="grid gap-4">
                 <div className="space-y-2">
                   <Label>SEO 标题(留空使用内容标题)</Label>
-                  <Input value={trans[l]?.seoTitle ?? ""} onChange={(e) => setT(l, { seoTitle: e.target.value })} />
+                  <Input
+                    value={trans[l]?.seoTitle ?? ""}
+                    onChange={(e) => setT(l, { seoTitle: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>SEO 关键词(逗号分隔)</Label>
@@ -307,7 +357,10 @@ export default function ContentEditPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>SEO 描述(留空使用摘要)</Label>
-                  <Textarea value={trans[l]?.seoDesc ?? ""} onChange={(e) => setT(l, { seoDesc: e.target.value })} />
+                  <Textarea
+                    value={trans[l]?.seoDesc ?? ""}
+                    onChange={(e) => setT(l, { seoDesc: e.target.value })}
+                  />
                 </div>
               </CardContent>
             </Card>
