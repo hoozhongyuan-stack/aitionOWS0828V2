@@ -1,0 +1,106 @@
+{
+  "common": {
+    "siteName": "AitionOWS",
+    "loading": "Loading…",
+    "readMore": "Read more",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "search": "Search",
+    "languageSwitch": "Language",
+    "back": "Back",
+    "empty": "No content yet",
+    "all": "All"
+  },
+  "nav": {
+    "home": "Home"
+  },
+  "site": {
+    "welcome": "Welcome",
+    "heroTitle": "Corporate Website Template System",
+    "heroSubtitle": "Highly customizable · Self-hosted · AI-search friendly",
+    "heroCta": "Contact us",
+    "latestNews": "Latest Updates",
+    "publishedAt": "Published",
+    "relatedForm": "Get in touch"
+  },
+  "footer": {
+    "contact": "Contact",
+    "agreementRegister": "Terms of Service",
+    "agreementPrivacy": "Privacy Policy"
+  },
+  "interaction": {
+    "like": "Like",
+    "liked": "Liked",
+    "share": "Share",
+    "shareCopied": "Link copied — share it now",
+    "views": "Views",
+    "comment": "Comments",
+    "commentPlaceholder": "Write a comment…",
+    "commentLoginRequired": "Log in to comment",
+    "commentGuestName": "Nickname (optional)",
+    "pendingReview": "Submitted. It will appear after review.",
+    "noComments": "No comments yet — be the first",
+    "submitComment": "Post comment"
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Sign up",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "nickname": "Nickname",
+    "wechatLogin": "Sign in with WeChat",
+    "noAccount": "No account yet?",
+    "hasAccount": "Already have an account?",
+    "agreePrefix": "I have read and agree to the",
+    "and": "and",
+    "loginSuccess": "Logged in",
+    "registerSuccess": "Registered and logged in",
+    "loginRequired": "Please log in to view this page",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotDesc": "Enter the email you registered with and we will send you a reset link.",
+    "sendReset": "Send reset email",
+    "resetSent": "If this email is registered, a reset link has been sent. Please check your inbox within 30 minutes (including the spam folder).",
+    "resetTitle": "Set a new password",
+    "newPassword": "New password",
+    "resetSubmit": "Reset password",
+    "resetSuccess": "Your password has been reset. Please log in with the new password.",
+    "resetInvalid": "This reset link is invalid or has expired. Please request a new one.",
+    "backToLogin": "Back to log in",
+    "passwordMismatch": "The two passwords do not match"
+  },
+  "form": {
+    "submit": "Submit",
+    "required": "This field is required",
+    "submitSuccess": "Submitted. We will get back to you soon.",
+    "submitFailed": "Submission failed. Please try again later.",
+    "uploadFile": "Upload file",
+    "selectPlaceholder": "Please select"
+  },
+  "submission": {
+    "title": "Submit a Post",
+    "myList": "My Submissions",
+    "category": "Category",
+    "contentTitle": "Title",
+    "summary": "Summary",
+    "body": "Body",
+    "cover": "Cover image",
+    "submit": "Submit for review",
+    "success": "Submitted. It will be published after review.",
+    "statusPending": "Pending review",
+    "statusPublished": "Published",
+    "statusRejected": "Rejected",
+    "closed": "Submissions are currently closed",
+    "empty": "No submissions yet",
+    "noCategory": "No categories are open for submission yet"
+  },
+  "maintenance": {
+    "title": "Under Maintenance",
+    "desc": "The site is under maintenance. Please check back later."
+  },
+  "errors": {
+    "backHome": "Back to home"
+  }
+}

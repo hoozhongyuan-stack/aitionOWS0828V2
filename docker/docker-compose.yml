@@ -1,0 +1,51 @@
+# ============================================================
+# AitionOWS 一键部署编排
+# 用法(在项目根目录):
+#   docker compose -f docker/docker-compose.yml up -d --build
+# 客户仅需:服务器 + 公网 IP + 域名
+# ============================================================
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: aition-ows
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # SQLite 相对路径以 prisma/ 目录为基准 → 实际为 /app/data/app.db(在 volume 内)
+      - DATABASE_URL=file:../data/app.db
+      - UPLOAD_DIR=./uploads
+      - BACKUP_DIR=./backups
+      # 生产务必替换为强随机串
+      - AUTH_SECRET=please-change-me-to-a-long-random-secret
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+    volumes:
+      # 数据/资源/备份持久化到宿主机,重建容器不丢数据
+      - ../data:/app/data
+      - ../uploads:/app/uploads
+      - ../backups:/app/backups
+
+  # ---------- 可选:Caddy 反向代理 + 自动 HTTPS ----------
+  # 取消注释并把 your-domain.com 换成真实域名即可启用
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: aition-ows-caddy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy_data:/data
+  #     - caddy_config:/config
+  #   depends_on:
+  #     - app
+
+# volumes:
+#   caddy_data:
+#   caddy_config:

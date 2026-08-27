@@ -1,0 +1,218 @@
+import { prisma } from "@/lib/db";
+import { parseFormFields, type FormField } from "@/types/form";
+import { findSensitiveWord } from "@/lib/ugc/filter";
+import { fingerprint } from "@/lib/ugc/anti-spam";
+import { notifyAdmin } from "@/server/notify";
+
+/**
+ * 表单获客服务(需求 4.5):
+ * 定义 CRUD、公开提交(服务端校验 + 防重复)、数据查看/删除/CSV 导出。
+ */
+
+// ---------------- 表单定义 ----------------
+
+export interface FormInput {
+  id?: number;
+  name: string;
+  slug: string;
+  fields: FormField[];
+  relatedKey: string | null; // 关联页面/栏目(contact / 栏目 slug)
+  antiDuplicate: boolean;
+  enabled: boolean;
+}
+
+export async function listForms() {
+  return prisma.form.findMany({
+    orderBy: { id: "desc" },
+    include: { _count: { select: { submissions: true } } },
+  });
+}
+
+export async function getForm(id: number) {
+  return prisma.form.findUnique({ where: { id } });
+}
+
+export async function saveForm(input: FormInput) {
+  if (input.fields.length === 0) throw new Error("表单至少需要一个字段");
+  const data = {
+    name: input.name,
+    slug: input.slug,
+    schema: JSON.stringify(input.fields),
+    relatedKey: input.relatedKey || null,
+    antiDuplicate: input.antiDuplicate,
+    enabled: input.enabled,
+  };
+  return input.id
+    ? prisma.form.update({ where: { id: input.id }, data })
+    : prisma.form.create({ data });
+}
+
+export async function deleteForm(id: number) {
+  await prisma.form.delete({ where: { id } }); // 提交数据级联删除
+}
+
+/** 前台:按关联键取启用的表单(场景化获客) */
+export async function getFormByRelatedKey(relatedKey: string) {
+  const form = await prisma.form.findFirst({ where: { relatedKey, enabled: true }, orderBy: { id: "desc" } });
+  if (!form) return null;
+  return { id: form.id, slug: form.slug, name: form.name, fields: parseFormFields(form.schema) };
+}
+
+export async function getFormBySlugPublic(slug: string) {
+  const form = await prisma.form.findUnique({ where: { slug } });
+  if (!form || !form.enabled) return null;
+  return { id: form.id, slug: form.slug, name: form.name, fields: parseFormFields(form.schema) };
+}
+
+// ---------------- 提交 ----------------
+
+/**
+ * 公开提交:逐字段服务端校验(绕过前端直接 POST 也会被拦)。
+ * @throws Error 中文校验信息
+ */
+export async function submitForm(input: {
+  slug: string;
+  data: Record<string, unknown>;
+  ip: string | null;
+  userAgent: string | null;
+}) {
+  const form = await prisma.form.findUnique({ where: { slug: input.slug } });
+  if (!form || !form.enabled) throw new Error("表单不存在或已停用");
+  const fields = parseFormFields(form.schema);
+
+  // —— 服务端校验 ——
+  const clean: Record<string, unknown> = {};
+  for (const f of fields) {
+    const raw = input.data[f.id];
+    const isEmpty =
+      raw === undefined ||
+      raw === null ||
+      (typeof raw === "string" && raw.trim() === "") ||
+      (Array.isArray(raw) && raw.length === 0);
+
+    if (f.required && isEmpty) throw new Error(`「${f.label}」为必填项`);
+    if (isEmpty) {
+      clean[f.id] = null;
+      continue;
+    }
+
+    if (f.type === "checkbox") {
+      if (!Array.isArray(raw)) throw new Error(`「${f.label}」数据格式错误`);
+      const opts = f.options ?? [];
+      if (raw.some((v) => !opts.includes(String(v)))) throw new Error(`「${f.label}」包含非法选项`);
+      clean[f.id] = raw.map(String);
+    } else if (f.type === "radio" || f.type === "select") {
+      if (!(f.options ?? []).includes(String(raw))) throw new Error(`「${f.label}」选项非法`);
+      clean[f.id] = String(raw);
+    } else {
+      const val = String(raw).slice(0, 2000);
+      if (f.pattern) {
+        try {
+          if (!new RegExp(f.pattern).test(val)) {
+            throw new Error(f.patternMsg || `「${f.label}」格式不正确`);
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message.includes("格式")) throw e;
+          // 非法正则配置:跳过校验(容错,不阻断获客)
+        }
+      }
+      clean[f.id] = val;
+    }
+  }
+
+  // —— 敏感词(文本字段拼接检测)——
+  const textBlob = Object.values(clean)
+    .filter((v): v is string => typeof v === "string")
+    .join(" ");
+  const hit = await findSensitiveWord(textBlob);
+  if (hit) throw new Error("提交内容包含敏感词,请修改后重试");
+
+  // —— 防重复提交(需求 4.5):同指纹 24h 内拒绝 ——
+  const fp = fingerprint(form.id, input.ip ?? "", JSON.stringify(clean));
+  if (form.antiDuplicate) {
+    const dup = await prisma.formSubmission.findFirst({
+      where: { fingerprint: fp, createdAt: { gte: new Date(Date.now() - 24 * 3600_000) } },
+    });
+    if (dup) throw new Error("请勿重复提交相同内容");
+  }
+
+  await prisma.formSubmission.create({
+    data: {
+      formId: form.id,
+      data: JSON.stringify(clean),
+      ip: input.ip,
+      userAgent: input.userAgent?.slice(0, 300) ?? null,
+      fingerprint: fp,
+    },
+  });
+
+  // 管理员邮件通知(新增需求):不 await,失败也不影响用户提交
+  void notifyAdmin(`[AitionOWS] 收到新的表单提交:${form.name}`, [
+    `表单:${form.name}`,
+    ...fields.map((f) => {
+      const val = clean[f.id];
+      return `${f.label}:${Array.isArray(val) ? val.join("、") : (val ?? "-")}`;
+    }),
+    `IP:${input.ip ?? "-"}`,
+    `时间:${new Date().toLocaleString("zh-CN")}`,
+  ]);
+}
+
+// ---------------- 数据管理 ----------------
+
+export async function listSubmissions(opts: { formId: number; page?: number; from?: string; to?: string }) {
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = 20;
+  const where = {
+    formId: opts.formId,
+    ...(opts.from || opts.to
+      ? {
+          createdAt: {
+            ...(opts.from ? { gte: new Date(opts.from) } : {}),
+            ...(opts.to ? { lte: new Date(opts.to + "T23:59:59") } : {}),
+          },
+        }
+      : {}),
+  };
+  const [total, items] = await Promise.all([
+    prisma.formSubmission.count({ where }),
+    prisma.formSubmission.findMany({
+      where,
+      orderBy: { id: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+  return { total, page, pageSize, items };
+}
+
+export async function deleteSubmission(id: number) {
+  await prisma.formSubmission.delete({ where: { id } });
+}
+
+/** CSV 导出(带 BOM,Excel 中文不乱码) */
+export async function exportSubmissionsCsv(formId: number): Promise<{ filename: string; csv: string }> {
+  const form = await prisma.form.findUnique({ where: { id: formId } });
+  if (!form) throw new Error("表单不存在");
+  const fields = parseFormFields(form.schema);
+  const rows = await prisma.formSubmission.findMany({ where: { formId }, orderBy: { id: "asc" } });
+
+  const esc = (v: unknown) => {
+    const s = v == null ? "" : Array.isArray(v) ? v.join("、") : String(v);
+    return `"${s.replace(/"/g, '""')}"`;
+  };
+  const header = ["提交时间", ...fields.map((f) => f.label), "IP"].map(esc).join(",");
+  const lines = rows.map((r) => {
+    let data: Record<string, unknown> = {};
+    try {
+      data = JSON.parse(r.data);
+    } catch {
+      /* 忽略脏数据 */
+    }
+    return [r.createdAt.toLocaleString("zh-CN"), ...fields.map((f) => data[f.id]), r.ip ?? ""].map(esc).join(",");
+  });
+  return {
+    filename: `${form.name}-数据导出.csv`,
+    csv: "﻿" + [header, ...lines].join("\r\n"), // BOM 前缀,Excel 中文兼容
+  };
+}

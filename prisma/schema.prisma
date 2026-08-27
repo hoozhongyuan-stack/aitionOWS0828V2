@@ -1,0 +1,353 @@
+// ============================================================
+// AitionOWS 数据模型 — SQLite + Prisma
+// 设计依据:docs/架构设计文档.md 第 3 节
+// 说明:内容型实体用独立 *Translation 表存多语言;
+//      配置类走 Setting(group,key,value=JSON) 通用存储。
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------- 状态值约定(重要) -------------------
+// SQLite 连接器不支持 Prisma enum,以下字段用 String 存储,
+// 合法值由 src/types/domain.ts 常量 + zod 在应用层强约束:
+//   Content.status : DRAFT | PUBLISHED | OFFLINE | SCHEDULED | PENDING | REJECTED
+//   Content.source : ADMIN | UGC
+//   Comment.status : PENDING | APPROVED | REJECTED
+//   User.status    : ACTIVE | DISABLED
+//   Like/ShareLog.targetType : CONTENT
+//   Agreement.type : REGISTER | PRIVACY
+
+// ------------------- 配置与站点基础 -------------------
+
+/// 通用配置存储:主题色/字体/品牌/GEO/功能开关/维护模式/微信凭证/文件限制等全部入库
+model Setting {
+  id        Int      @id @default(autoincrement())
+  group     String // 分组:theme / brand / seo / features / wechat / upload / i18n ...
+  key       String // 配置键
+  value     String // 值(JSON 字符串,支持任意结构)
+  updatedAt DateTime @updatedAt
+
+  @@unique([group, key])
+  @@index([group])
+}
+
+/// 语言配置:后台勾选默认语言与前台启用语言
+model Locale {
+  code      String  @id // zh-CN / en ...
+  name      String // 显示名
+  isDefault Boolean @default(false)
+  enabled   Boolean @default(true)
+  sort      Int     @default(0)
+}
+
+/// 静态 UI 文案覆盖(DB 优先,messages/*.json 兜底)
+model UiTranslation {
+  id        Int    @id @default(autoincrement())
+  locale    String
+  namespace String // 命名空间(如 common / nav / form)
+  key       String
+  value     String
+
+  @@unique([locale, namespace, key])
+  @@index([locale])
+}
+
+/// 用户协议(注册协议/隐私政策),按语言富文本存储
+model Agreement {
+  id        Int      @id @default(autoincrement())
+  type      String // REGISTER(注册协议)/ PRIVACY(隐私政策)
+  locale    String
+  title     String
+  body      String // 富文本 HTML
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, locale])
+}
+
+// ------------------------- SEO / GEO -------------------------
+
+/// 固定页面 TDK(首页/联系页等无独立实体的页面)
+model SeoMeta {
+  id          Int    @id @default(autoincrement())
+  pageKey     String // home / contact / login ...
+  locale      String
+  title       String
+  keywords    String
+  description String
+
+  @@unique([pageKey, locale])
+}
+
+// ------------------- CMS:栏目 / 导航 / 内容 -------------------
+
+/// 栏目(内容分类,同时是导航来源之一);支持树形、排序、隐藏、自定义模块类型
+model Category {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  parentId    Int? // 父栏目(树形)
+  moduleType  String // 模块类型:news/product/case/article...
+  sort        Int      @default(0)
+  visible     Boolean  @default(true)
+  externalUrl String? // 自定义跳转链接(可选)
+  allowSubmit Boolean  @default(false) // 是否允许用户投稿到本栏目
+  createdAt   DateTime @default(now())
+
+  parent       Category?             @relation("CategoryTree", fields: [parentId], references: [id])
+  children     Category[]            @relation("CategoryTree")
+  translations CategoryTranslation[]
+  contents     Content[]
+}
+
+model CategoryTranslation {
+  id          Int     @id @default(autoincrement())
+  categoryId  Int
+  locale      String
+  name        String // 栏目名(多语言)
+  description String?
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, locale])
+}
+
+/// 导航菜单项(可与栏目关联,也可自定义外链)
+model NavItem {
+  id         Int     @id @default(autoincrement())
+  parentId   Int?
+  categoryId Int? // 关联栏目(可空)
+  label      String // 兜底文案
+  labelI18n  String? // JSON: { "zh-CN":"...", "en":"..." }
+  url        String? // 自定义链接(与 categoryId 二选一)
+  sort       Int     @default(0)
+  visible    Boolean @default(true)
+  target     String  @default("_self")
+}
+
+/// 首页顶部通屏轮播图(新增需求①):后台最多维护 5 张,导航栏叠加在其上作为背景
+model Banner {
+  id        Int      @id @default(autoincrement())
+  imageUrl  String
+  linkUrl   String? // 点击跳转(可选)
+  sort      Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+/// 内容主表:后台发布内容与用户投稿共用(source 区分),含互动统计计数
+model Content {
+  id           Int       @id @default(autoincrement())
+  slug         String    @unique
+  categoryId   Int
+  status       String    @default("DRAFT") // DRAFT/PUBLISHED/OFFLINE/SCHEDULED/PENDING/REJECTED
+  source       String    @default("ADMIN") // ADMIN(后台)/ UGC(用户投稿)
+  coverUrl     String? // 封面图 URL(/uploads/...,资产已在 MediaAsset 登记)
+  authorUserId Int? // UGC 投稿人(前台用户)
+  authorName   String? // 作者显示名:后台发布时单独设置(必填);UGC 投稿自动取投稿人昵称
+  publishAt    DateTime? // 定时发布时间
+  // —— 互动统计计数(后台可手动改/清零)——
+  viewCount    Int       @default(0)
+  likeCount    Int       @default(0)
+  shareCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  category     Category             @relation(fields: [categoryId], references: [id])
+  translations ContentTranslation[]
+  comments     Comment[]
+
+  @@index([categoryId, status])
+  @@index([status, publishAt])
+}
+
+/// 内容多语言正文 + 单页独立 TDK
+model ContentTranslation {
+  id          Int     @id @default(autoincrement())
+  contentId   Int
+  locale      String
+  title       String
+  summary     String?
+  body        String // 富文本 HTML(图文/视频/表格/链接/列表)
+  // —— 单页 TDK ——
+  seoTitle    String?
+  seoKeywords String?
+  seoDesc     String?
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, locale])
+  @@index([locale])
+}
+
+// ------------------------- 表单获客 -------------------------
+
+/// 表单定义:字段结构以 JSON 存(可视化构建器输出),可关联栏目/页面
+model Form {
+  id            Int      @id @default(autoincrement())
+  name          String
+  slug          String   @unique
+  schema        String // JSON:字段数组(类型/字段名/必填/提示/校验规则)
+  relatedKey    String? // 关联页面/栏目标识(场景化获客)
+  antiDuplicate Boolean  @default(true) // 防重复提交开关
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  submissions FormSubmission[]
+}
+
+/// 表单提交数据:答案以 JSON 存,记录来源用于防刷/防重复
+model FormSubmission {
+  id          Int      @id @default(autoincrement())
+  formId      Int
+  data        String // JSON:字段名 -> 值
+  ip          String?
+  userAgent   String?
+  fingerprint String? // 防重复指纹(ip+表单+关键字段哈希)
+  createdAt   DateTime @default(now())
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, createdAt])
+  @@index([fingerprint])
+}
+
+// ------------------- 用户与管理员 -------------------
+
+/// 前台注册用户(邮箱 / 微信)
+model User {
+  id            Int        @id @default(autoincrement())
+  email         String?    @unique
+  passwordHash  String? // 邮箱注册者有,纯微信登录者可空
+  nickname      String?
+  avatarUrl     String?
+  wechatOpenId  String?  @unique // 微信 openid
+  wechatUnionId String?  @unique // 微信 unionid(可选)
+  status        String   @default("ACTIVE") // ACTIVE / DISABLED
+  createdAt     DateTime @default(now())
+
+  comments Comment[]
+}
+
+/// 后台管理员(与前台用户隔离,安全边界清晰)
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  passwordHash String
+  displayName  String?
+  role         String    @default("admin") // 预留角色扩展
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+/// 密码重置令牌(忘记密码邮件链接):只存哈希,一次性,30 分钟过期
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ------------- UGC:评论 / 点赞 / 转发 / 敏感词 -------------
+
+/// 评论:默认待审核,审核通过前台可见。
+/// commentLoginRequired 开关关闭时允许游客评论(userId 为空,guestName 展示)。
+model Comment {
+  id        Int      @id @default(autoincrement())
+  contentId Int
+  userId    Int? // 登录用户;游客评论为空
+  guestName String? // 游客昵称(游客评论时使用)
+  body      String
+  status    String   @default("PENDING") // PENDING / APPROVED / REJECTED
+  ip        String?
+  createdAt DateTime @default(now())
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([contentId, status])
+  @@index([status])
+}
+
+/// 点赞记录:用于去重/防刷(登录用 userId,游客用 guestKey 指纹)
+model Like {
+  id         Int      @id @default(autoincrement())
+  targetType String   @default("CONTENT") // 互动目标类型(可扩展)
+  targetId   Int
+  userId     Int? // 登录用户
+  guestKey   String? // 游客指纹(ip+ua 哈希 / cookie id)
+  createdAt  DateTime @default(now())
+
+  @@unique([targetType, targetId, userId])
+  @@unique([targetType, targetId, guestKey])
+  @@index([targetType, targetId])
+}
+
+/// 转发日志(主要用于统计;计数已冗余在 Content.shareCount)
+model ShareLog {
+  id         Int      @id @default(autoincrement())
+  targetType String   @default("CONTENT") // 互动目标类型(可扩展)
+  targetId   Int
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+}
+
+/// 敏感词库:评论/投稿基础过滤
+model SensitiveWord {
+  id        Int      @id @default(autoincrement())
+  word      String   @unique
+  createdAt DateTime @default(now())
+}
+
+// ------------------------- 文件 / 媒体 -------------------------
+
+/// 本地文件资产:统一登记,便于文件管理与 alt 语义
+model MediaAsset {
+  id           Int      @id @default(autoincrement())
+  path         String // 相对 uploads/ 的路径
+  filename     String
+  mime         String
+  size         Int // 字节
+  width        Int?
+  height       Int?
+  alt          String? // 图片 alt 语义(SEO)
+  uploaderType String   @default("admin") // admin / user
+  uploaderId   Int?
+  createdAt    DateTime @default(now())
+
+  @@index([mime])
+}
+
+// ------------------- 运维:统计 / 备份 -------------------
+
+/// 轻量访问统计(按天+路径聚合,供看板)
+model DailyStat {
+  id   Int    @id @default(autoincrement())
+  date String // YYYY-MM-DD
+  path String @default("*") // '*' 为全站汇总
+  pv   Int    @default(0)
+  uv   Int    @default(0)
+
+  @@unique([date, path])
+  @@index([date])
+}
+
+/// 备份记录:一键数据库 + 文件备份
+model BackupRecord {
+  id        Int      @id @default(autoincrement())
+  type      String // db / files / full
+  path      String // 备份文件位于 backups/
+  size      Int
+  createdAt DateTime @default(now())
+}

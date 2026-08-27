@@ -1,0 +1,106 @@
+{
+  "common": {
+    "siteName": "AitionOWS",
+    "loading": "加载中…",
+    "readMore": "查看更多",
+    "submit": "提交",
+    "cancel": "取消",
+    "search": "搜索",
+    "languageSwitch": "语言",
+    "back": "返回",
+    "empty": "暂无内容",
+    "all": "全部"
+  },
+  "nav": {
+    "home": "首页"
+  },
+  "site": {
+    "welcome": "欢迎访问",
+    "heroTitle": "企业官网模板系统",
+    "heroSubtitle": "高度自定义 · 本地部署 · AI 检索友好",
+    "heroCta": "联系我们",
+    "latestNews": "最新动态",
+    "publishedAt": "发布于",
+    "relatedForm": "在线咨询"
+  },
+  "footer": {
+    "contact": "联系我们",
+    "agreementRegister": "用户注册协议",
+    "agreementPrivacy": "隐私政策"
+  },
+  "interaction": {
+    "like": "点赞",
+    "liked": "已点赞",
+    "share": "转发",
+    "shareCopied": "链接已复制,快去分享吧",
+    "views": "阅读",
+    "comment": "评论",
+    "commentPlaceholder": "写下你的评论…",
+    "commentLoginRequired": "登录后可发表评论",
+    "commentGuestName": "昵称(选填)",
+    "pendingReview": "提交成功,审核通过后展示",
+    "noComments": "暂无评论,来抢沙发",
+    "submitComment": "发表评论"
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出",
+    "email": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "nickname": "昵称",
+    "wechatLogin": "微信扫码登录",
+    "noAccount": "还没有账号?",
+    "hasAccount": "已有账号?",
+    "agreePrefix": "我已阅读并同意",
+    "and": "和",
+    "loginSuccess": "登录成功",
+    "registerSuccess": "注册成功,已自动登录",
+    "loginRequired": "该页面需要登录后访问",
+    "forgotPassword": "忘记密码?",
+    "forgotTitle": "找回密码",
+    "forgotDesc": "输入注册时使用的邮箱,我们将向你发送重置链接。",
+    "sendReset": "发送重置邮件",
+    "resetSent": "如果该邮箱已注册,重置邮件已发送,请在 30 分钟内查收(注意查看垃圾邮件)。",
+    "resetTitle": "设置新密码",
+    "newPassword": "新密码",
+    "resetSubmit": "重置密码",
+    "resetSuccess": "密码已重置,请使用新密码登录。",
+    "resetInvalid": "重置链接无效或已过期,请重新申请。",
+    "backToLogin": "返回登录",
+    "passwordMismatch": "两次输入的密码不一致"
+  },
+  "form": {
+    "submit": "提交",
+    "required": "该项必填",
+    "submitSuccess": "提交成功,我们会尽快与您联系",
+    "submitFailed": "提交失败,请稍后重试",
+    "uploadFile": "上传文件",
+    "selectPlaceholder": "请选择"
+  },
+  "submission": {
+    "title": "我要投稿",
+    "myList": "我的投稿",
+    "category": "投稿栏目",
+    "contentTitle": "标题",
+    "summary": "摘要",
+    "body": "正文",
+    "cover": "封面图",
+    "submit": "提交审核",
+    "success": "投稿成功,审核通过后将正式展示",
+    "statusPending": "待审核",
+    "statusPublished": "已发布",
+    "statusRejected": "已驳回",
+    "closed": "投稿功能暂未开放",
+    "empty": "还没有投稿记录",
+    "noCategory": "暂无开放投稿的栏目"
+  },
+  "maintenance": {
+    "title": "网站维护中",
+    "desc": "网站正在维护,请稍后再来访问。"
+  },
+  "errors": {
+    "backHome": "返回首页"
+  }
+}

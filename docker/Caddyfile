@@ -1,0 +1,6 @@
+# Caddy 反向代理 + 自动 HTTPS(可选)
+# 把 your-domain.com 替换为真实域名;Caddy 会自动申请并续期证书。
+your-domain.com {
+    reverse_proxy app:3000
+    encode gzip zstd
+}

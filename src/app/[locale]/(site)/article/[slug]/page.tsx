@@ -1,0 +1,122 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { setRequestLocale, getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
+import { getPublishedBySlug } from "@/server/content";
+import { getFeatureFlags } from "@/lib/config";
+import { sanitizeRichHtml } from "@/lib/sanitize";
+import { InteractionBar } from "@/components/site/interaction-bar";
+import { CommentsSection } from "@/components/site/comments-section";
+import { ViewTracker } from "@/components/site/view-tracker";
+import { ArticleJsonLd } from "@/components/seo/json-ld";
+import { Eye, UserRound } from "lucide-react";
+
+/**
+ * 内容详情页:/article/[slug](SSR,需求 4.4 / 4.8)
+ * - 单页 TDK(需求 4.1):seoTitle/seoKeywords/seoDesc,兜底标题/摘要
+ * - 阅读量/点赞/转发展示与互动(开关受后台控制)
+ * - 评论区:仅展示已审核评论
+ */
+
+interface Props {
+  params: Promise<{ locale: string; slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const content = await getPublishedBySlug(slug, locale);
+  if (!content) return {};
+  return {
+    title: content.seoTitle || content.title,
+    description: content.seoDesc || content.summary || undefined,
+    keywords: content.seoKeywords || undefined,
+    openGraph: {
+      title: content.seoTitle || content.title,
+      description: content.seoDesc || content.summary || undefined,
+      images: content.coverUrl ? [content.coverUrl] : undefined,
+      type: "article",
+    },
+  };
+}
+
+export default async function ArticlePage({ params }: Props) {
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
+
+  const [content, features, t] = await Promise.all([
+    getPublishedBySlug(slug, locale),
+    getFeatureFlags(),
+    getTranslations("interaction"),
+  ]);
+  if (!content) notFound();
+
+  const date = new Date(content.publishedAt);
+
+  return (
+    <main className="container max-w-3xl py-10">
+      {/* 阅读量埋点(客户端一次性触发,防重复) */}
+      <ViewTracker contentId={content.id} />
+      {/* 结构化数据:文章(需求 4.1) */}
+      <ArticleJsonLd
+        locale={locale}
+        slug={content.slug}
+        title={content.title}
+        description={content.seoDesc || content.summary || ""}
+        cover={content.coverUrl}
+        publishedAt={date.toISOString()}
+        authorName={content.authorName}
+      />
+
+      <nav className="mb-4 text-sm text-muted-foreground" aria-label="面包屑">
+        <Link href={`/${locale}/c/${content.category.slug}`} className="hover:text-primary">
+          {content.category.name}
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="text-foreground">{content.title}</span>
+      </nav>
+
+      <article>
+        <header className="mb-6">
+          <h1 className="font-heading text-3xl font-bold leading-tight">{content.title}</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            {content.authorName && (
+              <span className="inline-flex items-center gap-1">
+                <UserRound className="h-4 w-4" />
+                {content.authorName}
+              </span>
+            )}
+            <time dateTime={date.toISOString()}>{date.toLocaleDateString(locale)}</time>
+            <span className="inline-flex items-center gap-1">
+              <Eye className="h-4 w-4" />
+              {t("views")} {content.viewCount}
+            </span>
+          </div>
+        </header>
+
+        {content.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={content.coverUrl} alt={content.title} className="mb-6 w-full rounded-xl" />
+        )}
+
+        {/* 渲染端兜底消毒:正文可能来自 UGC 投稿,防存储型 XSS */}
+        <div className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(content.body) }} />
+      </article>
+
+      {/* 点赞/转发(总开关控制,需求 4.8) */}
+      {(features.like || features.share) && (
+        <InteractionBar
+          contentId={content.id}
+          likeCount={content.likeCount}
+          shareCount={content.shareCount}
+          showLike={features.like}
+          showShare={features.share}
+        />
+      )}
+
+      {/* 评论区(总开关控制) */}
+      {features.comment && (
+        <CommentsSection contentId={content.id} loginRequired={features.commentLoginRequired} />
+      )}
+    </main>
+  );
+}

@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * 主题 CSS 变量(shadcn slate 基调)。
+ * 这里是"默认值兜底";运行时后台配置会在根布局注入 :root 内联样式覆盖,
+ * 实现"后台改主题 → 立即生效、无需重编译/重启"。
+ */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    /* 字体变量(后台可配) */
+    --font-sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-heading: var(--font-sans);
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+/*
+ * 富文本排版(编辑器 .prose-editor 与前台展示 .rich-content 共用):
+ * 保证 Tiptap 输出的语义化 HTML 在两端观感一致。
+ */
+@layer components {
+  .prose-editor,
+  .rich-content {
+    @apply text-sm leading-relaxed text-foreground;
+  }
+  .prose-editor h2,
+  .rich-content h2 {
+    @apply mb-3 mt-6 text-xl font-semibold;
+  }
+  .prose-editor h3,
+  .rich-content h3 {
+    @apply mb-2 mt-5 text-lg font-semibold;
+  }
+  .prose-editor p,
+  .rich-content p {
+    @apply my-2;
+  }
+  .prose-editor ul,
+  .rich-content ul {
+    @apply my-2 list-disc pl-6;
+  }
+  .prose-editor ol,
+  .rich-content ol {
+    @apply my-2 list-decimal pl-6;
+  }
+  .prose-editor blockquote,
+  .rich-content blockquote {
+    @apply my-3 border-l-4 border-border pl-4 text-muted-foreground;
+  }
+  .prose-editor a,
+  .rich-content a {
+    @apply text-primary underline underline-offset-2;
+  }
+  .prose-editor img,
+  .rich-content img {
+    @apply my-3 h-auto max-w-full rounded-md;
+  }
+  .prose-editor video,
+  .rich-content video {
+    @apply my-3 w-full rounded-md;
+  }
+  .prose-editor hr,
+  .rich-content hr {
+    @apply my-4;
+  }
+  .prose-editor code,
+  .rich-content code {
+    @apply rounded bg-muted px-1 py-0.5 font-mono text-xs;
+  }
+  .prose-editor pre,
+  .rich-content pre {
+    @apply my-3 overflow-x-auto rounded-md bg-muted p-3;
+  }
+  .rich-content table {
+    @apply my-3 w-full border-collapse text-sm;
+  }
+  .rich-content th,
+  .rich-content td {
+    @apply border px-2 py-1 text-left;
+  }
+}

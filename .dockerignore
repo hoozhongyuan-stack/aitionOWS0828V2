@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+data
+uploads
+backups
+docs
+*.md
+.env
+.env.local
+npm-debug.log*
+.DS_Store
+Thumbs.db

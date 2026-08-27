@@ -1,0 +1,46 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# 运行时数据(volume 挂载,禁止入库)
+/data/*.db
+/data/*.db-journal
+/data/*.db-wal
+/data/*.db-shm
+/uploads/*
+/backups/*
+!/data/.gitkeep
+!/uploads/.gitkeep
+!/backups/.gitkeep
+
+# prisma 生成产物
+/prisma/generated
+
+# env
+.env
+.env.local
+.env.*.local
+
+# 日志与系统文件
+npm-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# TypeScript ������������
+tsconfig.tsbuildinfo

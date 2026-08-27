@@ -1,0 +1,5 @@
+# 统一行尾策略:文本自动,shell 脚本强制 LF(Windows 检出 CRLF 会导致 Linux 容器无法执行)
+* text=auto
+*.sh text eol=lf
+Caddyfile text eol=lf
+Dockerfile text eol=lf
