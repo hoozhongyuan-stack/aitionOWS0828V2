@@ -29,6 +29,9 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/x-icon": "ico",
   "image/vnd.microsoft.icon": "ico",
   "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
+  "video/x-matroska": "mkv",
   "application/pdf": "pdf",
 };
 

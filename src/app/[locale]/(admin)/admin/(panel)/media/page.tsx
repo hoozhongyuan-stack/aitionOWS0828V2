@@ -39,22 +39,43 @@ export default function MediaAdminPage() {
       .then(setData)
       .catch((e) => toast.error(e.message));
   }, [page, mime]);
+  // 文件选择框按后台"上传允许类型"过滤,从源头避免选了必被拒的文件
+  const [accept, setAccept] = useState("image/*,video/mp4");
+  useEffect(() => {
+    apiGet<{ allowedTypes?: string[] }>("/api/admin/settings/upload")
+      .then((cfg) => {
+        if (cfg.allowedTypes?.length) setAccept(cfg.allowedTypes.join(","));
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(load, [load]);
 
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    if (files.length === 0) return;
+    // 逐文件真实结果汇总:此前无条件弹"上传完成",单个失败(类型/超限)被成功提示掩盖
+    const failed: string[] = [];
+    let ok = 0;
     for (const f of files) {
       try {
         await apiUpload(f);
+        ok++;
       } catch (err) {
-        toast.error(`${f.name}: ${err instanceof Error ? err.message : "上传失败"}`);
+        failed.push(`${f.name}:${err instanceof Error ? err.message : "上传失败"}`);
       }
     }
-    if (files.length) {
-      toast.success("上传完成");
-      load();
+    if (ok > 0) {
+      toast.success(`上传成功 ${ok} 个文件`);
     }
+    if (failed.length > 0) {
+      toast.error(`${failed.length} 个文件上传失败`, {
+        description: failed.join("；"),
+        duration: 8000,
+      });
+    }
+    if (ok > 0) load();
   }
 
   async function saveAlt(row: MediaRow) {
@@ -104,7 +125,7 @@ export default function MediaAdminPage() {
             </SelectContent>
           </Select>
           <label>
-            <input type="file" multiple className="hidden" onChange={upload} />
+              <input type="file" multiple accept={accept} className="hidden" onChange={upload} />
             <Button asChild>
               <span>
                 <Upload className="h-4 w-4" /> 上传文件

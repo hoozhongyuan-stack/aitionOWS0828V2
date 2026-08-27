@@ -54,8 +54,9 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
           </div>
         );
       })}
-      {/* 蒙层:保证叠加文字在任意图片上都可读 */}
-      <div className="absolute inset-0 bg-black/35" />
+      {/* 蒙层:保证叠加文字在任意图片上都可读。
+          必须对指针事件透明:此前蒙层渲染在链接层之上,整块 Hero 的点击(含外链)都被它吃掉 */}
+      <div className="pointer-events-none absolute inset-0 bg-black/35" />
       {banners.length > 1 && (
         <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center gap-1.5">
           {banners.map((_, i) => (

@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import { getBrandConfig, getSeoConfig, getFeatureFlags, getThemeConfig } from "@/lib/config";
 import { getEnabledLocales } from "@/server/i18n";
 import { getVisibleNav } from "@/server/content/nav";
-import { getUserSession } from "@/lib/auth/session";
+import { getActiveUserSession } from "@/lib/auth/session";
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
 import { OrganizationJsonLd } from "@/components/seo/json-ld";
@@ -37,7 +37,8 @@ export default async function SiteLayout({
     getFeatureFlags(),
     getThemeConfig(),
     getVisibleNav(locale),
-    getUserSession(),
+    // 页头必须与写接口同口径:禁用账号即使持有效 JWT 也按未登录渲染(F7 状态一致性)
+    getActiveUserSession(),
     getTranslations("auth"),
     getTranslations("footer"),
     getTranslations("submission"),

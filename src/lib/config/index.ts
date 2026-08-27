@@ -94,6 +94,7 @@ export interface UploadConfig {
 const UPLOAD_DEFAULTS: UploadConfig = {
   maxSizeMB: 10,
   // 含 ICO(image/x-icon 与 image/vnd.microsoft.icon 为不同浏览器的上报差异),用于 favicon 场景
+  // 视频除 mp4 外放宽常见容器:webm / mov(quicktime) / mkv(matroska)
   allowedTypes: [
     "image/jpeg",
     "image/png",
@@ -103,6 +104,9 @@ const UPLOAD_DEFAULTS: UploadConfig = {
     "image/x-icon",
     "image/vnd.microsoft.icon",
     "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "video/x-matroska",
   ],
   maxCount: 20,
 };

@@ -35,7 +35,7 @@ export function SiteFooter({
                 // 名称必填;链接与二维码至少其一(微信二维码等场景通常没有链接)
                 .filter((s) => s.name && (s.url || s.qrcodeUrl))
                 .map((s) => (
-                  <li key={s.name + (s.url || s.qrcodeUrl || "")} className="group relative">
+                  <li key={s.name + (s.url || s.qrcodeUrl || "")} className="flex flex-col gap-2">
                     {s.url ? (
                       <a
                         href={s.url}
@@ -51,12 +51,16 @@ export function SiteFooter({
                       </span>
                     )}
                     {s.qrcodeUrl && (
-                      // 扫码友好:加大弹层、强制正方形白底(二维码识别需要留白静区与对比度),
-                      // object-contain 保证非正方形原图也完整显示不裁切
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 rounded-xl border bg-white p-3 shadow-lg group-hover:block">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={s.qrcodeUrl} alt={`${s.name} 二维码`} className="aspect-square h-44 w-44 object-contain" />
-                      </div>
+                      // 常驻展示(108×108):移动端没有 hover,弹层方案发现性差;
+                      // 白底留白保证二维码识别率,object-contain 保证非正方形原图完整显示
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={s.qrcodeUrl}
+                        alt={`${s.name} 二维码`}
+                        width={108}
+                        height={108}
+                        className="h-[108px] w-[108px] rounded-lg border bg-white object-contain p-1"
+                      />
                     )}
                   </li>
                 ))}
