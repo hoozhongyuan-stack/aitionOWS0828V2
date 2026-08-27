@@ -106,7 +106,7 @@ export default function ThemePage() {
   const set = (k: keyof ThemeValues, v: string | boolean) => setValues({ ...values, [k]: v });
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">主题外观</h1>
         <p className="text-sm text-muted-foreground">调色板与字体全局生效,保存后无需重启。</p>

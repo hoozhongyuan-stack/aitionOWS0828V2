@@ -132,7 +132,7 @@ export default function FormEditPage() {
   if (loading) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>

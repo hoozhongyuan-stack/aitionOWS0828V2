@@ -41,7 +41,7 @@ function SecurityInner() {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">安全设置</h1>
         <p className="text-sm text-muted-foreground">管理员账号安全。</p>

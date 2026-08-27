@@ -81,7 +81,7 @@ export default function BrandPage() {
   if (!v) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">品牌信息</h1>
         <p className="text-sm text-muted-foreground">站点标识、备案版权与联系方式,前台页脚等位置自动引用。</p>

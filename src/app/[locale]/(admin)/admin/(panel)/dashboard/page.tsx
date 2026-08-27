@@ -51,7 +51,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">数据看板</h1>
         <p className="text-sm text-muted-foreground">站点访问与业务概览。</p>

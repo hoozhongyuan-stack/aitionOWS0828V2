@@ -4,7 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiGet, apiPost, apiDelete, apiUpload } from "@/components/admin/api-client";
 import { Trash2, Upload, FileVideo, File as FileIcon, Check } from "lucide-react";
 
@@ -104,16 +110,23 @@ export default function MediaAdminPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">文件管理</h1>
           <p className="text-sm text-muted-foreground">
-            共 {data?.total ?? "…"} 个文件,全部存储于服务器本地 uploads/ 目录;alt 用于图片 SEO 语义。
+            共 {data?.total ?? "…"} 个文件,全部存储于服务器本地 uploads/ 目录;alt 用于图片 SEO
+            语义。
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={mime} onValueChange={(v) => { setMime(v); setPage(1); }}>
+          <Select
+            value={mime}
+            onValueChange={(v) => {
+              setMime(v);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -125,7 +138,7 @@ export default function MediaAdminPage() {
             </SelectContent>
           </Select>
           <label>
-              <input type="file" multiple accept={accept} className="hidden" onChange={upload} />
+            <input type="file" multiple accept={accept} className="hidden" onChange={upload} />
             <Button asChild>
               <span>
                 <Upload className="h-4 w-4" /> 上传文件
@@ -136,14 +149,21 @@ export default function MediaAdminPage() {
       </div>
 
       {data?.items.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-16 text-center text-muted-foreground">暂无文件</div>
+        <div className="rounded-lg border border-dashed p-16 text-center text-muted-foreground">
+          暂无文件
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {data?.items.map((m) => (
             <div key={m.id} className="overflow-hidden rounded-lg border bg-card">
               {m.mime.startsWith("image/") ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.url} alt={m.alt ?? m.filename} loading="lazy" className="aspect-video w-full object-cover" />
+                <img
+                  src={m.url}
+                  alt={m.alt ?? m.filename}
+                  loading="lazy"
+                  className="aspect-video w-full object-cover"
+                />
               ) : (
                 <div className="flex aspect-video w-full items-center justify-center bg-muted">
                   {m.mime.startsWith("video/") ? (
@@ -164,10 +184,22 @@ export default function MediaAdminPage() {
                     placeholder="alt 语义描述"
                     className="h-7 text-xs"
                   />
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveAlt(m)} title="保存 alt">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => saveAlt(m)}
+                    title="保存 alt"
+                  >
                     <Check className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m)} title="删除">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => remove(m)}
+                    title="删除"
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -179,13 +211,23 @@ export default function MediaAdminPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 text-sm">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
             上一页
           </Button>
           <span className="text-muted-foreground">
             {page} / {totalPages}
           </span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
             下一页
           </Button>
         </div>

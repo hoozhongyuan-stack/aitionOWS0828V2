@@ -407,7 +407,7 @@ function WordsTab() {
 
 export default function UgcAdminPage() {
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">互动审核</h1>
         <p className="text-sm text-muted-foreground">所有 UGC 内容先审后发;互动总开关见「功能设置」。</p>

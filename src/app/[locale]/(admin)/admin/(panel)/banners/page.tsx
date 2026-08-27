@@ -167,7 +167,7 @@ export default function BannersAdminPage() {
   if (!items) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">轮播图</h1>
         <p className="text-sm text-muted-foreground">

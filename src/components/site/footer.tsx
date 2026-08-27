@@ -74,10 +74,16 @@ export function SiteFooter({
           {brand.contactAddress && <div>{brand.contactAddress}</div>}
         </div>
         <div className="space-y-2 text-sm">
-          <Link href={`/${locale}/agreement/register`} className="block text-muted-foreground hover:text-primary">
+          <Link
+            href={`/${locale}/agreement/register`}
+            className="block text-muted-foreground hover:text-primary"
+          >
             {labels.register}
           </Link>
-          <Link href={`/${locale}/agreement/privacy`} className="block text-muted-foreground hover:text-primary">
+          <Link
+            href={`/${locale}/agreement/privacy`}
+            className="block text-muted-foreground hover:text-primary"
+          >
             {labels.privacy}
           </Link>
         </div>

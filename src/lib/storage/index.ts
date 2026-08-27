@@ -91,9 +91,12 @@ export async function saveUpload(input: {
       // 避免产出"扩展名/mime 与真实内容不符"的脏文件(favicon 黑块缺陷的根因)
       if (!meta.format) throw new Error("unrecognized image");
       if (meta.width && meta.width > 2560) img = img.resize({ width: 2560 });
-      if (input.mime === "image/jpeg") buffer = Buffer.from(await img.jpeg({ quality: 80 }).toBuffer());
-      else if (input.mime === "image/png") buffer = Buffer.from(await img.png({ compressionLevel: 8 }).toBuffer());
-      else if (input.mime === "image/webp") buffer = Buffer.from(await img.webp({ quality: 80 }).toBuffer());
+      if (input.mime === "image/jpeg")
+        buffer = Buffer.from(await img.jpeg({ quality: 80 }).toBuffer());
+      else if (input.mime === "image/png")
+        buffer = Buffer.from(await img.png({ compressionLevel: 8 }).toBuffer());
+      else if (input.mime === "image/webp")
+        buffer = Buffer.from(await img.webp({ quality: 80 }).toBuffer());
       const outMeta = await sharp(buffer).metadata();
       width = outMeta.width ?? null;
       height = outMeta.height ?? null;
@@ -104,7 +107,9 @@ export async function saveUpload(input: {
 
   const now = new Date();
   const ext =
-    EXT_BY_MIME[input.mime] || path.extname(input.originalName).replace(".", "").toLowerCase() || "bin";
+    EXT_BY_MIME[input.mime] ||
+    path.extname(input.originalName).replace(".", "").toLowerCase() ||
+    "bin";
   const rel = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${crypto.randomUUID()}.${ext}`;
   const abs = path.join(uploadRoot(), rel);
   await mkdir(path.dirname(abs), { recursive: true });

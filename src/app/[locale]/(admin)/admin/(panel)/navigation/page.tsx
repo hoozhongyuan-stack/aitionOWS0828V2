@@ -148,7 +148,7 @@ export default function NavigationAdminPage() {
     id == null ? "-" : (cats.find((c) => c.id === id)?.translations[0]?.name ?? `#${id}`);
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">导航管理</h1>

@@ -388,7 +388,7 @@ function ErrorsTab() {
 
 export default function SettingsPage() {
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">功能设置</h1>
         <p className="text-sm text-muted-foreground">互动开关、上传限制、第三方登录与错误页。</p>

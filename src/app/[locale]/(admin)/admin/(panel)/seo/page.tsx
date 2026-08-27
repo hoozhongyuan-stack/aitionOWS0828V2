@@ -50,7 +50,7 @@ export default function SeoPage() {
   const setS = (k: string, val: unknown) => setV({ ...v, [k]: val });
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">SEO / GEO</h1>
         <p className="text-sm text-muted-foreground">地理信息注入结构化数据,提升本地检索与 AI 展示效果。</p>
