@@ -54,7 +54,7 @@ export default async function HomePage({
         <div
           className={
             hasBanners
-              ? "container relative z-10 flex flex-col items-center gap-6 py-20 text-center text-white sm:py-28"
+              ? "container pointer-events-none relative z-10 flex flex-col items-center gap-6 py-20 text-center text-white sm:py-28"
               : "container flex flex-col items-center gap-6 py-20 text-center sm:py-28"
           }
         >
@@ -70,7 +70,7 @@ export default async function HomePage({
           <p className={hasBanners ? "max-w-xl text-lg text-white/90 drop-shadow-md" : "max-w-xl text-lg text-muted-foreground"}>
             {t("heroSubtitle")}
           </p>
-          <Button asChild size="lg" variant={hasBanners ? "secondary" : "default"}>
+          <Button asChild size="lg" variant={hasBanners ? "secondary" : "default"} className={hasBanners ? "pointer-events-auto" : undefined}>
             <Link href={`/${locale}/contact`}>
               {t("heroCta")}
               <ArrowRight className="h-4 w-4" />
