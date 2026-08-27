@@ -12,11 +12,15 @@ export interface SessionPayload {
 }
 
 function getSecret(): Uint8Array {
-  const s = process.env.AUTH_SECRET || "dev-insecure-secret-change-me";
+  // 开发环境允许缺省(方便首次体验);生产环境绝不允许——
+  // 回退到公开的默认串等于任何人可离线伪造 admin JWT 接管后台,必须直接失败(fail-closed)
+  const dev = process.env.NODE_ENV !== "production";
+  const s = process.env.AUTH_SECRET || (dev ? "dev-insecure-secret-change-me" : "");
+  if (!s) throw new Error("AUTH_SECRET 未配置:生产环境必须提供强随机密钥");
   return new TextEncoder().encode(s);
 }
 
-/** 是否仍在使用默认密钥(生产应告警) */
+/** 是否仍在使用默认密钥(生产应告警并拒绝发令牌) */
 export function isInsecureSecret(): boolean {
   const s = process.env.AUTH_SECRET || "";
   return !s || s.includes("please-change-me") || s === "dev-insecure-secret-change-me";

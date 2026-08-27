@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
-import { verifyToken } from "./jwt";
+import { verifyToken, isInsecureSecret } from "./jwt";
+import { prisma } from "@/lib/db";
+import { USER_STATUS } from "@/types/domain";
 import { jsonErr } from "@/lib/api";
 
 /**
@@ -50,6 +52,38 @@ export async function requireAdmin(): Promise<{ admin: AdminSession } | { error:
 /** Route Handler 守卫:要求前台用户登录 */
 export async function requireUser(): Promise<{ user: UserSession } | { error: ReturnType<typeof jsonErr> }> {
   const user = await getUserSession();
+  if (!user) return { error: jsonErr("请先登录", 401) };
+  return { user };
+}
+
+/**
+ * 登录/注册等发令牌的接口必须先过这道闸:
+ * 生产环境使用默认/未配置 AUTH_SECRET 时拒绝发放会话,并给出可操作的提示
+ * (默认密钥是公开字符串,任何人都能伪造 admin JWT,绝不能静默放行)。
+ * 返回 null 表示放行。
+ */
+export function guardAuthSecret(): ReturnType<typeof jsonErr> | null {
+  if (process.env.NODE_ENV === "production" && isInsecureSecret()) {
+    return jsonErr("服务端安全密钥(AUTH_SECRET)未配置,登录已禁用。请在部署环境设置强随机 AUTH_SECRET 后重启服务", 503);
+  }
+  return null;
+}
+
+/**
+ * 写操作专用会话读取:除签名校验外还复查账号当前状态。
+ * 被封禁用户在 cookie 有效期内也不得继续产出 UGC/上传(会话不吊销体系下的必要兜底)。
+ */
+export async function getActiveUserSession(): Promise<UserSession | null> {
+  const s = await getUserSession();
+  if (!s) return null;
+  const u = await prisma.user.findUnique({ where: { id: s.id }, select: { status: true } });
+  if (!u || u.status !== USER_STATUS.ACTIVE) return null;
+  return s;
+}
+
+/** 同 getActiveUserSession 的守卫版本:未登录或已禁用均返回 401 */
+export async function requireActiveUser(): Promise<{ user: UserSession } | { error: ReturnType<typeof jsonErr> }> {
+  const user = await getActiveUserSession();
   if (!user) return { error: jsonErr("请先登录", 401) };
   return { user };
 }

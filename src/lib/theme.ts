@@ -31,11 +31,24 @@ export function hexToHslTriplet(hex: string): string | null {
   return `${round(h * 360)} ${round(s * 100)}% ${round(l * 100)}%`;
 }
 
+/** 合法颜色(hex 或 HSL 三元组);非法输入一律视为脏数据返回 fallback */
+const COLOR_OK = /^(#[0-9a-fA-F]{6}|[0-9]{1,3}(\.[0-9]+)? [0-9]{1,3}(\.[0-9]+)?% [0-9]{1,3}(\.[0-9]+)?%)$/;
+const UNIT_OK = /^[0-9]{1,4}(\.[0-9]+)?(px|rem|em|%)?$/;
+const PX_OK = /^[0-9]{1,4}(\.[0-9]+)?px$/;
+const NUMBER_OK = /^[0-9](\.[0-9]+)?$/;
+// 字体栈剔除可断开 CSS/HTML 的字符;theme 值最终进 <style>,这是注入逃逸的最后防线
+const FONT_BAD = /[<>{};\\`]/;
+
+function safeUnit(v: string | undefined, fallback: string, ok: RegExp): string {
+  const s = (v ?? "").trim();
+  return s && s.length <= 200 && !FONT_BAD.test(s) && ok.test(s) ? s : fallback;
+}
+
 /** 任意配置颜色 → HSL 三元组(非法输入返回 fallback) */
 function toTriplet(value: string, fallback: string): string {
   if (!value) return fallback;
   if (value.startsWith("#")) return hexToHslTriplet(value) ?? fallback;
-  return value; // 认为已是 "h s% l%" 格式
+  return COLOR_OK.test(value.trim()) ? value.trim() : fallback;
 }
 
 /** 由 HSL 三元组的亮度决定配文颜色(亮底配深字、深底配白字) */
@@ -85,10 +98,13 @@ export function buildThemeCss(theme: ThemeConfig): string {
     `--border:${shiftL(secondary, -5)}`,
     `--input:${shiftL(secondary, -5)}`,
     `--ring:${primary}`,
-    `--radius:${theme.radius || "0.5rem"}`,
-    `--font-sans:${theme.fontSans}`,
-    `--font-heading:${theme.fontHeading || "var(--font-sans)"}`,
+    `--radius:${safeUnit(theme.radius, "0.5rem", UNIT_OK)}`,
+    `--font-sans:${safeUnit(theme.fontSans, "system-ui, sans-serif", FONT_OK_FONT)}`,
+    `--font-heading:${safeUnit(theme.fontHeading, "var(--font-sans)", FONT_OK_FONT)}`,
   ].join(";");
 
-  return `:root{${vars}}html{font-size:${theme.fontSize || "16px"}}body{line-height:${theme.lineHeight || "1.6"}}`;
+  return `:root{${vars}}html{font-size:${safeUnit(theme.fontSize, "16px", PX_OK)}}body{line-height:${safeUnit(theme.lineHeight, "1.6", NUMBER_OK)}}`;
 }
+
+// 字体栈与颜色/长度走不同校验:允许逗号、引号、百分号,只挡危险字符
+const FONT_OK_FONT = /^[^<>{};\\`]{0,200}$/;

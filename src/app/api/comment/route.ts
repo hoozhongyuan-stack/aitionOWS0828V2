@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
-import { getUserSession } from "@/lib/auth/session";
+import { getActiveUserSession } from "@/lib/auth/session";
 import { getFeatureFlags } from "@/lib/config";
 import { listApprovedComments, submitComment } from "@/server/ugc";
 import { rateLimit } from "@/lib/ugc/anti-spam";
@@ -29,7 +29,8 @@ export async function POST(req: Request) {
   const parsed = await parseBody(req, postSchema);
   if (parsed.error) return parsed.error;
 
-  const user = await getUserSession();
+  // 写操作用有效会话:被封禁用户即使持有效 cookie 也不得评论
+  const user = await getActiveUserSession();
   if (features.commentLoginRequired && !user) return jsonErr("请登录后评论", 401);
 
   const ip = getClientIp(req);

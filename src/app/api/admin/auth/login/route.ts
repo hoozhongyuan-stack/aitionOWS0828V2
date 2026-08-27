@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
-import { ADMIN_COOKIE, sessionCookieOptions } from "@/lib/auth/session";
+import { ADMIN_COOKIE, sessionCookieOptions, guardAuthSecret } from "@/lib/auth/session";
 import { getSecurityConfig } from "@/lib/config";
 
 /**
@@ -25,6 +25,9 @@ const WINDOW_MS = 10 * 60 * 1000;
 const MAX_FAILS = 10;
 
 export async function POST(req: Request) {
+  const secretBlock = guardAuthSecret();
+  if (secretBlock) return secretBlock;
+
   const parsed = await parseBody(req, schema);
   if (parsed.error) return parsed.error;
   const { username, password } = parsed.data;

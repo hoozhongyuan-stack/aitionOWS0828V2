@@ -2,7 +2,7 @@ import { z } from "zod";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { loginByEmail } from "@/server/user";
 import { signToken } from "@/lib/auth/jwt";
-import { USER_COOKIE, sessionCookieOptions } from "@/lib/auth/session";
+import { USER_COOKIE, sessionCookieOptions, guardAuthSecret } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/ugc/anti-spam";
 
 /** 邮箱登录:POST /api/auth/login(需求 4.6) */
@@ -12,6 +12,9 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  const secretBlock = guardAuthSecret();
+  if (secretBlock) return secretBlock;
+
   const parsed = await parseBody(req, schema);
   if (parsed.error) return parsed.error;
 

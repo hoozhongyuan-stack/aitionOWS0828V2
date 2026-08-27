@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
-import { getUserSession, GUEST_COOKIE } from "@/lib/auth/session";
+import { getUserSession, getActiveUserSession, GUEST_COOKIE } from "@/lib/auth/session";
 import { getFeatureFlags } from "@/lib/config";
 import { toggleLike, hasLiked } from "@/server/ugc";
 import { getOrCreateGuestKey, guestCookieOptions, rateLimit } from "@/lib/ugc/anti-spam";
@@ -21,7 +21,10 @@ export async function POST(req: Request) {
   const ip = getClientIp(req);
   if (!rateLimit(`like:${ip}`, 30, 60_000)) return jsonErr("操作过于频繁,请稍后再试", 429);
 
-  const user = await getUserSession();
+  // 登录点赞需为有效账号;封禁用户直接拒绝(若静默降级为游客身份,等于架空封禁)
+  const raw = await getUserSession();
+  const user = raw ? await getActiveUserSession() : null;
+  if (raw && !user) return jsonErr("账号已被禁用", 403);
   const guest = user ? null : await getOrCreateGuestKey();
 
   try {

@@ -18,6 +18,15 @@ export interface MailPayload {
   lines: string[];
 }
 
+/**
+ * 头部净化:剥除 CR/LF/NUL。
+ * subject/fromName 会拼进 SMTP 头(投稿通知的标题是用户可控输入),
+ * 换行注入可追加任意邮件头;不依赖 nodemailer 内部是否兜底,入库前统一剥除。
+ */
+function headerSafe(value: string): string {
+  return value.replace(/[\r\n\0]+/g, " ").trim();
+}
+
 /** 通用发信;返回是否成功(未配置 SMTP / 发送失败均返回 false) */
 export async function sendMail(payload: MailPayload): Promise<boolean> {
   let cfg: NotifyConfig;
@@ -29,6 +38,10 @@ export async function sendMail(payload: MailPayload): Promise<boolean> {
   }
   if (!cfg.smtpHost.trim()) return false;
 
+  // 显式短超时:SMTP 端口被防火墙 DROP 时默认超时可达分钟级,会把请求挂死
+  const TIMEOUTS = { connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 20_000 };
+
+  let closeTransporter: (() => void) | null = null;
   try {
     const nodemailer = await import("nodemailer");
     const transporter = nodemailer.default.createTransport({
@@ -36,23 +49,29 @@ export async function sendMail(payload: MailPayload): Promise<boolean> {
       port: cfg.smtpPort || 465,
       secure: cfg.smtpSecure,
       auth: cfg.smtpUser ? { user: cfg.smtpUser, pass: cfg.smtpPassword } : undefined,
+      ...TIMEOUTS,
     });
+    closeTransporter = () => transporter.close();
 
-    const from = cfg.fromEmail
-      ? `"${cfg.fromName || "AitionOWS"}" <${cfg.fromEmail}>`
-      : cfg.smtpUser || undefined;
+    const fromName = headerSafe(cfg.fromName || "AitionOWS");
+    const fromEmail = headerSafe(cfg.fromEmail);
+    const from =
+      fromEmail ? `"${fromName}" <${fromEmail}>` : cfg.smtpUser || undefined;
 
-    await transporter.sendMail({
+    const result = await transporter.sendMail({
       from,
       to: payload.to,
-      subject: payload.subject,
+      subject: headerSafe(payload.subject),
       text: payload.lines.join("\n"),
       html: payload.lines.map((l) => `<p>${l.replace(/</g, "&lt;")}</p>`).join(""),
     });
-    return true;
+    return !!result;
   } catch (e) {
     console.error("[mail] 邮件发送失败:", e);
     return false;
+  } finally {
+    // 每次调用独立建连,用完即关,防 socket 泄漏
+    closeTransporter?.();
   }
 }
 

@@ -17,6 +17,24 @@ const nextConfig: NextConfig = {
     // 构建时 lint 错误会阻断构建(质量门禁;如需放开可改为 true)
     ignoreDuringBuilds: false,
   },
+  // 站点级安全响应头(此前仅 /uploads 文件路由有自己的 CSP sandbox):
+  // - 不启用完整 CSP:Next SSR 注水与主题 <style> 注入依赖内联,CSP 需要 nonce 体系,
+  //   属破坏性变更;此处先落无副作用的基线头。
+  // - HSTS 在纯 HTTP 内网链路上会被浏览器忽略,经 Caddy 反代的 HTTPS 用户则正常生效。
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Strict-Transport-Security", value: "max-age=15552000; includeSubDomains" },
+        ],
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

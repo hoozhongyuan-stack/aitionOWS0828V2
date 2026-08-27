@@ -28,6 +28,55 @@ const MASK = "••••••••"; // 前端展示与"未修改"占位
 
 const putSchema = z.object({ values: z.record(z.string(), z.unknown()) });
 
+/**
+ * theme 组字段级白名单:值最终会拼进全站 <style> 注入(src/lib/theme.ts),
+ * 非法内容可逃逸 style 标签形成存储型 XSS,必须在写入边界校验。
+ * (buildThemeCss 侧另有防御性净化兜底历史脏数据。)
+ */
+const COLOR =
+  /^(#[0-9a-fA-F]{6}|[0-9]{1,3}(\.[0-9]+)? [0-9]{1,3}(\.[0-9]+)?% [0-9]{1,3}(\.[0-9]+)?%)$/;
+const PX = /^[0-9]{1,4}(\.[0-9]+)?px$/;
+const LEN_UNIT = /^[0-9]{1,4}(\.[0-9]+)?(px|rem|em|%)?$/;
+// 字体栈只禁止真正危险的字符(CSS 断句符与标签括号);正常字体名/回退列表均可通过
+const FONT = /^[^<>{};\\`]*$/;
+
+const themeSchema = z
+  .object({
+    primary: z.string().regex(COLOR).max(40),
+    secondary: z.string().regex(COLOR).max(40),
+    background: z.string().regex(COLOR).max(40),
+    foreground: z.string().regex(COLOR).max(40),
+    mutedTextColor: z.string().regex(COLOR).max(40),
+    radius: z.string().regex(LEN_UNIT).max(10),
+    fontSans: z.string().regex(FONT).max(200),
+    fontHeading: z.string().regex(FONT).max(200),
+    fontSize: z.string().regex(PX).max(10),
+    lineHeight: z
+      .string()
+      .regex(/^[0-9](\.[0-9]+)?$/)
+      .max(5),
+    logoHeight: z.string().regex(PX).max(10),
+    navFontSize: z.string().regex(PX).max(10),
+    navBold: z.boolean(),
+  })
+  .partial()
+  .passthrough(); // passthrough:保留未知键入库;CSS 注入面只消费上面已校验的字段
+
+function validateGroup(
+  group: string,
+  values: Record<string, unknown>
+): ReturnType<typeof jsonErr> | null {
+  if (group !== "theme") return null;
+  const r = themeSchema.safeParse(values);
+  if (!r.success) {
+    const first = r.error.issues[0];
+    return jsonErr(
+      `主题配置格式不正确:${first?.path?.join(".") ?? ""} ${first?.message ?? ""}`.trim()
+    );
+  }
+  return null;
+}
+
 export async function GET(_req: Request, ctx: { params: Promise<{ group: string }> }) {
   const guard = await requireAdmin();
   if ("error" in guard) return guard.error;
@@ -56,6 +105,9 @@ export async function PUT(req: Request, ctx: { params: Promise<{ group: string }
   for (const key of SECRET_KEYS[group] ?? []) {
     if (values[key] === MASK) values[key] = current[key] ?? "";
   }
+
+  const invalid = validateGroup(group, values);
+  if (invalid) return invalid;
 
   await saveSettingGroup(group, values);
   return jsonOk();

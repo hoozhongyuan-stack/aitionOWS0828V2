@@ -46,7 +46,7 @@
     "lucide-react": "^0.469.0",
     "next": "15.5.21",
     "next-intl": "^4.13.3",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^9.0.5",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "sanitize-html": "^2.17.7",

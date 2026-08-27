@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getWechatConfig } from "@/lib/config";
 import { loginByWechat } from "@/server/user";
 import { signToken } from "@/lib/auth/jwt";
-import { USER_COOKIE, sessionCookieOptions } from "@/lib/auth/session";
+import { USER_COOKIE, sessionCookieOptions, guardAuthSecret } from "@/lib/auth/session";
 
 /**
  * 微信扫码登录回调:GET /api/auth/wechat/callback?code=&state=
@@ -19,7 +19,9 @@ export async function GET(req: Request) {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? url.origin;
 
   const fail = (msg: string) =>
-    NextResponse.redirect(`${base}${next.startsWith("/") ? next : "/"}?wxerror=${encodeURIComponent(msg)}`);
+    NextResponse.redirect(
+      `${base}${next.startsWith("/") ? next : "/"}?wxerror=${encodeURIComponent(msg)}`
+    );
 
   if (!code || !state || !expectedState || state !== expectedState) {
     return fail("微信登录校验失败,请重试");
@@ -62,6 +64,10 @@ export async function GET(req: Request) {
       unionId: token.unionid ?? null,
       nickname,
     });
+
+    // 生产环境密钥未配置时拒绝发会话(与邮箱登录同一道闸)
+    const secretBlock = guardAuthSecret();
+    if (secretBlock) return fail("登录暂不可用:服务端安全密钥未配置");
 
     const jwt = await signToken(
       { sub: String(user.id), typ: "user", name: user.nickname || "微信用户" },
