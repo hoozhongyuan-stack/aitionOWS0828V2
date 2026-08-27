@@ -86,6 +86,7 @@ const FEATURE_DEFAULTS: FeatureFlags = {
 };
 
 // —— 上传限制 ——
+export const VIDEO_MAX_SIZE_MB = 400; // 视频单文件上限(固定值,不随后台 maxSizeMB 配置)
 export interface UploadConfig {
   maxSizeMB: number;
   allowedTypes: string[];

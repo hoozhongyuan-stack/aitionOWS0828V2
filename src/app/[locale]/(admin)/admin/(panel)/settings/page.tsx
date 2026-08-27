@@ -88,9 +88,24 @@ function FeaturesTab() {
         <CardDescription>关闭后前台立即隐藏对应入口,接口同步拒绝写入</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <SwitchRow label="点赞" desc="内容页点赞/取消点赞" checked={!!v.like} onChange={(c) => set("like", c)} />
-        <SwitchRow label="转发" desc="内容页复制链接转发与计数" checked={!!v.share} onChange={(c) => set("share", c)} />
-        <SwitchRow label="评论" desc="内容页评论(提交后需审核)" checked={!!v.comment} onChange={(c) => set("comment", c)} />
+        <SwitchRow
+          label="点赞"
+          desc="内容页点赞/取消点赞"
+          checked={!!v.like}
+          onChange={(c) => set("like", c)}
+        />
+        <SwitchRow
+          label="转发"
+          desc="内容页复制链接转发与计数"
+          checked={!!v.share}
+          onChange={(c) => set("share", c)}
+        />
+        <SwitchRow
+          label="评论"
+          desc="内容页评论(提交后需审核)"
+          checked={!!v.comment}
+          onChange={(c) => set("comment", c)}
+        />
         <SwitchRow
           label="评论需登录"
           desc="关闭后允许游客评论(仍需审核)"
@@ -132,7 +147,7 @@ function UploadTab() {
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>单文件大小上限(MB)</Label>
+            <Label>单文件大小上限(MB,视频固定 400MB 不受此项影响)</Label>
             <Input
               type="number"
               min={1}
@@ -198,7 +213,10 @@ function WechatTab() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>AppID</Label>
-            <Input value={String(v.appId ?? "")} onChange={(e) => setValues({ ...v, appId: e.target.value })} />
+            <Input
+              value={String(v.appId ?? "")}
+              onChange={(e) => setValues({ ...v, appId: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
             <Label>AppSecret(保存后脱敏显示)</Label>
@@ -210,7 +228,8 @@ function WechatTab() {
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          回调地址请在微信开放平台配置为:<code className="rounded bg-muted px-1">https://你的域名/api/auth/wechat/callback</code>
+          回调地址请在微信开放平台配置为:
+          <code className="rounded bg-muted px-1">https://你的域名/api/auth/wechat/callback</code>
           。H5(公众号)登录字段已预留,当前版本未启用。
         </p>
         <div className="flex justify-end">
@@ -332,8 +351,8 @@ function NotifyTab() {
           使用 SSL(端口 465 通常勾选;587/25 端口通常不勾选)
         </label>
         <p className="text-xs text-muted-foreground">
-          常见邮箱 SMTP:QQ 邮箱/企业邮箱 smtp.exmail.qq.com:465,阿里企业邮箱 smtp.qiye.aliyun.com:465,
-          需先在邮箱后台开启 SMTP 服务并使用授权码(不是登录密码)。
+          常见邮箱 SMTP:QQ 邮箱/企业邮箱 smtp.exmail.qq.com:465,阿里企业邮箱
+          smtp.qiye.aliyun.com:465, 需先在邮箱后台开启 SMTP 服务并使用授权码(不是登录密码)。
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={sendTest} disabled={testing}>
@@ -361,19 +380,31 @@ function ErrorsTab() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>404 标题</Label>
-            <Input value={String(v.notFoundTitle ?? "")} onChange={(e) => setValues({ ...v, notFoundTitle: e.target.value })} />
+            <Input
+              value={String(v.notFoundTitle ?? "")}
+              onChange={(e) => setValues({ ...v, notFoundTitle: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
             <Label>404 描述</Label>
-            <Input value={String(v.notFoundDesc ?? "")} onChange={(e) => setValues({ ...v, notFoundDesc: e.target.value })} />
+            <Input
+              value={String(v.notFoundDesc ?? "")}
+              onChange={(e) => setValues({ ...v, notFoundDesc: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
             <Label>500 标题</Label>
-            <Input value={String(v.errorTitle ?? "")} onChange={(e) => setValues({ ...v, errorTitle: e.target.value })} />
+            <Input
+              value={String(v.errorTitle ?? "")}
+              onChange={(e) => setValues({ ...v, errorTitle: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
             <Label>500 描述</Label>
-            <Input value={String(v.errorDesc ?? "")} onChange={(e) => setValues({ ...v, errorDesc: e.target.value })} />
+            <Input
+              value={String(v.errorDesc ?? "")}
+              onChange={(e) => setValues({ ...v, errorDesc: e.target.value })}
+            />
           </div>
         </div>
         <div className="flex justify-end">

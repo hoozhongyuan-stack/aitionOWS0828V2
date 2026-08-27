@@ -2,7 +2,7 @@ import { mkdir, writeFile, unlink, stat } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import sharp from "sharp";
-import { getUploadConfig } from "@/lib/config";
+import { getUploadConfig, VIDEO_MAX_SIZE_MB } from "@/lib/config";
 
 /**
  * 本地文件存储(硬性边界:禁止任何云存储)。
@@ -67,9 +67,11 @@ export async function saveUpload(input: {
   if (!cfg.allowedTypes.includes(input.mime) && !ICO_MIMES.includes(input.mime)) {
     throw new Error(`不允许的文件类型:${input.mime}`);
   }
-  const maxBytes = cfg.maxSizeMB * 1024 * 1024;
+  // 视频体积普遍较大,单独放宽(400MB);其余类型沿用后台配置上限
+  const limitMB = input.mime.startsWith("video/") ? VIDEO_MAX_SIZE_MB : cfg.maxSizeMB;
+  const maxBytes = limitMB * 1024 * 1024;
   if (input.buffer.length > maxBytes) {
-    throw new Error(`文件超过大小限制(${cfg.maxSizeMB}MB)`);
+    throw new Error(`文件超过大小限制(${limitMB}MB)`);
   }
 
   let buffer = input.buffer;

@@ -1,5 +1,6 @@
 import { getUserSession, getActiveUserSession } from "@/lib/auth/session";
-import { jsonOk, jsonErr, getClientIp } from "@/lib/api";
+import { jsonOk, jsonErr, getClientIp, contentLengthExceeds } from "@/lib/api";
+import { VIDEO_MAX_SIZE_MB } from "@/lib/config";
 import { createMedia } from "@/server/media";
 import { rateLimit } from "@/lib/ugc/anti-spam";
 
@@ -15,6 +16,11 @@ const PURPOSES = new Set(["form", "submission"]);
 const WINDOW_MS = 600_000;
 
 export async function POST(req: Request) {
+  // 读取 body 前的体积预检(与后台上传同口径)
+  if (contentLengthExceeds(req, VIDEO_MAX_SIZE_MB)) {
+    return jsonErr(`文件超过大小限制(最大 ${VIDEO_MAX_SIZE_MB}MB)`, 413);
+  }
+
   let form: FormData;
   try {
     form = await req.formData();

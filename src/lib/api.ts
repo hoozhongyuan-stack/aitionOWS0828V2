@@ -16,8 +16,18 @@ export function jsonErr(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
 }
 
-/** 解析并校验 JSON 请求体;失败时直接返回可用的错误响应 */
-export async function parseBody<T>(
+/**
+ * 上传预检:Content-Length 已超上限时,调用方应在读取 body 之前拒绝。
+ * 否则 400MB 级文件会被整体读进内存后才被校验拦下,白白消耗内存。
+ * 预留 64KB multipart 边界开销;无 Content-Length(分块传输)时放行,交给业务层精确校验。
+ */
+export function contentLengthExceeds(req: Request, maxMB: number): boolean {
+  const cl = Number(req.headers.get("content-length") ?? 0);
+  if (!Number.isFinite(cl) || cl <= 0) return false;
+  return cl > maxMB * 1024 * 1024 + 64 * 1024;
+}
+
+/** 解析并校验 JSON 请求体;失败时直接返回可用的错误响应 */ export async function parseBody<T>(
   req: Request,
   schema: ZodType<T>
 ): Promise<{ data: T; error?: undefined } | { data?: undefined; error: NextResponse }> {
@@ -30,7 +40,9 @@ export async function parseBody<T>(
   const r = schema.safeParse(json);
   if (!r.success) {
     const first = r.error.issues[0];
-    return { error: jsonErr(`参数错误:${first?.path?.join(".") ?? ""} ${first?.message ?? ""}`.trim()) };
+    return {
+      error: jsonErr(`参数错误:${first?.path?.join(".") ?? ""} ${first?.message ?? ""}`.trim()),
+    };
   }
   return { data: r.data };
 }

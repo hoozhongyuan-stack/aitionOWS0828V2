@@ -7,7 +7,7 @@ import type { BrandConfig } from "@/lib/config";
  *
  * 文字颜色说明:社交账号名/联系方式/协议链接均为 text-muted-foreground,
  * 该变量已独立于主色/文字色单独配置(见「主题外观 → 次要文字色」),后台可统一调整。
- * 二维码(新增需求②):配置了 qrcodeUrl 时,鼠标悬浮在账号名上弹出二维码图片。
+ * 社交卡片(需求②):配置了 qrcodeUrl 时常驻展示 108×108 图,名称居中于图片下方。
  */
 export function SiteFooter({
   brand,
@@ -20,7 +20,8 @@ export function SiteFooter({
 }) {
   return (
     <footer className="border-t bg-muted/30">
-      <div className="container grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-3">
+      {/* items-center:社交卡片列较高,联系我们/协议两列随之垂直居中,视觉齐平 */}
+      <div className="container grid items-center gap-8 py-10 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <div className="flex items-center gap-2">
             {brand.logoUrl ? (
@@ -30,26 +31,15 @@ export function SiteFooter({
             <span className="font-heading font-semibold">{brand.siteName}</span>
           </div>
           {brand.socials.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-3">
+            <ul className="mt-4 flex flex-wrap gap-4">
               {brand.socials
                 // 名称必填;链接与二维码至少其一(微信二维码等场景通常没有链接)
                 .filter((s) => s.name && (s.url || s.qrcodeUrl))
                 .map((s) => (
-                  <li key={s.name + (s.url || s.qrcodeUrl || "")} className="flex flex-col gap-2">
-                    {s.url ? (
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-muted-foreground hover:text-primary"
-                      >
-                        {s.name}
-                      </a>
-                    ) : (
-                      <span className="cursor-default text-sm text-muted-foreground hover:text-primary">
-                        {s.name}
-                      </span>
-                    )}
+                  <li
+                    key={s.name + (s.url || s.qrcodeUrl || "")}
+                    className="flex flex-col items-center gap-2"
+                  >
                     {s.qrcodeUrl && (
                       // 常驻展示(108×108):移动端没有 hover,弹层方案发现性差;
                       // 白底留白保证二维码识别率,object-contain 保证非正方形原图完整显示
@@ -59,8 +49,22 @@ export function SiteFooter({
                         alt={`${s.name} 二维码`}
                         width={108}
                         height={108}
-                        className="h-[108px] w-[108px] rounded-lg border bg-white object-contain p-1"
+                        className="h-[108px] w-[108px] rounded-lg border bg-white object-contain p-1 shadow-sm"
                       />
+                    )}
+                    {s.url ? (
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-center text-sm text-muted-foreground hover:text-primary"
+                      >
+                        {s.name}
+                      </a>
+                    ) : (
+                      <span className="cursor-default text-center text-sm text-muted-foreground">
+                        {s.name}
+                      </span>
                     )}
                   </li>
                 ))}
