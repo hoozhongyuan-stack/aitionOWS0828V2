@@ -210,7 +210,9 @@ export async function exportSubmissionsCsv(
   const rows = await prisma.formSubmission.findMany({ where: { formId }, orderBy: { id: "asc" } });
 
   const esc = (v: unknown) => {
-    const s = v == null ? "" : Array.isArray(v) ? v.join("、") : String(v);
+    let s = v == null ? "" : Array.isArray(v) ? v.join("、") : String(v);
+    // 公式注入防护:Excel/WPS 会把 =+-@/Tab/CR 开头的单元格当公式执行,前置单引号强制按文本处理
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     return `"${s.replace(/"/g, '""')}"`;
   };
   const header = ["提交时间", ...fields.map((f) => f.label), "IP"].map(esc).join(",");

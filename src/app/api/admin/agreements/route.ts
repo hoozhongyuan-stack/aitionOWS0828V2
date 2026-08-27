@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 import { jsonOk, jsonErr, parseBody } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth/session";
 import { AGREEMENT_TYPE } from "@/types/domain";
+import { getAgreementExact, saveAgreement } from "@/server/agreement";
 
 /**
  * 用户协议管理:GET/PUT /api/admin/agreements
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
   const type = url.searchParams.get("type");
   const locale = url.searchParams.get("locale");
   if (!type || !locale) return jsonErr("缺少 type/locale");
-  const row = await prisma.agreement.findUnique({ where: { type_locale: { type, locale } } });
+  const row = await getAgreementExact(type, locale);
   return jsonOk(row ?? { type, locale, title: "", body: "" });
 }
 
@@ -33,10 +33,6 @@ export async function PUT(req: Request) {
   const parsed = await parseBody(req, putSchema);
   if (parsed.error) return parsed.error;
   const { type, locale, title, body } = parsed.data;
-  await prisma.agreement.upsert({
-    where: { type_locale: { type, locale } },
-    update: { title, body },
-    create: { type, locale, title, body },
-  });
+  await saveAgreement(type, locale, title, body);
   return jsonOk();
 }

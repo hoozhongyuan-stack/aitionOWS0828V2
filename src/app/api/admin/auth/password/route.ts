@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 import { jsonOk, jsonErr, parseBody } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth/session";
-import { verifyPassword, hashPassword } from "@/lib/auth/password";
 import { saveSettingGroup } from "@/server/setting";
+import { changeAdminPassword } from "@/server/admin";
 
 /**
  * 管理员修改密码:POST /api/admin/auth/password
@@ -22,17 +21,12 @@ export async function POST(req: Request) {
   if (parsed.error) return parsed.error;
   const { oldPassword, newPassword } = parsed.data;
 
-  const admin = await prisma.adminUser.findUnique({ where: { id: guard.admin.id } });
-  if (!admin) return jsonErr("账号不存在", 404);
-  if (!(await verifyPassword(oldPassword, admin.passwordHash))) {
-    return jsonErr("原密码错误", 400);
+  try {
+    await changeAdminPassword(guard.admin.id, oldPassword, newPassword);
+  } catch (e) {
+    return jsonErr(e instanceof Error ? e.message : "修改失败");
   }
-  if (newPassword === "admin888") return jsonErr("新密码不能使用默认密码");
 
-  await prisma.adminUser.update({
-    where: { id: admin.id },
-    data: { passwordHash: await hashPassword(newPassword) },
-  });
   await saveSettingGroup("security", { defaultPwChanged: true });
 
   return jsonOk();

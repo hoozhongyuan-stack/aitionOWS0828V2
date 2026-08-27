@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/db";
 import { AGREEMENT_TYPE } from "@/types/domain";
-import { routing } from "@/i18n/routing";
+import { getAgreementForLocale } from "@/server/agreement";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 
 /**
@@ -16,17 +15,11 @@ const TYPE_MAP: Record<string, string> = {
   privacy: AGREEMENT_TYPE.PRIVACY,
 };
 
+
 async function loadAgreement(locale: string, typeKey: string) {
   const type = TYPE_MAP[typeKey];
   if (!type) return null;
-  // 当前语言 → 默认语言 → 任意语言,层层兜底
-  const row =
-    (await prisma.agreement.findUnique({ where: { type_locale: { type, locale } } })) ??
-    (await prisma.agreement.findUnique({
-      where: { type_locale: { type, locale: routing.defaultLocale } },
-    })) ??
-    (await prisma.agreement.findFirst({ where: { type } }));
-  return row;
+  return getAgreementForLocale(locale, type);
 }
 
 export async function generateMetadata({

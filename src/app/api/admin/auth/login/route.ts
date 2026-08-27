@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { ADMIN_COOKIE, sessionCookieOptions, guardAuthSecret } from "@/lib/auth/session";
 import { getSecurityConfig } from "@/lib/config";
+import { findAdminByUsername, touchAdminLogin } from "@/server/admin";
 
 /**
  * 管理员登录:POST /api/admin/auth/login
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     return jsonErr("失败次数过多,请 10 分钟后再试", 429);
   }
 
-  const admin = await prisma.adminUser.findUnique({ where: { username } });
+  const admin = await findAdminByUsername(username);
   const ok = admin && (await verifyPassword(password, admin.passwordHash));
   if (!ok) {
     const cur = rec && Date.now() - rec.ts < WINDOW_MS ? rec : { n: 0, ts: Date.now() };
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   }
   fails.delete(ip);
 
-  await prisma.adminUser.update({ where: { id: admin.id }, data: { lastLoginAt: new Date() } });
+  await touchAdminLogin(admin.id);
 
   const token = await signToken(
     { sub: String(admin.id), typ: "admin", name: admin.displayName || admin.username },

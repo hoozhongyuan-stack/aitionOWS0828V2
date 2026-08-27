@@ -85,3 +85,14 @@ export async function setUserStatus(id: number, status: string) {
   if (status !== USER_STATUS.ACTIVE && status !== USER_STATUS.DISABLED) throw new Error("非法状态");
   await prisma.user.update({ where: { id }, data: { status } });
 }
+
+/** 当前登录用户信息(仅 ACTIVE 账号);禁用/不存在返回 null。供 /api/auth/me 等展示场景 */
+export async function getActiveUserInfo(id: number): Promise<{ id: number; email: string | null; nickname: string } | null> {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user || user.status !== USER_STATUS.ACTIVE) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    nickname: user.nickname || user.email?.split("@")[0] || `用户${user.id}`,
+  };
+}
