@@ -71,13 +71,15 @@ export function SiteFooter({
             </ul>
           )}
         </div>
-        <div className="space-y-2 text-sm text-muted-foreground">
+        {/* 板块在其网格列内水平居中(lg 起);内部条目保持左对齐 */}
+        <div className="space-y-2 text-sm text-muted-foreground lg:justify-self-center">
           <div className="font-medium text-foreground">{labels.contact}</div>
           {brand.contactPhone && <div>{brand.contactPhone}</div>}
           {brand.contactEmail && <div>{brand.contactEmail}</div>}
           {brand.contactAddress && <div>{brand.contactAddress}</div>}
         </div>
-        <div className="space-y-2 text-sm">
+        {/* 协议两链接整体靠右(lg 起) */}
+        <div className="space-y-2 text-sm lg:justify-self-end">
           <Link
             href={`/${locale}/agreement/register`}
             className="block text-muted-foreground hover:text-primary"
