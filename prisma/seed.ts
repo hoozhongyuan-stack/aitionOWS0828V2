@@ -158,6 +158,109 @@ async function main() {
     });
   }
 
+  // —— 验收/演示夹具(scripts/acceptance.mjs 依赖;同样只补缺失,客户删掉后重跑 seed 会还原)——
+  const news = await prisma.category.upsert({
+    where: { slug: "news" },
+    update: {},
+    create: {
+      slug: "news",
+      moduleType: "article",
+      visible: true,
+      allowSubmit: false,
+      translations: {
+        create: [
+          { locale: "zh-CN", name: "新闻资讯" },
+          { locale: "en", name: "News" },
+        ],
+      },
+    },
+  });
+  const welcome = await prisma.content.upsert({
+    where: { slug: "welcome-aition" },
+    update: {},
+    create: {
+      slug: "welcome-aition",
+      categoryId: news.id,
+      status: "PUBLISHED",
+      source: "ADMIN",
+      authorName: "AitionOWS",
+      publishAt: new Date(),
+      translations: {
+        create: [
+          {
+            locale: "zh-CN",
+            title: "欢迎使用 AitionOWS",
+            summary: "可售卖、可一键部署、高度自定义的企业官网模板。",
+            body: "<h2>核心亮点</h2><p>全站 SSR 与 AI 检索友好、后台可视化配置保存即生效、UGC 先审后发、内置备份与本地存储。</p>",
+            seoTitle: "欢迎使用 AitionOWS",
+          },
+          {
+            locale: "en",
+            title: "Welcome to AitionOWS",
+            summary: "A sellable, one-click deployable, highly customizable corporate website template.",
+            body: "<h2>Highlights</h2><p>Full SSR, visual admin with instant effect, moderated UGC, built-in backup and local storage.</p>",
+            seoTitle: "Welcome to AitionOWS",
+          },
+        ],
+      },
+    },
+  });
+  await prisma.form.upsert({
+    where: { slug: "contact-form" },
+    update: {},
+    create: {
+      slug: "contact-form",
+      name: "在线咨询",
+      relatedKey: "contact",
+      enabled: true,
+      antiDuplicate: true,
+      schema: JSON.stringify([
+        { id: "f_name", type: "text", label: "姓名", required: true, placeholder: "您的称呼" },
+        {
+          id: "f_phone",
+          type: "text",
+          label: "联系电话",
+          required: true,
+          placeholder: "手机号码",
+          pattern: "^1[3-9]\\d{9}$",
+          patternMsg: "手机号格式不正确",
+        },
+        { id: "f_need", type: "select", label: "咨询类型", required: true, options: ["产品咨询", "技术支持", "合作洽谈"] },
+        { id: "f_msg", type: "textarea", label: "留言内容", required: false, placeholder: "想咨询的内容" },
+      ]),
+    },
+  });
+  const agreements: { type: string; locale: string; title: string; body: string }[] = [
+    {
+      type: "REGISTER",
+      locale: "zh-CN",
+      title: "用户注册协议",
+      body: "<p>注册即表示同意本站服务条款:合法使用本站服务,不得发布违法违规内容。</p>",
+    },
+    {
+      type: "PRIVACY",
+      locale: "zh-CN",
+      title: "用户隐私政策",
+      body: "<p>我们仅收集提供服务所必需的信息,不会向第三方出售您的个人数据。</p>",
+    },
+    {
+      type: "REGISTER",
+      locale: "en",
+      title: "Terms of Service",
+      body: "<p>By registering you agree to use this site lawfully and respectfully.</p>",
+    },
+    {
+      type: "PRIVACY",
+      locale: "en",
+      title: "Privacy Policy",
+      body: "<p>We only collect what is necessary to provide the service and never sell your data.</p>",
+    },
+  ];
+  for (const a of agreements) {
+    await prisma.agreement.upsert({ where: { type_locale: { type: a.type, locale: a.locale } }, update: {}, create: a });
+  }
+  void welcome;
+
   console.log("✔ 种子数据初始化完成(默认管理员 admin / admin888)");
 }
 
