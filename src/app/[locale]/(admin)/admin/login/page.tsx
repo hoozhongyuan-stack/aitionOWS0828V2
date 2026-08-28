@@ -8,8 +8,16 @@ import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { apiPost } from "@/components/admin/api-client";
+import { LoginParticles } from "@/components/admin/login-particles";
 
 /**
  * 后台登录页。
@@ -26,9 +34,14 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const r = await apiPost<{ mustChangePw: boolean }>("/api/admin/auth/login", { username, password });
+      const r = await apiPost<{ mustChangePw: boolean }>("/api/admin/auth/login", {
+        username,
+        password,
+      });
       toast.success("登录成功");
-      router.replace(r.mustChangePw ? `/${locale}/admin/security?force=1` : `/${locale}/admin/dashboard`);
+      router.replace(
+        r.mustChangePw ? `/${locale}/admin/security?force=1` : `/${locale}/admin/dashboard`
+      );
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "登录失败");
@@ -37,12 +50,14 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
       <Toaster richColors position="top-center" />
-      <Card className="w-full max-w-sm">
+      {/* 科幻粒子背景:pointer-events-none 保证不拦截表单点击 */}
+      <LoginParticles />
+      <Card className="relative z-10 w-full max-w-sm shadow-[0_0_50px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/20">
         <CardHeader>
-          <CardTitle className="text-xl">管理后台</CardTitle>
-          <CardDescription>请使用管理员账号登录</CardDescription>
+          <CardTitle className="text-lg leading-snug">AiTion中英文GEO友好型官网系统</CardTitle>
+          <CardDescription>管理后台 · 请使用管理员账号登录</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">
@@ -72,6 +87,9 @@ export default function AdminLoginPage() {
             </Button>
           </form>
         </CardContent>
+        <CardFooter className="justify-center pb-5">
+          <span className="text-xs text-muted-foreground">客服邮箱:leooohu@outlook.com</span>
+        </CardFooter>
       </Card>
     </main>
   );
