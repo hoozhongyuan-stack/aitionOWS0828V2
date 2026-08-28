@@ -10,7 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiGet, apiPut } from "@/components/admin/api-client";
 import type { FormField, FieldType } from "@/types/form";
 import { ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus } from "lucide-react";
@@ -67,14 +73,25 @@ export default function FormEditPage() {
       setSlug(`form-${Date.now().toString(36)}`);
       setFields([
         { ...newField("text"), label: "姓名", required: true },
-        { ...newField("text"), label: "联系电话", required: true, pattern: "^1[3-9]\\d{9}$", patternMsg: "手机号格式不正确" },
+        {
+          ...newField("text"),
+          label: "联系电话",
+          required: true,
+          pattern: "^1[3-9]\\d{9}$",
+          patternMsg: "手机号格式不正确",
+        },
         { ...newField("textarea"), label: "咨询内容" },
       ]);
       return;
     }
-    apiGet<{ name: string; slug: string; schema: string; relatedKey: string | null; enabled: boolean; antiDuplicate: boolean }>(
-      `/api/admin/forms?id=${id}`
-    )
+    apiGet<{
+      name: string;
+      slug: string;
+      schema: string;
+      relatedKey: string | null;
+      enabled: boolean;
+      antiDuplicate: boolean;
+    }>(`/api/admin/forms?id=${id}`)
       .then((f) => {
         setName(f.name);
         setSlug(f.slug);
@@ -160,7 +177,11 @@ export default function FormEditPage() {
           </div>
           <div className="space-y-2">
             <Label>关联标识(contact=联系页;栏目标识=该栏目页底部)</Label>
-            <Input value={relatedKey} onChange={(e) => setRelatedKey(e.target.value)} placeholder="contact" />
+            <Input
+              value={relatedKey}
+              onChange={(e) => setRelatedKey(e.target.value)}
+              placeholder="contact"
+            />
           </div>
           <div className="flex items-end gap-6 pb-1">
             <label className="flex items-center gap-2 text-sm">
@@ -180,7 +201,12 @@ export default function FormEditPage() {
           <CardTitle>字段配置({fields.length})</CardTitle>
           <div className="flex flex-wrap gap-1">
             {(Object.keys(TYPE_LABEL) as FieldType[]).map((t) => (
-              <Button key={t} variant="outline" size="sm" onClick={() => setFields([...fields, newField(t)])}>
+              <Button
+                key={t}
+                variant="outline"
+                size="sm"
+                onClick={() => setFields([...fields, newField(t)])}
+              >
                 <Plus className="h-3 w-3" />
                 {TYPE_LABEL[t]}
               </Button>
@@ -198,13 +224,27 @@ export default function FormEditPage() {
               <div className="mb-3 flex items-center justify-between">
                 <span className="rounded bg-muted px-2 py-0.5 text-xs">{TYPE_LABEL[f.type]}</span>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => move(i, -1)} disabled={i === 0}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                  >
                     <ArrowUp className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => move(i, 1)} disabled={i === fields.length - 1}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => move(i, 1)}
+                    disabled={i === fields.length - 1}
+                  >
                     <ArrowDown className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setFields(fields.filter((_, j) => j !== i))}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFields(fields.filter((_, j) => j !== i))}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -212,7 +252,11 @@ export default function FormEditPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <Label className="text-xs">字段名</Label>
-                  <Input value={f.label} onChange={(e) => setF(i, { label: e.target.value })} className="h-8" />
+                  <Input
+                    value={f.label}
+                    onChange={(e) => setF(i, { label: e.target.value })}
+                    className="h-8"
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">提示文案(placeholder)</Label>
@@ -227,7 +271,9 @@ export default function FormEditPage() {
                     <Label className="text-xs">选项(每行一个)</Label>
                     <Textarea
                       value={f.options.join("\n")}
-                      onChange={(e) => setF(i, { options: e.target.value.split("\n").filter((s) => s.trim()) })}
+                      onChange={(e) =>
+                        setF(i, { options: e.target.value.split("\n").filter((s) => s.trim()) })
+                      }
                       rows={3}
                     />
                   </div>
@@ -237,8 +283,14 @@ export default function FormEditPage() {
                     <div className="space-y-1">
                       <Label className="text-xs">格式校验</Label>
                       <Select
-                        value={PATTERN_PRESETS.some((p) => p.value === (f.pattern ?? "")) ? (f.pattern ?? "") : "custom"}
-                        onValueChange={(v) => setF(i, { pattern: v === "custom" ? f.pattern : v || undefined })}
+                        value={
+                          PATTERN_PRESETS.some((p) => p.value === (f.pattern ?? ""))
+                            ? (f.pattern ?? "")
+                            : "custom"
+                        }
+                        onValueChange={(v) =>
+                          setF(i, { pattern: v === "custom" ? f.pattern : v || undefined })
+                        }
                       >
                         <SelectTrigger className="h-8">
                           <SelectValue />

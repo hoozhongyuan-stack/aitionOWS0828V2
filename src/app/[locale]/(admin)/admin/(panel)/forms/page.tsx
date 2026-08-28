@@ -6,7 +6,14 @@ import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { apiGet, apiDelete } from "@/components/admin/api-client";
 import { Plus, Pencil, Trash2, Database } from "lucide-react";
 
@@ -20,6 +27,7 @@ interface FormRow {
   enabled: boolean;
   antiDuplicate: boolean;
   createdAt: string;
+  unhandledCount: number;
   _count: { submissions: number };
 }
 
@@ -35,7 +43,12 @@ export default function FormsAdminPage() {
   useEffect(load, [load]);
 
   async function remove(row: FormRow) {
-    if (!window.confirm(`确认删除表单「${row.name}」?其 ${row._count.submissions} 条提交数据将一并删除`)) return;
+    if (
+      !window.confirm(
+        `确认删除表单「${row.name}」?其 ${row._count.submissions} 条提交数据将一并删除`
+      )
+    )
+      return;
     try {
       await apiDelete(`/api/admin/forms?id=${row.id}`);
       toast.success("已删除");
@@ -90,14 +103,26 @@ export default function FormsAdminPage() {
               <TableCell>
                 {row.relatedKey ? <Badge variant="outline">{row.relatedKey}</Badge> : "-"}
               </TableCell>
-              <TableCell>{row._count.submissions}</TableCell>
               <TableCell>
-                {row.enabled ? <Badge variant="outline">启用</Badge> : <Badge variant="secondary">停用</Badge>}
+                {row._count.submissions}
+                {row.unhandledCount > 0 && (
+                  <Badge className="ml-2" variant="destructive">
+                    {row.unhandledCount} 未处理
+                  </Badge>
+                )}
+              </TableCell>
+              <TableCell>
+                {row.enabled ? (
+                  <Badge variant="outline">启用</Badge>
+                ) : (
+                  <Badge variant="secondary">停用</Badge>
+                )}
               </TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="sm" asChild title="提交数据">
+                <Button variant="outline" size="sm" asChild title="提交数据">
                   <Link href={`/${locale}/admin/forms/data/${row.id}`}>
-                    <Database className="h-4 w-4" />
+                    <Database className="mr-1 h-3.5 w-3.5" />
+                    数据
                   </Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>

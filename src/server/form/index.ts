@@ -22,10 +22,20 @@ export interface FormInput {
 }
 
 export async function listForms() {
-  return prisma.form.findMany({
+  const rows = await prisma.form.findMany({
     orderBy: { id: "desc" },
     include: { _count: { select: { submissions: true } } },
   });
+  const ids = rows.map((r) => r.id);
+  const unhandled = ids.length
+    ? await prisma.formSubmission.groupBy({
+        by: ["formId"],
+        where: { formId: { in: ids }, status: "UNHANDLED" },
+        _count: { _all: true },
+      })
+    : [];
+  const map = new Map(unhandled.map((u) => [u.formId, u._count._all]));
+  return rows.map((r) => ({ ...r, unhandledCount: map.get(r.id) ?? 0 }));
 }
 
 export async function getForm(id: number) {
@@ -170,11 +180,13 @@ export async function listSubmissions(opts: {
   page?: number;
   from?: string;
   to?: string;
+  status?: string;
 }) {
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = 20;
   const where = {
     formId: opts.formId,
+    ...(opts.status === "UNHANDLED" || opts.status === "HANDLED" ? { status: opts.status } : {}),
     ...(opts.from || opts.to
       ? {
           createdAt: {
@@ -196,6 +208,15 @@ export async function listSubmissions(opts: {
   return { total, page, pageSize, items };
 }
 
+/** 标记提交数据为已处理/未处理 */
+export async function setSubmissionStatus(id: number, status: string) {
+  if (status !== "HANDLED" && status !== "UNHANDLED") throw new Error("非法的处理状态");
+  await prisma.formSubmission.update({
+    where: { id },
+    data: { status, ...(status === "HANDLED" ? { handledAt: new Date() } : { handledAt: null }) },
+  });
+}
+
 export async function deleteSubmission(id: number) {
   await prisma.formSubmission.delete({ where: { id } });
 }
@@ -215,7 +236,8 @@ export async function exportSubmissionsCsv(
     if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     return `"${s.replace(/"/g, '""')}"`;
   };
-  const header = ["提交时间", ...fields.map((f) => f.label), "IP"].map(esc).join(",");
+  const statusLabel = (st: string) => (st === "HANDLED" ? "已处理" : "未处理");
+  const header = ["提交时间", ...fields.map((f) => f.label), "处理状态", "IP"].map(esc).join(",");
   const lines = rows.map((r) => {
     let data: Record<string, unknown> = {};
     try {
@@ -223,7 +245,12 @@ export async function exportSubmissionsCsv(
     } catch {
       /* 忽略脏数据 */
     }
-    return [r.createdAt.toLocaleString("zh-CN"), ...fields.map((f) => data[f.id]), r.ip ?? ""]
+    return [
+      r.createdAt.toLocaleString("zh-CN"),
+      ...fields.map((f) => data[f.id]),
+      statusLabel(r.status),
+      r.ip ?? "",
+    ]
       .map(esc)
       .join(",");
   });

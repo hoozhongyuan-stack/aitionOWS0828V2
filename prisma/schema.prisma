@@ -210,6 +210,8 @@ model FormSubmission {
   ip          String?
   userAgent   String?
   fingerprint String? // 防重复指纹(ip+表单+关键字段哈希)
+  status      String   @default("UNHANDLED") // UNHANDLED(未处理)/HANDLED(已处理)
+  handledAt   DateTime? // 标记处理时间
   createdAt   DateTime @default(now())
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)

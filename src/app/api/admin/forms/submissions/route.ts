@@ -1,6 +1,11 @@
 import { jsonOk, jsonErr } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth/session";
-import { listSubmissions, deleteSubmission, exportSubmissionsCsv } from "@/server/form";
+import {
+  listSubmissions,
+  deleteSubmission,
+  exportSubmissionsCsv,
+  setSubmissionStatus,
+} from "@/server/form";
 
 /**
  * 表单数据管理:
@@ -35,8 +40,23 @@ export async function GET(req: Request) {
       page: Number(sp.get("page")) || 1,
       from: sp.get("from") || undefined,
       to: sp.get("to") || undefined,
+      status: sp.get("status") || undefined,
     })
   );
+}
+
+/** 标记处理状态:PUT { id, status: "HANDLED" | "UNHANDLED" } */
+export async function PUT(req: Request) {
+  const guard = await requireAdmin();
+  if ("error" in guard) return guard.error;
+  const body = (await req.json().catch(() => ({}))) as { id?: number; status?: string };
+  if (!body.id || !body.status) return jsonErr("缺少 id/status");
+  try {
+    await setSubmissionStatus(Number(body.id), body.status);
+    return jsonOk();
+  } catch (e) {
+    return jsonErr(e instanceof Error ? e.message : "操作失败");
+  }
 }
 
 export async function DELETE(req: Request) {

@@ -15,22 +15,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { apiGet, apiDelete } from "@/components/admin/api-client";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { apiGet, apiDelete, apiPut } from "@/components/admin/api-client";
 import type { FormField } from "@/types/form";
-import { ArrowLeft, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Download, RotateCcw, Trash2 } from "lucide-react";
 
 /**
  * 表单提交数据页:/admin/forms/data/[id]
- * 列表页「提交数据」图标的落地页(此前链接指向不存在的路由,点击 404)。
- * 展示逐条提交明细(按字段 schema 展开)、分页、单条删除与 CSV 导出(API 已有)。
+ * 列表页「提交数据」的落地页。
+ * 展示逐条提交明细(按字段 schema 展开)、状态筛选、标记处理、分页、删除与 CSV 导出。
  */
 
 interface SubmissionRow {
   id: number;
   data: string;
   ip: string | null;
+  status: string; // UNHANDLED / HANDLED
+  handledAt: string | null;
   createdAt: string;
 }
+
+const STATUS_LABEL: Record<string, string> = {
+  UNHANDLED: "未处理",
+  HANDLED: "已处理",
+};
 
 export default function FormDataPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,13 +57,14 @@ export default function FormDataPage() {
   const [rows, setRows] = useState<SubmissionRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const pageSize = 20;
 
   useEffect(() => {
     apiGet<{ id: number; name: string; schema: string }[]>("/api/admin/forms")
-      .then((rows) => {
-        const mine = rows.find((r) => r.id === formId);
+      .then((all) => {
+        const mine = all.find((r) => r.id === formId);
         if (mine) {
           setFormName(mine.name);
           try {
@@ -63,8 +79,9 @@ export default function FormDataPage() {
 
   const load = useCallback(() => {
     setLoading(true);
+    const st = statusFilter !== "ALL" ? `&status=${statusFilter}` : "";
     apiGet<{ total: number; items: SubmissionRow[] }>(
-      `/api/admin/forms/submissions?formId=${formId}&page=${page}`
+      `/api/admin/forms/submissions?formId=${formId}&page=${page}${st}`
     )
       .then((d) => {
         setRows(d.items ?? []);
@@ -72,7 +89,7 @@ export default function FormDataPage() {
       })
       .catch((e) => toast.error(e instanceof Error ? e.message : "加载失败"))
       .finally(() => setLoading(false));
-  }, [formId, page]);
+  }, [formId, page, statusFilter]);
 
   useEffect(load, [load]);
 
@@ -84,6 +101,17 @@ export default function FormDataPage() {
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "删除失败");
+    }
+  }
+
+  /** 标记处理状态:HANDLED 已处理 / UNHANDLED 撤销回未处理 */
+  async function mark(rowId: number, status: "HANDLED" | "UNHANDLED") {
+    try {
+      await apiPut("/api/admin/forms/submissions", { id: rowId, status });
+      toast.success(status === "HANDLED" ? "已标记为已处理" : "已撤回未处理");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "操作失败");
     }
   }
 
@@ -125,8 +153,24 @@ export default function FormDataPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>提交记录</CardTitle>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">全部状态</SelectItem>
+              <SelectItem value="UNHANDLED">未处理</SelectItem>
+              <SelectItem value="HANDLED">已处理</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent>
           <Table>
@@ -136,6 +180,7 @@ export default function FormDataPage() {
                   <TableHead key={f.id}>{f.label}</TableHead>
                 ))}
                 <TableHead>提交时间</TableHead>
+                <TableHead>状态</TableHead>
                 <TableHead>IP</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
@@ -144,7 +189,7 @@ export default function FormDataPage() {
               {loading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={fields.length + 3}
+                    colSpan={fields.length + 4}
                     className="h-24 text-center text-muted-foreground"
                   >
                     加载中…
@@ -153,10 +198,10 @@ export default function FormDataPage() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={fields.length + 3}
+                    colSpan={fields.length + 4}
                     className="h-24 text-center text-muted-foreground"
                   >
-                    暂无提交数据
+                    {statusFilter === "ALL" ? "暂无提交数据" : "该筛选条件下暂无数据"}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -167,8 +212,9 @@ export default function FormDataPage() {
                   } catch {
                     /* 脏数据按空对象展示 */
                   }
+                  const handled = r.status === "HANDLED";
                   return (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} className={handled ? "opacity-60" : undefined}>
                       {fields.map((f) => (
                         <TableCell key={f.id} className="max-w-56 truncate align-middle">
                           {cellText(f, parsed[f.id])}
@@ -177,11 +223,40 @@ export default function FormDataPage() {
                       <TableCell className="whitespace-nowrap">
                         {new Date(r.createdAt).toLocaleString("zh-CN")}
                       </TableCell>
+                      <TableCell>
+                        <Badge variant={handled ? "secondary" : "default"}>
+                          {STATUS_LABEL[r.status] ?? r.status}
+                        </Badge>
+                        {handled && r.handledAt && (
+                          <div className="mt-0.5 text-[10px] text-muted-foreground">
+                            {new Date(r.handledAt).toLocaleString("zh-CN")}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>{r.ip ?? "-"}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => remove(r.id)} title="删除">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={handled ? "撤销回未处理" : "标记为已处理"}
+                            onClick={() => mark(r.id, handled ? "UNHANDLED" : "HANDLED")}
+                          >
+                            {handled ? (
+                              <RotateCcw className="h-4 w-4" />
+                            ) : (
+                              <Check className="h-4 w-4 text-emerald-600" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => remove(r.id)}
+                            title="删除"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
