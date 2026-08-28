@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { listForSitemap } from "@/server/content";
 import { getEnabledLocales } from "@/server/i18n";
+
+// 后台开关/内容变化需即时生效:sitemap 路由不做构建期静态化
+export const dynamic = "force-dynamic";
 import { routing } from "@/i18n/routing";
 
 /**

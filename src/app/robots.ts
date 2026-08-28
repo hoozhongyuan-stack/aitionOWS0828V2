@@ -1,4 +1,7 @@
 import type { MetadataRoute } from "next";
+
+// 后台开关/内容变化需即时生效:robots 路由不做构建期静态化
+export const dynamic = "force-dynamic";
 import { getSeoConfig } from "@/lib/config";
 
 /**
