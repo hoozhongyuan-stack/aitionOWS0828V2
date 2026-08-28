@@ -7,6 +7,7 @@ import { buildAlternates } from "@/lib/seo/alternates";
 import { getForm } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
 import { sanitizeRichHtml } from "@/lib/sanitize";
+import { safeDateLocale } from "@/lib/utils";
 import { InteractionBar } from "@/components/site/interaction-bar";
 import { CommentsSection } from "@/components/site/comments-section";
 import { ViewTracker } from "@/components/site/view-tracker";
@@ -101,7 +102,7 @@ export default async function ArticlePage({ params }: Props) {
                 {content.authorName}
               </span>
             )}
-            <time dateTime={date.toISOString()}>{date.toLocaleDateString(locale)}</time>
+            <time dateTime={date.toISOString()}>{date.toLocaleDateString(safeDateLocale(locale))}</time>
             <span className="inline-flex items-center gap-1">
               <Eye className="h-4 w-4" />
               {t("views")} {content.viewCount}

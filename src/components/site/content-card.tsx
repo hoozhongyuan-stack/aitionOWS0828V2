@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, ThumbsUp } from "lucide-react";
+import { safeDateLocale } from "@/lib/utils";
 
 /** 内容卡片(栏目页/首页共用):封面 + 标题 + 摘要 + 数据 */
 export function ContentCard({
@@ -40,7 +41,7 @@ export function ContentCard({
         <h3 className="line-clamp-2 font-heading font-semibold group-hover:text-primary">{item.title}</h3>
         {item.summary && <p className="line-clamp-2 text-sm text-muted-foreground">{item.summary}</p>}
         <div className="mt-auto flex items-center gap-3 pt-2 text-xs text-muted-foreground">
-          <time dateTime={date.toISOString()}>{date.toLocaleDateString(locale)}</time>
+          <time dateTime={date.toISOString()}>{date.toLocaleDateString(safeDateLocale(locale))}</time>
           <span className="inline-flex items-center gap-1" title={viewsLabel}>
             <Eye className="h-3.5 w-3.5" />
             {item.viewCount}

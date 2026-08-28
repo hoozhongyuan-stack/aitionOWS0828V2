@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { safeDateLocale } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare } from "lucide-react";
@@ -123,7 +124,7 @@ export function CommentsSection({
               <div className="mb-1 flex items-center justify-between text-sm">
                 <span className="font-medium">{c.author}</span>
                 <time className="text-xs text-muted-foreground">
-                  {new Date(c.createdAt).toLocaleString(locale)}
+                  {new Date(c.createdAt).toLocaleString(safeDateLocale(locale))}
                 </time>
               </div>
               <p className="whitespace-pre-wrap text-sm">{c.body}</p>

@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { getUserSession } from "@/lib/auth/session";
 import { listMySubmissions } from "@/server/ugc";
+import { safeDateLocale } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 /** 我的投稿(需求 4.8):查看各投稿审核状态 */
@@ -58,7 +59,7 @@ export default async function MySubmissionsPage({
                   <span className="truncate font-medium">{r.title}</span>
                 )}
                 <div className="text-xs text-muted-foreground">
-                  {r.category} · {new Date(r.createdAt).toLocaleDateString(locale)}
+                  {r.category} · {new Date(r.createdAt).toLocaleDateString(safeDateLocale(locale))}
                 </div>
               </div>
               {statusBadge(r.status)}

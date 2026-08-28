@@ -54,6 +54,10 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  // locale 合法性校验:带点路径(如 /favicon.ico、/x.json)会跳过中间件落入本动态段,
+  // 未经校验的 locale 会传入 Intl API 抛 RangeError(生产日志已被扫描器刷屏)。
+  // 非法 → 统一走 styled 404。
+  if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
 
   // 校验语言合法性
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
