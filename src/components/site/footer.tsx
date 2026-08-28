@@ -20,8 +20,8 @@ export function SiteFooter({
 }) {
   return (
     <footer className="border-t bg-muted/30">
-      {/* items-center:社交卡片列较高,联系我们/协议两列随之垂直居中,视觉齐平 */}
-      <div className="container grid items-center gap-8 py-10 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 列序(需求):品牌标识 → 用户协议 → 联系我们 → 社交名片;items-center 保持各列垂直齐平 */}
+      <div className="container grid items-center gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
             {brand.logoUrl ? (
@@ -30,56 +30,8 @@ export function SiteFooter({
             ) : null}
             <span className="font-heading font-semibold">{brand.siteName}</span>
           </div>
-          {brand.socials.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-4">
-              {brand.socials
-                // 名称必填;链接与二维码至少其一(微信二维码等场景通常没有链接)
-                .filter((s) => s.name && (s.url || s.qrcodeUrl))
-                .map((s) => (
-                  <li
-                    key={s.name + (s.url || s.qrcodeUrl || "")}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    {s.qrcodeUrl && (
-                      // 常驻展示(108×108):移动端没有 hover,弹层方案发现性差;
-                      // 白底留白保证二维码识别率,object-contain 保证非正方形原图完整显示
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={s.qrcodeUrl}
-                        alt={`${s.name} 二维码`}
-                        width={108}
-                        height={108}
-                        className="h-[108px] w-[108px] rounded-lg border bg-white object-contain p-1 shadow-sm"
-                      />
-                    )}
-                    {s.url ? (
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-center text-sm text-muted-foreground hover:text-primary"
-                      >
-                        {s.name}
-                      </a>
-                    ) : (
-                      <span className="cursor-default text-center text-sm text-muted-foreground">
-                        {s.name}
-                      </span>
-                    )}
-                  </li>
-                ))}
-            </ul>
-          )}
         </div>
-        {/* 板块在其网格列内水平居中(lg 起);内部条目保持左对齐 */}
-        <div className="space-y-2 text-sm text-muted-foreground lg:justify-self-center">
-          <div className="font-medium text-foreground">{labels.contact}</div>
-          {brand.contactPhone && <div>{brand.contactPhone}</div>}
-          {brand.contactEmail && <div>{brand.contactEmail}</div>}
-          {brand.contactAddress && <div>{brand.contactAddress}</div>}
-        </div>
-        {/* 协议两链接整体靠右(lg 起) */}
-        <div className="space-y-2 text-sm lg:justify-self-end">
+        <div className="space-y-2 text-sm">
           <Link
             href={`/${locale}/agreement/register`}
             className="block text-muted-foreground hover:text-primary"
@@ -93,6 +45,52 @@ export function SiteFooter({
             {labels.privacy}
           </Link>
         </div>
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="font-medium text-foreground">{labels.contact}</div>
+          {brand.contactPhone && <div>{brand.contactPhone}</div>}
+          {brand.contactEmail && <div>{brand.contactEmail}</div>}
+          {brand.contactAddress && <div>{brand.contactAddress}</div>}
+        </div>
+        {brand.socials.length > 0 && (
+          <ul className="flex flex-wrap gap-4">
+            {brand.socials
+              // 名称必填;链接与二维码至少其一(微信二维码等场景通常没有链接)
+              .filter((s) => s.name && (s.url || s.qrcodeUrl))
+              .map((s) => (
+                <li
+                  key={s.name + (s.url || s.qrcodeUrl || "")}
+                  className="flex flex-col items-center gap-2"
+                >
+                  {s.qrcodeUrl && (
+                    // 常驻展示(108×108):移动端没有 hover,弹层方案发现性差;
+                    // 白底留白保证二维码识别率,object-contain 保证非正方形原图完整显示
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={s.qrcodeUrl}
+                      alt={`${s.name} 二维码`}
+                      width={108}
+                      height={108}
+                      className="h-[108px] w-[108px] rounded-lg border bg-white object-contain p-1 shadow-sm"
+                    />
+                  )}
+                  {s.url ? (
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-center text-sm text-muted-foreground hover:text-primary"
+                    >
+                      {s.name}
+                    </a>
+                  ) : (
+                    <span className="cursor-default text-center text-sm text-muted-foreground">
+                      {s.name}
+                    </span>
+                  )}
+                </li>
+              ))}
+          </ul>
+        )}
       </div>
       <div className="border-t">
         <div className="container flex flex-col items-center justify-between gap-2 py-4 text-xs text-muted-foreground sm:flex-row">
