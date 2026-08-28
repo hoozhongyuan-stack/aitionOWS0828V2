@@ -270,6 +270,41 @@ export async function getContentForEdit(id: number) {
   });
 }
 
+/** llms.txt 数据源:可见栏目名(指定语言,缺省回退第一条翻译) */
+export async function listCategoriesWithNames(locale: string) {
+  const cats = await prisma.category.findMany({
+    where: { visible: true },
+    orderBy: { sort: "asc" },
+    include: { translations: true },
+  });
+  return cats.map((c) => ({
+    slug: c.slug,
+    name:
+      c.translations.find((x) => x.locale === locale)?.name ?? c.translations[0]?.name ?? c.slug,
+  }));
+}
+
+/** llms.txt 数据源:已发布内容的标题与摘要(指定语言,缺省回退第一条翻译) */
+export async function listForLlms(locale: string) {
+  const rows = await prisma.content.findMany({
+    where: { status: CONTENT_STATUS.PUBLISHED },
+    orderBy: [{ publishAt: "desc" }, { id: "desc" }],
+    include: { translations: true, category: { include: { translations: true } } },
+  });
+  return rows.map((r) => {
+    const t = r.translations.find((x) => x.locale === locale) ?? r.translations[0];
+    const cat =
+      r.category.translations.find((x) => x.locale === locale) ?? r.category.translations[0];
+    return {
+      slug: r.slug,
+      title: t?.title ?? r.slug,
+      summary: t?.summary ?? "",
+      categorySlug: r.category.slug,
+      categoryName: cat?.name ?? r.category.slug,
+    };
+  });
+}
+
 export async function deleteContent(id: number) {
   await prisma.content.delete({ where: { id } });
 }

@@ -1,4 +1,9 @@
 import { setRequestLocale } from "next-intl/server";
+
+export const metadata = {
+  // 工具页无索引价值:noindex 防薄内容/重复内容(SEO 标准做法)
+  robots: { index: false, follow: true },
+};
 import { getBrandConfig } from "@/lib/config";
 import { Wrench } from "lucide-react";
 

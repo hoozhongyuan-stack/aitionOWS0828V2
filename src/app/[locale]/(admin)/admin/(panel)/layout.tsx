@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { getAdminSession } from "@/lib/auth/session";
 import { getBrandConfig, getSecurityConfig } from "@/lib/config";
@@ -10,6 +11,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
  * 后台面板布局:统一管理员会话校验(JWT 真实验证,middleware 只做 cookie 存在性检查)。
  * 未登录 → 跳转后台登录页。
  */
+/** 后台整组页面不对外索引 */
+export async function generateMetadata(): Promise<Metadata> {
+  return { robots: { index: false, follow: false } };
+}
+
 export default async function AdminPanelLayout({
   children,
   params,

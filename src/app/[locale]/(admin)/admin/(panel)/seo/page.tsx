@@ -8,9 +8,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiGet, apiPut, apiDelete } from "@/components/admin/api-client";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -53,7 +72,9 @@ export default function SeoPage() {
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">SEO / GEO</h1>
-        <p className="text-sm text-muted-foreground">地理信息注入结构化数据,提升本地检索与 AI 展示效果。</p>
+        <p className="text-sm text-muted-foreground">
+          地理信息注入结构化数据,提升本地检索与 AI 展示效果。
+        </p>
       </div>
 
       <Card>
@@ -64,19 +85,34 @@ export default function SeoPage() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>所在城市</Label>
-            <Input value={String(v.city ?? "")} onChange={(e) => setS("city", e.target.value)} placeholder="例:上海" />
+            <Input
+              value={String(v.city ?? "")}
+              onChange={(e) => setS("city", e.target.value)}
+              placeholder="例:上海"
+            />
           </div>
           <div className="space-y-2">
             <Label>详细地址</Label>
-            <Input value={String(v.address ?? "")} onChange={(e) => setS("address", e.target.value)} />
+            <Input
+              value={String(v.address ?? "")}
+              onChange={(e) => setS("address", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>纬度(lat)</Label>
-            <Input value={String(v.lat ?? "")} onChange={(e) => setS("lat", e.target.value)} placeholder="31.2304" />
+            <Input
+              value={String(v.lat ?? "")}
+              onChange={(e) => setS("lat", e.target.value)}
+              placeholder="31.2304"
+            />
           </div>
           <div className="space-y-2">
             <Label>经度(lng)</Label>
-            <Input value={String(v.lng ?? "")} onChange={(e) => setS("lng", e.target.value)} placeholder="121.4737" />
+            <Input
+              value={String(v.lng ?? "")}
+              onChange={(e) => setS("lng", e.target.value)}
+              placeholder="121.4737"
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>服务范围</Label>
@@ -106,9 +142,23 @@ export default function SeoPage() {
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
               <div className="text-sm font-medium">允许搜索引擎收录</div>
-              <div className="text-xs text-muted-foreground">关闭后 robots.txt 将禁止全站抓取(慎用)</div>
+              <div className="text-xs text-muted-foreground">
+                关闭后 robots.txt 将禁止全站抓取(慎用)
+              </div>
             </div>
             <Switch checked={!!v.allowIndex} onCheckedChange={(c) => setS("allowIndex", c)} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <div className="text-sm font-medium">允许 AI 检索引擎抓取(GEO)</div>
+              <div className="text-xs text-muted-foreground">
+                关闭后 robots.txt 将禁止 GPTBot/PerplexityBot 等主流 AI 爬虫
+              </div>
+            </div>
+            <Switch
+              checked={v.aiCrawlAllow !== false}
+              onCheckedChange={(c) => setS("aiCrawlAllow", c)}
+            />
           </div>
           <div className="space-y-2">
             <Label>额外屏蔽路径(每行一条,如 /private)</Label>
@@ -154,7 +204,13 @@ function SeoMetaManager() {
   const [rows, setRows] = useState<SeoMetaRow[]>([]);
   const [locales, setLocales] = useState<string[]>(["zh-CN", "en"]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ pageKey: "home", locale: "zh-CN", title: "", keywords: "", description: "" });
+  const [form, setForm] = useState({
+    pageKey: "home",
+    locale: "zh-CN",
+    title: "",
+    keywords: "",
+    description: "",
+  });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(() => {
@@ -199,12 +255,20 @@ function SeoMetaManager() {
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <div>
           <CardTitle>固定页 TDK</CardTitle>
-          <CardDescription>首页、联系页等固定页面的标题/关键词/描述(内容与栏目在各自编辑处配置)</CardDescription>
+          <CardDescription>
+            首页、联系页等固定页面的标题/关键词/描述(内容与栏目在各自编辑处配置)
+          </CardDescription>
         </div>
         <Button
           size="sm"
           onClick={() => {
-            setForm({ pageKey: "home", locale: locales[0] ?? "zh-CN", title: "", keywords: "", description: "" });
+            setForm({
+              pageKey: "home",
+              locale: locales[0] ?? "zh-CN",
+              title: "",
+              keywords: "",
+              description: "",
+            });
             setOpen(true);
           }}
         >
@@ -270,7 +334,10 @@ function SeoMetaManager() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>页面标识</Label>
-                <Select value={form.pageKey} onValueChange={(v) => setForm({ ...form, pageKey: v })}>
+                <Select
+                  value={form.pageKey}
+                  onValueChange={(v) => setForm({ ...form, pageKey: v })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -301,11 +368,17 @@ function SeoMetaManager() {
             </div>
             <div className="space-y-2">
               <Label>标题(Title)</Label>
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>关键词(Keywords,逗号分隔)</Label>
-              <Input value={form.keywords} onChange={(e) => setForm({ ...form, keywords: e.target.value })} />
+              <Input
+                value={form.keywords}
+                onChange={(e) => setForm({ ...form, keywords: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>描述(Description)</Label>

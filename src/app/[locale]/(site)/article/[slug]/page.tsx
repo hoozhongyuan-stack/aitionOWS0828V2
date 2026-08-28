@@ -3,6 +3,7 @@ import Link from "next/link";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getPublishedBySlug } from "@/server/content";
+import { buildAlternates } from "@/lib/seo/alternates";
 import { getForm } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
 import { sanitizeRichHtml } from "@/lib/sanitize";
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!content) return {};
   return {
     title: content.seoTitle || content.title,
+    alternates: await buildAlternates(`/article/${slug}`, locale),
     description: content.seoDesc || content.summary || undefined,
     keywords: content.seoKeywords || undefined,
     openGraph: {

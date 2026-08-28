@@ -1,4 +1,9 @@
 import { setRequestLocale } from "next-intl/server";
+
+export const metadata = {
+  // 工具页无索引价值:noindex 防薄内容/重复内容(SEO 标准做法)
+  robots: { index: false, follow: true },
+};
 import { ResetPasswordForm } from "@/components/site/password-forms";
 
 /** 重置密码:从邮件链接携带 token 进入,设置新密码 */

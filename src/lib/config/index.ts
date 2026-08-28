@@ -121,6 +121,7 @@ export interface SeoConfig {
   serviceArea: string;
   geoKeywords: string;
   allowIndex: boolean; // robots 是否允许抓取
+  aiCrawlAllow: boolean; // 是否允许主流 AI 检索引擎抓取(GEO 策略开关)
   extraDisallow: string; // 额外屏蔽路径(每行一条)
 }
 const SEO_DEFAULTS: SeoConfig = {
@@ -131,6 +132,7 @@ const SEO_DEFAULTS: SeoConfig = {
   serviceArea: "",
   geoKeywords: "",
   allowIndex: true,
+  aiCrawlAllow: true,
   extraDisallow: "",
 };
 

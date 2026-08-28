@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getBrandConfig, getSeoConfig } from "@/lib/config";
 import { getEnabledLocales } from "@/server/i18n";
+import { routing } from "@/i18n/routing";
 
 /**
  * SEO 服务(需求 4.1):固定页 TDK、hreflang alternates、GEO 关键词合并。
@@ -28,7 +29,11 @@ export async function getSeoMetaFor(pageKey: string, locale: string): Promise<Me
     keywords,
     alternates: {
       canonical: `${base}/${locale}${path}`,
-      languages: Object.fromEntries(locales.map((l) => [l.code, `${base}/${l.code}${path}`])),
+      languages: {
+        ...Object.fromEntries(locales.map((l) => [l.code, `${base}/${l.code}${path}`])),
+        // x-default:面向无语言偏好的抓取方,指向默认语言版本
+        "x-default": `${base}/${routing.defaultLocale}${path}`,
+      },
     },
   };
 }

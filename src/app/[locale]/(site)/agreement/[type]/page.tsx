@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { AGREEMENT_TYPE } from "@/types/domain";
 import { getAgreementForLocale } from "@/server/agreement";
+import { buildAlternates } from "@/lib/seo/alternates";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 
 /**
@@ -14,7 +15,6 @@ const TYPE_MAP: Record<string, string> = {
   register: AGREEMENT_TYPE.REGISTER,
   privacy: AGREEMENT_TYPE.PRIVACY,
 };
-
 
 async function loadAgreement(locale: string, typeKey: string) {
   const type = TYPE_MAP[typeKey];
@@ -29,7 +29,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, type } = await params;
   const row = await loadAgreement(locale, type);
-  return { title: row?.title ?? "协议" };
+  return {
+    title: row?.title ?? "协议",
+    alternates: await buildAlternates(`/agreement/${type}`, locale),
+  };
 }
 
 export default async function AgreementPage({
@@ -47,7 +50,10 @@ export default async function AgreementPage({
     <main className="container max-w-3xl py-10">
       <h1 className="mb-6 text-2xl font-semibold">{row?.title ?? "协议内容暂未配置"}</h1>
       {row?.body ? (
-        <article className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(row.body) }} />
+        <article
+          className="rich-content"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(row.body) }}
+        />
       ) : (
         <p className="text-muted-foreground">管理员尚未发布该协议内容。</p>
       )}

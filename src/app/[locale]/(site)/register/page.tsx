@@ -11,7 +11,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return getSeoMetaFor("register", locale);
+  return {
+    ...(await getSeoMetaFor("register", locale)),
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function RegisterPage({

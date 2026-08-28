@@ -3,6 +3,7 @@ import Link from "next/link";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { listPublishedByCategory } from "@/server/content";
+import { buildAlternates } from "@/lib/seo/alternates";
 import { getFormByRelatedKey } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
 import { ContentCard } from "@/components/site/content-card";
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return {};
   return {
     title: data.category.name,
+    alternates: await buildAlternates(`/c/${slug}`, locale),
     description: data.category.description ?? undefined,
   };
 }
@@ -69,7 +71,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       </header>
 
       {data.items.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-16 text-center text-muted-foreground">{t("empty")}</div>
+        <div className="rounded-lg border border-dashed p-16 text-center text-muted-foreground">
+          {t("empty")}
+        </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((item) => (
@@ -98,7 +102,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
       {relatedForm && (
         <section className="mx-auto mt-14 max-w-2xl">
-          <FormRenderer slug={relatedForm.slug} title={relatedForm.name} fields={relatedForm.fields} />
+          <FormRenderer
+            slug={relatedForm.slug}
+            title={relatedForm.name}
+            fields={relatedForm.fields}
+          />
         </section>
       )}
     </main>

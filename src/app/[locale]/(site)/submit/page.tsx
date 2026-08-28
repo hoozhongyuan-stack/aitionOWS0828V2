@@ -1,4 +1,9 @@
 import { redirect } from "next/navigation";
+
+export const metadata = {
+  // 工具页无索引价值:noindex 防薄内容/重复内容(SEO 标准做法)
+  robots: { index: false, follow: true },
+};
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { getFeatureFlags } from "@/lib/config";
 import { getUserSession } from "@/lib/auth/session";

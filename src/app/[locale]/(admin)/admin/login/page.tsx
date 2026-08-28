@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+
+export const metadata = { robots: { index: false, follow: false } };
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "sonner";
