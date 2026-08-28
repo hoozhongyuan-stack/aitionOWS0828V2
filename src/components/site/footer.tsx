@@ -20,17 +20,18 @@ export function SiteFooter({
 }) {
   return (
     <footer className="border-t bg-muted/30">
-      {/* 列序(需求):品牌标识 → 用户协议 → 联系我们 → 社交名片;items-center 保持各列垂直齐平 */}
-      <div className="container grid items-center gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <div className="flex items-center gap-2">
-            {brand.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={brand.logoUrl} alt={`${brand.siteName} LOGO`} className="h-7 w-auto" />
-            ) : null}
-            <span className="font-heading font-semibold">{brand.siteName}</span>
-          </div>
+      {/* 品牌行:独占一行,左上对齐 */}
+      <div className="container pt-10">
+        <div className="flex items-center gap-2">
+          {brand.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logoUrl} alt={`${brand.siteName} LOGO`} className="h-7 w-auto" />
+          ) : null}
+          <span className="font-heading font-semibold">{brand.siteName}</span>
         </div>
+      </div>
+      {/* 模块行(需求列序):用户协议 → 联系我们 → 社交名片;items-center 保持垂直齐平 */}
+      <div className="container grid items-center gap-8 pb-10 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2 text-sm">
           <Link
             href={`/${locale}/agreement/register`}
