@@ -53,7 +53,7 @@ export function SiteFooter({
           {brand.contactAddress && <div>{brand.contactAddress}</div>}
         </div>
         {brand.socials.length > 0 && (
-          <ul className="flex flex-wrap gap-4">
+          <ul className="flex flex-wrap justify-start gap-4 sm:justify-end">
             {brand.socials
               // 名称必填;链接与二维码至少其一(微信二维码等场景通常没有链接)
               .filter((s) => s.name && (s.url || s.qrcodeUrl))
