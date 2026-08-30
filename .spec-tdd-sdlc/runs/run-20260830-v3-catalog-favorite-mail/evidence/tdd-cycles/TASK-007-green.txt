@@ -1,0 +1,23 @@
+== TASK-007 GREEN (TEST-008 / TEST-009 / TEST-010 / AC-006 / AC-021 / AC-007 / AC-008 / REQ-005) ==
+command: npx vitest run tests/server/favorite.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ✓ tests/server/favorite.test.ts (12 tests) 205ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  22:59:08
+   Duration  919ms (transform 47ms, setup 511ms, import 13ms, tests 205ms, environment 0ms)
+
+
+exit_code: 0
+timestamp_utc: 2026-08-30T14:59:09+0000
+
+[稳定性] 连续 4 次运行(含本次)均 12/12 通过,含并发快速切换用例。
+[实现] src/server/ugc/index.ts 新增 FavoriteTargetNotFoundError(status=404)/toggleFavorite(事务内翻转+P2002 并发兜底+计数同步)/hasFavorited/listMyFavorites(createdAt 倒序,locale 回退:指定语言→首条翻译(id asc)→slug,moduleType 类型标识);新增 src/app/api/interaction/favorite/route.ts(POST + requireFavoriteActor 401 薄封装 + postFavorite 薄封装,404 语义映射)。
+[测试修正记录] RED 捕获后对夹具做两处隔离性修正(非被测行为变更):①每个用例使用独立内容行,避免共享收藏状态导致顺序耦合;②TEST-010 使用专用用户;并依据实测发现(Prisma include translations 无 ORDER BY 时返回顺序不稳定)在 listMyFavorites 中以 translations orderBy id asc 固化「首条翻译」语义,对应断言 favoriteCount 期望值随夹具修正(1)。

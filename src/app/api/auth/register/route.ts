@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
-import { registerByEmail } from "@/server/user";
+import { registerByEmail, toPublicUser } from "@/server/user";
 import { signToken } from "@/lib/auth/jwt";
 import { USER_COOKIE, sessionCookieOptions, guardAuthSecret } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/ugc/anti-spam";
@@ -32,7 +32,8 @@ export async function POST(req: Request) {
       { sub: String(user.id), typ: "user", name: user.nickname || "用户" },
       "30d"
     );
-    const res = jsonOk({ id: user.id, nickname: user.nickname });
+    // 前台响应统一经白名单序列化:绝不携带公司/地区资料字段(NFR-001)
+    const res = jsonOk(toPublicUser(user));
     res.cookies.set(USER_COOKIE, token, sessionCookieOptions(30 * 24 * 3600));
     return res;
   } catch (e) {

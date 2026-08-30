@@ -1,0 +1,22 @@
+== TASK-007 + TASK-009 全量回归 (NFR-005 / AC-019 前置) ==
+command: npx vitest run && npx tsc --noEmit
+
+--- npx vitest run ---
+ ✓ tests/server/favorite.test.ts (12 tests) 379ms
+ ✓ tests/server/user-privacy.test.ts (5 tests) 498ms
+ ✓ tests/server/content-product.test.ts (4 tests) 35ms
+ ✓ tests/notify/mail-template.test.ts (14 tests) 10ms
+ ✓ tests/db/migration.test.ts (1 test) 1634ms
+     ✓ 应用 V3.0 迁移后:存量数据无损、新列空值/默认值、Favorite 唯一约束、迁移幂等  943ms
+
+ Test Files  11 passed (11)
+      Tests  67 passed (67)
+   Start at  23:04:52
+   Duration  3.46s (transform 799ms, setup 14.91s, import 1.12s, tests 3.65s, environment 1ms)
+
+vitest_exit: 0
+
+--- npx tsc --noEmit ---
+tsc_exit: 0
+
+timestamp_utc: 2026-08-30T15:04:56+0000

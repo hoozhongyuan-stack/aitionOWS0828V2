@@ -75,6 +75,135 @@ export async function hasLiked(input: {
   return !!row;
 }
 
+// ---------------- 收藏(需求 V3.0 REQ-005) ----------------
+
+/** 收藏目标不存在或未发布的语义错误(路由层映射 HTTP 404;计数保持不变) */
+export class FavoriteTargetNotFoundError extends Error {
+  readonly status = 404;
+  constructor(message = "内容不存在或未发布") {
+    super(message);
+    this.name = "FavoriteTargetNotFoundError";
+  }
+}
+
+/** 收藏唯一键 @@unique([targetType, targetId, userId]) 对应的复合查询/写入键 */
+function favoriteKey(contentId: number, userId: number) {
+  return { targetType: TARGET_TYPE.CONTENT, targetId: contentId, userId };
+}
+
+/**
+ * 收藏/取消收藏(切换语义):POST 一次调用 = 一次状态翻转。
+ * 事务内维护 Favorite 行与 Content.favoriteCount 冗余计数;
+ * 数据库唯一约束兜底并发重复:P2002 捕获后落到底部重查,返回当前真实状态。
+ */
+export async function toggleFavorite(input: {
+  contentId: number;
+  userId: number;
+}): Promise<{ favorited: boolean; favoriteCount: number }> {
+  const { contentId, userId } = input;
+  const content = await prisma.content.findUnique({
+    where: { id: contentId },
+    select: { status: true },
+  });
+  if (!content || content.status !== CONTENT_STATUS.PUBLISHED) {
+    throw new FavoriteTargetNotFoundError();
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const key = favoriteKey(contentId, userId);
+    const existing = await tx.favorite.findUnique({
+      where: { targetType_targetId_userId: key },
+    });
+    try {
+      if (existing) {
+        await tx.favorite.delete({ where: { id: existing.id } });
+        await tx.content.updateMany({
+          where: { id: contentId, favoriteCount: { gt: 0 } },
+          data: { favoriteCount: { decrement: 1 } },
+        });
+      } else {
+        await tx.favorite.create({ data: key });
+        await tx.content.update({
+          where: { id: contentId },
+          data: { favoriteCount: { increment: 1 } },
+        });
+      }
+    } catch (e) {
+      // 唯一约束并发兜底:另一并发请求已插入同一条收藏 → 吞掉 P2002,按当前态返回
+      if ((e as { code?: string }).code !== "P2002") throw e;
+    }
+    const [row, favoritedRow] = await Promise.all([
+      tx.content.findUnique({ where: { id: contentId }, select: { favoriteCount: true } }),
+      tx.favorite.findUnique({ where: { targetType_targetId_userId: key } }),
+    ]);
+    return { favorited: !!favoritedRow, favoriteCount: row?.favoriteCount ?? 0 };
+  });
+}
+
+/** 查询当前用户是否已收藏该内容(未登录恒 false) */
+export async function hasFavorited(input: {
+  contentId: number;
+  userId?: number | null;
+}): Promise<boolean> {
+  if (!input.userId) return false;
+  const row = await prisma.favorite.findUnique({
+    where: {
+      targetType_targetId_userId: favoriteKey(input.contentId, input.userId),
+    },
+  });
+  return !!row;
+}
+
+/**
+ * 个人收藏列表(个人中心「我的收藏」):按收藏时间倒序。
+ * 标题/栏目名 locale 回退现有机制:指定语言 → 首条翻译 → slug;
+ * moduleType 为文章/商品类型标识(news/product/…),供个人中心区分类型展示。
+ */
+export async function listMyFavorites(userId: number, locale: string) {
+  const rows = await prisma.favorite.findMany({
+    where: { userId, targetType: TARGET_TYPE.CONTENT },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+  if (!rows.length) return [];
+  const contents = await prisma.content.findMany({
+    where: { id: { in: rows.map((r) => r.targetId) } },
+    include: {
+      // 「首条翻译」需要确定性:按 id 升序 = 创建顺序(无 ORDER BY 时 SQLite 返回顺序不稳定)
+      translations: { orderBy: { id: "asc" } },
+      category: { include: { translations: { orderBy: { id: "asc" } } } },
+    },
+  });
+  const byId = new Map(contents.map((c) => [c.id, c]));
+  const items: {
+    contentId: number;
+    slug: string;
+    title: string;
+    moduleType: string;
+    categoryName: string;
+    coverUrl: string | null;
+    favoriteCount: number;
+    favoritedAt: Date;
+  }[] = [];
+  for (const f of rows) {
+    const c = byId.get(f.targetId);
+    if (!c) continue; // 目标内容已被删除的残留收藏,列表中跳过
+    const t = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
+    const cat =
+      c.category.translations.find((x) => x.locale === locale) ?? c.category.translations[0];
+    items.push({
+      contentId: c.id,
+      slug: c.slug,
+      title: t?.title ?? c.slug,
+      moduleType: c.category.moduleType,
+      categoryName: cat?.name ?? c.category.slug,
+      coverUrl: c.coverUrl,
+      favoriteCount: c.favoriteCount,
+      favoritedAt: f.createdAt,
+    });
+  }
+  return items;
+}
+
 // ---------------- 转发 ----------------
 
 export async function recordShare(contentId: number, ip: string | null): Promise<number> {

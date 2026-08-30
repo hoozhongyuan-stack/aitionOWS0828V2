@@ -1,0 +1,22 @@
+== TASK-009 GREEN (TEST-012 / TEST-013 / AC-010 / AC-011 / NFR-001 / REQ-009) ==
+command: npx vitest run tests/server/user-profile.test.ts tests/server/user-privacy.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ✓ tests/server/user-profile.test.ts (7 tests) 126ms
+ ✓ tests/server/user-privacy.test.ts (5 tests) 300ms
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  23:04:05
+   Duration  1.01s (transform 105ms, setup 1.19s, import 46ms, tests 426ms, environment 0ms)
+
+
+exit_code: 0
+timestamp_utc: 2026-08-30T15:04:06+0000
+
+[实现] src/server/user/index.ts:新增 toPublicUser 白名单序列化(PublicUser: id/email/nickname/avatarUrl,绝不含 companyName/country/province/city);getActiveUserInfo 改经 toPublicUser 出口;新增 adminUpdateProfile(zod:4 字段全可选 trim ≤100,空串视为清空)与 userProfileSchema/USER_PROFILE_FIELDS;listUsersAdmin 增加 q(公司名称 contains)选项并在列表 select 中加入 4 资料字段与 avatarUrl(仅后台出口)。路由统一:/api/auth/login、/api/auth/register 响应改经 toPublicUser;/api/auth/me 经 getActiveUserInfo(内部 toPublicUser);/api/admin/users 新增 PATCH(管理员鉴权+资料更新)与 GET q 透传。前台出口排查:me/login/register 之外,wechat/callback(302 重定向无用户 JSON)、logout、password/forgot、password/reset 均无用户对象响应,无需改动。
