@@ -2,7 +2,7 @@
   "schema_version": "1.1",
   "project_type": "brownfield",
   "run_id": "run-20260830-v3-catalog-favorite-mail",
-  "state_revision": 5,
+  "state_revision": 7,
   "orchestrator_id": "orchestrator-zcode-main",
   "requirements": [
     {
@@ -12,8 +12,12 @@
       "acceptance_ids": [
         "AC-017"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-001"
+      ],
+      "evidence_ids": [
+        "EVID-001"
+      ]
     },
     {
       "id": "REQ-001",
@@ -22,8 +26,13 @@
       "acceptance_ids": [
         "AC-001"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-002"
+      ],
+      "evidence_ids": [
+        "EVID-002",
+        "EVID-003"
+      ]
     },
     {
       "id": "REQ-002",
@@ -65,8 +74,13 @@
         "AC-006",
         "AC-021"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-002"
+      ],
+      "evidence_ids": [
+        "EVID-002",
+        "EVID-003"
+      ]
     },
     {
       "id": "REQ-006",
@@ -105,8 +119,13 @@
       "acceptance_ids": [
         "AC-010"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-002"
+      ],
+      "evidence_ids": [
+        "EVID-002",
+        "EVID-003"
+      ]
     },
     {
       "id": "REQ-010",
@@ -164,8 +183,14 @@
       "acceptance_ids": [
         "AC-015"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-002"
+      ],
+      "evidence_ids": [
+        "EVID-002",
+        "EVID-003",
+        "EVID-004"
+      ]
     },
     {
       "id": "NFR-004",
@@ -183,7 +208,9 @@
       "acceptance_ids": [
         "AC-019"
       ],
-      "task_ids": [],
+      "task_ids": [
+        "TASK-001"
+      ],
       "evidence_ids": []
     },
     {
@@ -565,6 +592,29 @@
       "evidence_ids": [
         "EVID-001"
       ],
+      "commit_ids": [
+        "d0d71c5474e9f0e67bdc1abacf380bb05dcc72a7"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": "TASK-002",
+      "role": "implementation",
+      "agent_id": "agent-cd9a9937-implementerA",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-005",
+        "REQ-009"
+      ],
+      "nfr_ids": [
+        "NFR-003"
+      ],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-002",
+        "EVID-003",
+        "EVID-004"
+      ],
       "commit_ids": [],
       "status": "complete"
     }
@@ -588,6 +638,72 @@
       "test_ids": [
         "TEST-000"
       ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-002",
+      "path": "evidence/tdd-cycles/TASK-002-red.txt",
+      "sha256": "a104c5421d6bbeef132a7c2e8a1d440f7772a2989c8da2065f760b9c542f9776",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-005",
+        "REQ-009"
+      ],
+      "nfr_ids": [
+        "NFR-003"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-002"
+      ],
+      "cycle_ids": [
+        "TDD-002"
+      ],
+      "test_ids": [
+        "TEST-017"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-003",
+      "path": "evidence/tdd-cycles/TASK-002-green.txt",
+      "sha256": "654fe43e1ddcfdd66ddce03afccd2b6e05b3f1c79ed320a0012c7a5339891093",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-005",
+        "REQ-009"
+      ],
+      "nfr_ids": [
+        "NFR-003"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-002"
+      ],
+      "cycle_ids": [
+        "TDD-002"
+      ],
+      "test_ids": [
+        "TEST-017"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-004",
+      "path": "evidence/tdd-cycles/TASK-002-regression.txt",
+      "sha256": "78216d5a2a88c66a0bea26dee74b814f84122afb04ff636b219b866aabecbe7a",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-003"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-002"
+      ],
+      "cycle_ids": [
+        "TDD-002"
+      ],
+      "test_ids": [],
       "manual_verification_ids": []
     }
   ],
@@ -861,9 +977,14 @@
       "acceptance_ids": [
         "AC-015"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-002"
+      ],
+      "evidence_ids": [
+        "EVID-002",
+        "EVID-003"
+      ],
+      "status": "passed"
     },
     {
       "id": "TEST-018",
@@ -912,7 +1033,6 @@
         "TEST-000"
       ],
       "manual_verification_ids": [],
-      "red": null,
       "green": {
         "status": "passed",
         "command": "npx vitest run",
@@ -922,7 +1042,53 @@
         "evidence_id": "EVID-001",
         "sha256": "59f3012772d5346fe2902304eaac901898b91ad5d0452f349907dd0331793108"
       },
-      "refactor": null
+      "justification": "测试基建为非行为变更:不改变任何用户可见行为,vitest 配置/临时库夹具/冒烟测试均属开发工具链",
+      "verification": "TEST-000 冒烟测试通过(运行器可用、@ 别名解析、临时 SQLite 应用全部迁移),exit 0"
+    },
+    {
+      "id": "TDD-002",
+      "applicability": "required",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-005",
+        "REQ-009"
+      ],
+      "nfr_ids": [
+        "NFR-003"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-017"
+      ],
+      "manual_verification_ids": [],
+      "red": {
+        "status": "failed",
+        "failure_kind": "missing_behavior",
+        "command": "npx vitest run tests/db/migration.test.ts",
+        "observed": "The column main.User.companyName does not exist in the current database（新迁移缺失）",
+        "timestamp": "2026-08-30T14:24:32+0000",
+        "exit_code": 1,
+        "evidence_id": "EVID-002",
+        "sha256": "a104c5421d6bbeef132a7c2e8a1d440f7772a2989c8da2065f760b9c542f9776"
+      },
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run tests/db/migration.test.ts",
+        "observed": "迁移演练通过：存量保留/新列可空默认/唯一约束P2002/幂等",
+        "timestamp": "2026-08-30T14:33:30+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-003",
+        "sha256": "654fe43e1ddcfdd66ddce03afccd2b6e05b3f1c79ed320a0012c7a5339891093"
+      },
+      "refactor": {
+        "status": "passed",
+        "command": "npx vitest run && npx tsc --noEmit",
+        "observed": "全量回归 4/4 通过 + 类型检查通过",
+        "timestamp": "2026-08-30T14:36:30+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-004",
+        "sha256": "78216d5a2a88c66a0bea26dee74b814f84122afb04ff636b219b866aabecbe7a"
+      }
     }
   ],
   "blockers": [],
@@ -960,7 +1126,7 @@
       "id": "APR-002",
       "version": 1,
       "gate": "G2",
-      "status": "pending",
+      "status": "approved",
       "supersedes": null,
       "approver_type": "user",
       "artifact_version": "design-v1+plan-v1",
@@ -981,6 +1147,18 @@
           "path": "plan.md",
           "sha256": "3b4e82f764981606724aa848d282c2a874dc6bf663f2321d1cc26fb8e92cc9ed"
         }
+      ],
+      "approved_at": "2026-08-30T14:18:27+0000",
+      "user_decision": "approved（用户在 G2 批准包对话中明确回复「批准」）",
+      "accepted_risks": [
+        "迁移回滚依赖人工 SQL 脚本（Prisma 无 down）",
+        "vitest/@vitest/coverage-v8 为新增 dev 依赖",
+        "article 与 product 详情表单 enabled 处理差异（有意行为）"
+      ],
+      "conditions": [
+        "后续设计实质变更需重新过 G2",
+        "push/merge 等外部动作需 G4",
+        "schema 一次迁移完成后不得再改（如需回 G2）"
       ]
     }
   ],
@@ -996,7 +1174,7 @@
     },
     "baseline_commit": "ce96eb1cc56428eee4c1509e013c3692162d1cde",
     "candidate_commit": null,
-    "current_commit": "ce96eb1cc56428eee4c1509e013c3692162d1cde",
+    "current_commit": "d0d71c5474e9f0e67bdc1abacf380bb05dcc72a7",
     "dirty_paths_before": [
       {
         "path": "docs/V3.0升级计划.md",
@@ -1004,35 +1182,89 @@
       }
     ],
     "workflow_paths": [
+      ".spec-tdd-sdlc/**",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/**",
+      "docs/**",
+      "messages",
+      "package-lock.json",
+      "package.json",
+      "prisma/migrations/*",
       "prisma/schema.prisma",
       "prisma/seed.ts",
-      "prisma/migrations/*",
-      "src/server/content",
-      "src/server/ugc",
-      "src/server/user",
-      "src/server/notify",
-      "src/server/admin",
-      "src/server/seo",
-      "src/lib/config",
-      "src/types/domain.ts",
-      "src/components/seo",
-      "src/components/site",
-      "src/components/admin",
-      "src/app/[locale]/(site)",
       "src/app/[locale]/(admin)",
+      "src/app/[locale]/(site)",
       "src/app/api",
       "src/app/llms.txt",
       "src/app/sitemap.ts",
-      "messages",
-      "package.json",
-      "vitest.config.ts",
-      "tests"
+      "src/components/admin",
+      "src/components/seo",
+      "src/components/site",
+      "src/lib/config",
+      "src/server/admin",
+      "src/server/content",
+      "src/server/notify",
+      "src/server/seo",
+      "src/server/ugc",
+      "src/server/user",
+      "src/types/domain.ts",
+      "tests",
+      "tests/**",
+      "tests/setup/db.ts",
+      "tests/smoke.test.ts",
+      "vitest.config.ts"
     ],
-    "candidate_paths": [],
+    "candidate_paths": [
+      "package.json",
+      "package-lock.json",
+      "vitest.config.ts",
+      "tests/setup/db.ts",
+      "tests/smoke.test.ts",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/**"
+    ],
     "unauthorized_actions": [],
     "required_ci": [],
     "ci_results": [],
-    "workflow_commits": []
+    "workflow_commits": [
+      {
+        "commit": "d0d71c5474e9f0e67bdc1abacf380bb05dcc72a7",
+        "requirement_ids": [
+          "REQ-013"
+        ],
+        "nfr_ids": [
+          "NFR-005"
+        ],
+        "defect_ids": [],
+        "acceptance_ids": [
+          "AC-017"
+        ],
+        "test_ids": [
+          "TEST-000"
+        ],
+        "task_ids": [
+          "TASK-001"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v3-catalog-favorite-mail",
+          "Requirement": [
+            "REQ-013"
+          ],
+          "NFR": [
+            "NFR-005"
+          ],
+          "Defect": [],
+          "Acceptance": [
+            "AC-017"
+          ],
+          "Test": [
+            "TEST-000"
+          ],
+          "Task": [
+            "TASK-001"
+          ]
+        }
+      }
+    ]
   },
   "coverage": null
 }

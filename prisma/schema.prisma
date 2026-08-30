@@ -22,6 +22,7 @@ datasource db {
 //   Comment.status : PENDING | APPROVED | REJECTED
 //   User.status    : ACTIVE | DISABLED
 //   Like/ShareLog.targetType : CONTENT
+//   Favorite.targetType : CONTENT
 //   Agreement.type : REGISTER | PRIVACY
 
 // ------------------- 配置与站点基础 -------------------
@@ -148,6 +149,8 @@ model Content {
   status       String    @default("DRAFT") // DRAFT/PUBLISHED/OFFLINE/SCHEDULED/PENDING/REJECTED
   source       String    @default("ADMIN") // ADMIN(后台)/ UGC(用户投稿)
   coverUrl     String? // 封面图 URL(/uploads/...,资产已在 MediaAsset 登记)
+  gallery      String? // 图集:JSON 数组(图片路径有序列表),product 类栏目的商品多图
+  specs        String? // 规格参数:JSON 数组([{key,value}...] 有序键值对),product 类栏目的商品参数
   authorUserId Int? // UGC 投稿人(前台用户)
   authorName   String? // 作者显示名:后台发布时单独设置(必填);UGC 投稿自动取投稿人昵称
   formId       Int? // 关联表单(可选):非空且表单启用时,文章详情页底部渲染该表单;无外键,应用层维护一致性
@@ -156,6 +159,7 @@ model Content {
   viewCount    Int       @default(0)
   likeCount    Int       @default(0)
   shareCount   Int       @default(0)
+  favoriteCount Int      @default(0) // 收藏数:随 Favorite 表增删由应用层同步维护
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -231,6 +235,11 @@ model User {
   avatarUrl     String?
   wechatOpenId  String?  @unique // 微信 openid
   wechatUnionId String?  @unique // 微信 unionid(可选)
+  // —— 公司/地区资料(后台用户管理维护,全部可空)——
+  companyName   String? // 公司名称(支持后台列表模糊搜索)
+  country       String? // 国家
+  province      String? // 省/州
+  city          String? // 市
   status        String   @default("ACTIVE") // ACTIVE / DISABLED
   createdAt     DateTime @default(now())
 
@@ -293,6 +302,20 @@ model Like {
   @@unique([targetType, targetId, userId])
   @@unique([targetType, targetId, guestKey])
   @@index([targetType, targetId])
+}
+
+/// 收藏记录:登录用户对已发布内容的收藏(targetId 通用引用,不建 Prisma relation,
+/// 与 Content.formId 同策略:无外键,应用层维护一致性);
+/// 唯一约束兜底防重复,增删时由应用层同步 Content.favoriteCount。
+model Favorite {
+  id         Int      @id @default(autoincrement())
+  targetType String   @default("CONTENT") // 收藏目标类型(可扩展)
+  targetId   Int // 收藏目标 id(通用引用,无外键,应用层维护一致性)
+  userId     Int // 收藏人(仅登录用户)
+  createdAt  DateTime @default(now())
+
+  @@unique([targetType, targetId, userId])
+  @@index([userId])
 }
 
 /// 转发日志(主要用于统计;计数已冗余在 Content.shareCount)

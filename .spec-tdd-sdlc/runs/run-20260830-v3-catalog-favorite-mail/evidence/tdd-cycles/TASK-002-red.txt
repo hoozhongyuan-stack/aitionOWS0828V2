@@ -1,0 +1,47 @@
+== TASK-002 RED (TEST-017 / AC-015 / NFR-003) ==
+command: npx vitest run tests/db/migration.test.ts
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ❯ tests/db/migration.test.ts (1 test | 1 failed) 1118ms
+     × 应用 V3.0 迁移后:存量数据无损、新列空值/默认值、Favorite 唯一约束、迁移幂等 535ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/db/migration.test.ts > TEST-017: V3.0 迁移演练(存量无损/新列默认值/幂等) > 应用 V3.0 迁移后:存量数据无损、新列空值/默认值、Favorite 唯一约束、迁移幂等
+PrismaClientKnownRequestError: 
+Invalid `migrated.user.findFirst()` invocation in
+/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/tests/db/migration.test.ts:97:40
+
+  94 const migrated = new PrismaClient({ datasourceUrl: dbUrl() });
+  95 try {
+  96   // d1. 旧行完好(业务字段与互动计数不变)
+→ 97   const user = await migrated.user.findFirst(
+The column `main.User.companyName` does not exist in the current database.
+ ❯ ri.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:228:12
+ ❯ ri.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:11
+ ❯ ri.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:11
+ ❯ l node_modules/@prisma/client/src/runtime/getPrismaClient.ts:862:23
+ ❯ tests/db/migration.test.ts:97:20
+     95|     try {
+     96|       // d1. 旧行完好(业务字段与互动计数不变)
+     97|       const user = await migrated.user.findFirst();
+       |                    ^
+     98|       expect(user?.email).toBe("legacy@example.com");
+     99|       expect(user?.nickname).toBe("老用户");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  22:24:30
+   Duration  1.99s (transform 35ms, setup 641ms, import 44ms, tests 1.12s, environment 0ms)
+
+
+exit_code: 1
+timestamp_utc: 2026-08-30T14:24:32+0000
+context: prisma/migrations 仅含 baseline_init + form_submission_status,V3.0 新迁移尚未生成;失败原因为 missing_behavior(新列/新表不存在),非测试语法错误。前置两次 fixture 修正(Content/Setting updatedAt 非空,raw INSERT 需显式提供)已排除。
