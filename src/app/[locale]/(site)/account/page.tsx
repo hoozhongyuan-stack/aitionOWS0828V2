@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Bookmark, FileText } from "lucide-react";
-import { getUserSession } from "@/lib/auth/session";
+import { getActiveUserSession } from "@/lib/auth/session";
 import { listMyFavorites, listMySubmissions } from "@/server/ugc";
 import { resolveContentDetailPath } from "@/server/content";
 import { cn, safeDateLocale } from "@/lib/utils";
@@ -39,7 +39,8 @@ export default async function AccountPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const user = await getUserSession();
+  // 写接口同口径(L-3):仅 ACTIVE 账号可见;禁用账号视同未登录跳转登录页
+  const user = await getActiveUserSession();
   if (!user) redirect(buildLoginRedirectUrl(locale, `/${locale}/account`));
 
   const sp = await searchParams;

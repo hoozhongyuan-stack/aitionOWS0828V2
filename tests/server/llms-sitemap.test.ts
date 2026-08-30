@@ -119,3 +119,79 @@ describe("TEST-007:llms.txt / sitemap 商品收录", () => {
     expect(articleUrls).not.toContainEqual(expect.stringContaining("llms-product-item"));
   });
 });
+
+describe("buildLlmsText 纯函数组装(新模块 @/server/content/llms 直测)", () => {
+  async function loadBuild(): Promise<typeof import("@/server/content/llms")> {
+    return (await import("@/server/content/llms")) as typeof import("@/server/content/llms");
+  }
+
+  const baseInput = {
+    base: "https://geo.test",
+    locale: "zh-CN",
+    siteName: "组装测试站",
+    otherLocales: ["en"],
+    categories: [{ slug: "about", name: "关于我们" }],
+    contents: [
+      { slug: "p1", title: "商品一", summary: "商品一摘要", moduleType: "product" },
+      { slug: "a1", title: "文章一", summary: "", moduleType: "news" },
+    ],
+  };
+
+  it("完整输入:品牌头含电话/邮箱,栏目/产品/文章分区与产品摘要齐全", async () => {
+    const { buildLlmsText } = await loadBuild();
+    const text = buildLlmsText({
+      ...baseInput,
+      contactPhone: "400-000-0000",
+      contactEmail: "hi@geo.test",
+    });
+    expect(text).toContain("# 组装测试站");
+    expect(text).toContain("电话:400-000-0000");
+    expect(text).toContain("邮箱:hi@geo.test");
+    expect(text).toContain("主要语言:zh-CN(其他语言:en)");
+    expect(text).toContain("- [关于我们](https://geo.test/zh-CN/c/about)");
+    expect(text).toContain("## 产品");
+    expect(text).toContain("- [商品一](https://geo.test/zh-CN/product/p1):商品一摘要");
+    expect(text).toContain("## 文章");
+    expect(text).toContain("- [文章一](https://geo.test/zh-CN/article/a1)");
+    expect(text).toContain("- [sitemap.xml](https://geo.test/sitemap.xml)");
+    // 分区顺序:产品分区在文章分区之前
+    expect(text.indexOf("## 产品")).toBeLessThan(text.indexOf("## 文章"));
+  });
+
+  it("极简输入:无联系方式/无其他语言/无栏目 → 兜底文案且不渲染对应分区", async () => {
+    const { buildLlmsText } = await loadBuild();
+    const text = buildLlmsText({
+      base: "https://geo.test",
+      locale: "zh-CN",
+      siteName: "极简站",
+      otherLocales: [],
+      categories: [],
+      contents: [{ slug: "a1", title: "文章一", summary: "", moduleType: "news" }],
+    });
+    expect(text).not.toContain("电话:");
+    expect(text).not.toContain("邮箱:");
+    expect(text).toContain("主要语言:zh-CN(其他语言:无)");
+    expect(text).not.toContain("## 栏目");
+    expect(text).not.toContain("## 产品");
+    expect(text).toContain("## 文章");
+  });
+
+  it("仅产品无文章:渲染产品分区且不渲染文章分区(含无摘要的条目)", async () => {
+    const { buildLlmsText } = await loadBuild();
+    const text = buildLlmsText({
+      ...baseInput,
+      contents: [{ slug: "p1", title: "商品一", summary: "", moduleType: "product" }],
+    });
+    expect(text).toContain("## 产品");
+    expect(text).toContain("](https://geo.test/zh-CN/product/p1)");
+    expect(text).not.toContain("## 文章");
+  });
+
+  it("无任何内容:栏目分区可独立存在,产品/文章分区均不渲染", async () => {
+    const { buildLlmsText } = await loadBuild();
+    const text = buildLlmsText({ ...baseInput, contents: [] });
+    expect(text).toContain("## 栏目");
+    expect(text).not.toContain("## 产品");
+    expect(text).not.toContain("## 文章");
+  });
+});

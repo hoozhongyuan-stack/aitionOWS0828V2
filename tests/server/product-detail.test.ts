@@ -78,6 +78,20 @@ beforeAll(async () => {
     specs: "]]]bad",
     formId: null,
   });
+  // 合法 JSON 但非数组结构(AC-021 容错:按空处理,不抛错、不封面兜底)
+  await mk("non-array-json-product", {
+    coverUrl: "/uploads/non-array.webp",
+    gallery: JSON.stringify({ not: "array" }),
+    specs: JSON.stringify({ k: "v" }),
+    formId: null,
+  });
+  // 无封面、无图集:无兜底来源 → 空图集
+  await mk("no-cover-product", {
+    coverUrl: null,
+    gallery: null,
+    specs: null,
+    formId: null,
+  });
   // 未发布(草稿)
   await prisma.content.create({
     data: {
@@ -116,6 +130,19 @@ describe("TEST-002:商品详情数据组装(图集/参数/TDK)", () => {
     const broken = await getProductDetail("broken-json-product", "zh-CN");
     expect(broken!.gallery).toEqual([]);
     expect(broken!.specs).toEqual([]);
+  });
+
+  it("AC-021 容错补充:合法 JSON 非数组按空返回且不做封面兜底;无封面无图集 → 空图集", async () => {
+    // 合法 JSON 但非数组:invalid=true → 按空图集返回,即使有封面也不兜底
+    const nonArray = await getProductDetail("non-array-json-product", "zh-CN");
+    expect(nonArray).toBeTruthy();
+    expect(nonArray!.gallery).toEqual([]);
+    expect(nonArray!.specs).toEqual([]);
+    // 无封面且无图集:无兜底来源 → 空图集(不抛错)
+    const noCover = await getProductDetail("no-cover-product", "zh-CN");
+    expect(noCover).toBeTruthy();
+    expect(noCover!.gallery).toEqual([]);
+    expect(noCover!.specs).toEqual([]);
   });
 
   it("未发布(草稿)商品返回 null", async () => {

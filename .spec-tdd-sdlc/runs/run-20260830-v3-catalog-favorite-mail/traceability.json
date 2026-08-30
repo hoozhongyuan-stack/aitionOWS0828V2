@@ -50,11 +50,14 @@
         "AC-003"
       ],
       "task_ids": [
-        "TASK-003"
+        "TASK-003",
+        "TASK-004"
       ],
       "evidence_ids": [
         "EVID-005",
-        "EVID-006"
+        "EVID-006",
+        "EVID-021",
+        "EVID-022"
       ]
     },
     {
@@ -65,11 +68,14 @@
         "AC-004"
       ],
       "task_ids": [
-        "TASK-003"
+        "TASK-003",
+        "TASK-004"
       ],
       "evidence_ids": [
         "EVID-005",
-        "EVID-006"
+        "EVID-006",
+        "EVID-021",
+        "EVID-022"
       ]
     },
     {
@@ -79,8 +85,13 @@
       "acceptance_ids": [
         "AC-005"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-005"
+      ],
+      "evidence_ids": [
+        "EVID-023",
+        "EVID-024"
+      ]
     },
     {
       "id": "REQ-005",
@@ -109,11 +120,14 @@
         "AC-007"
       ],
       "task_ids": [
+        "TASK-004",
         "TASK-008"
       ],
       "evidence_ids": [
         "EVID-018",
-        "EVID-019"
+        "EVID-019",
+        "EVID-021",
+        "EVID-022"
       ]
     },
     {
@@ -240,8 +254,14 @@
       "acceptance_ids": [
         "AC-018"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-004"
+      ],
+      "evidence_ids": [
+        "EVID-021",
+        "EVID-022",
+        "EVID-025"
+      ]
     },
     {
       "id": "NFR-003",
@@ -830,6 +850,64 @@
         "748479fd139343852f6b9c187fadec8b0a64f4da"
       ],
       "status": "complete"
+    },
+    {
+      "id": "TASK-004",
+      "role": "implementation",
+      "agent_id": "agent_89257f99-implementerD-wave3",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-003",
+        "REQ-006"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-021",
+        "EVID-022",
+        "EVID-025"
+      ],
+      "commit_ids": [
+        "e41782838f658982d0ba962fb023d1d17dca6bdc"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": "TASK-005",
+      "role": "implementation",
+      "agent_id": "agent_89257f99-implementerD-wave3",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-023",
+        "EVID-024",
+        "EVID-025"
+      ],
+      "commit_ids": [
+        "e41782838f658982d0ba962fb023d1d17dca6bdc"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": "TASK-011",
+      "role": "implementation",
+      "agent_id": "agent_89257f99-implementerD-wave3",
+      "requirement_ids": [],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-025"
+      ],
+      "commit_ids": [
+        "e41782838f658982d0ba962fb023d1d17dca6bdc"
+      ],
+      "status": "complete",
+      "note": "non-normative 种子（Spec Included 声明），幂等不覆盖客户数据"
     }
   ],
   "evidence": [
@@ -1278,6 +1356,117 @@
       ],
       "test_ids": [],
       "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-021",
+      "path": "evidence/tdd-cycles/TASK-004-red.txt",
+      "sha256": "c78c8f2788470a5a5c12ecf4756f2f811ed4cc060ffa12f3c5d9c3d681d9a68a",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-003",
+        "REQ-006"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-004"
+      ],
+      "cycle_ids": [
+        "TDD-004"
+      ],
+      "test_ids": [
+        "TEST-019"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-022",
+      "path": "evidence/tdd-cycles/TASK-004-green.txt",
+      "sha256": "7c9fb03ac28671fa746f29a234b6d035d17bcecb5c971f32742f90fa335b3f3c",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-003",
+        "REQ-006"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-004"
+      ],
+      "cycle_ids": [
+        "TDD-004"
+      ],
+      "test_ids": [
+        "TEST-019"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-023",
+      "path": "evidence/tdd-cycles/TASK-005-red.txt",
+      "sha256": "ff8cc69826903a5e3b94c94fa73708bcbb41e73989363e343d2948aaed94db0a",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-005"
+      ],
+      "cycle_ids": [
+        "TDD-005"
+      ],
+      "test_ids": [
+        "TEST-006",
+        "TEST-007"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-024",
+      "path": "evidence/tdd-cycles/TASK-005-green.txt",
+      "sha256": "9d141fca4396a43e0423567fda5195f07b40773abbc7725e470830641ea83ea4",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-005"
+      ],
+      "cycle_ids": [
+        "TDD-005"
+      ],
+      "test_ids": [
+        "TEST-006",
+        "TEST-007"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-025",
+      "path": "evidence/tdd-cycles/TASK-004-005-011-integration-regression.txt",
+      "sha256": "8f6a0c37329f7d1364044168684dc4498fa3e551d713a867f376d4e98bbcec93",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-004",
+        "TASK-005",
+        "TASK-011"
+      ],
+      "cycle_ids": [
+        "TDD-004",
+        "TDD-005"
+      ],
+      "test_ids": [],
+      "manual_verification_ids": []
     }
   ],
   "tests": [
@@ -1412,9 +1601,14 @@
       "acceptance_ids": [
         "AC-005"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-005"
+      ],
+      "evidence_ids": [
+        "EVID-023",
+        "EVID-024"
+      ],
+      "status": "passed"
     },
     {
       "id": "TEST-007",
@@ -1426,9 +1620,14 @@
       "acceptance_ids": [
         "AC-005"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-005"
+      ],
+      "evidence_ids": [
+        "EVID-023",
+        "EVID-024"
+      ],
+      "status": "passed"
     },
     {
       "id": "TEST-008",
@@ -1661,9 +1860,14 @@
         "AC-020",
         "AC-018"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-004"
+      ],
+      "evidence_ids": [
+        "EVID-021",
+        "EVID-022"
+      ],
+      "status": "passed"
     }
   ],
   "manual_verifications": [],
@@ -2008,6 +2212,93 @@
         "exit_code": 0,
         "evidence_id": "EVID-020",
         "sha256": "1d66cd3d8adade46539d123731c7f688a777b3f9d6b2851408558d3bb19d4de2"
+      }
+    },
+    {
+      "id": "TDD-004",
+      "applicability": "required",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-003",
+        "REQ-006"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-019"
+      ],
+      "manual_verification_ids": [],
+      "red": {
+        "status": "failed",
+        "failure_kind": "missing_behavior",
+        "command": "npx vitest run tests/app/product-page.test.ts",
+        "observed": "2/2 失败：/zh-CN/product/[slug] 路由不存在（404/500）",
+        "timestamp": "2026-08-30T16:20:00+0000",
+        "exit_code": 1,
+        "evidence_id": "EVID-021",
+        "sha256": "c78c8f2788470a5a5c12ecf4756f2f811ed4cc060ffa12f3c5d9c3d681d9a68a"
+      },
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run tests/app/product-page.test.ts",
+        "observed": "2/2 通过：初始 HTML 含图集/参数表/正文/询盘表单，不存在 slug 返回 404",
+        "timestamp": "2026-08-30T16:30:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-022",
+        "sha256": "7c9fb03ac28671fa746f29a234b6d035d17bcecb5c971f32742f90fa335b3f3c"
+      },
+      "refactor": {
+        "status": "passed",
+        "command": "npx vitest run && npx tsc --noEmit",
+        "observed": "17 文件 91/91 全绿 + 类型检查通过",
+        "timestamp": "2026-08-30T16:40:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-025",
+        "sha256": "8f6a0c37329f7d1364044168684dc4498fa3e551d713a867f376d4e98bbcec93"
+      }
+    },
+    {
+      "id": "TDD-005",
+      "applicability": "required",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-006",
+        "TEST-007"
+      ],
+      "manual_verification_ids": [],
+      "red": {
+        "status": "failed",
+        "failure_kind": "missing_behavior",
+        "command": "npx vitest run tests/seo/product-jsonld.test.ts tests/server/llms-sitemap.test.ts",
+        "observed": "6 failed：JSON-LD 缺绝对 image/brand/category/sku、llms.txt 无产品分区、sitemap 商品为 article URL",
+        "timestamp": "2026-08-30T16:20:00+0000",
+        "exit_code": 1,
+        "evidence_id": "EVID-023",
+        "sha256": "ff8cc69826903a5e3b94c94fa73708bcbb41e73989363e343d2948aaed94db0a"
+      },
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run tests/seo/product-jsonld.test.ts tests/server/llms-sitemap.test.ts",
+        "observed": "8/8 通过",
+        "timestamp": "2026-08-30T16:35:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-024",
+        "sha256": "9d141fca4396a43e0423567fda5195f07b40773abbc7725e470830641ea83ea4"
+      },
+      "refactor": {
+        "status": "passed",
+        "command": "npx vitest run && npx tsc --noEmit",
+        "observed": "17 文件 91/91 全绿 + 类型检查通过",
+        "timestamp": "2026-08-30T16:40:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-025",
+        "sha256": "8f6a0c37329f7d1364044168684dc4498fa3e551d713a867f376d4e98bbcec93"
       }
     }
   ],
@@ -2460,6 +2751,63 @@
           ],
           "Task": [
             "TASK-008"
+          ]
+        }
+      },
+      {
+        "commit": "e41782838f658982d0ba962fb023d1d17dca6bdc",
+        "requirement_ids": [
+          "REQ-002",
+          "REQ-003",
+          "REQ-004",
+          "REQ-006"
+        ],
+        "nfr_ids": [
+          "NFR-002"
+        ],
+        "defect_ids": [],
+        "acceptance_ids": [
+          "AC-005",
+          "AC-018",
+          "AC-020"
+        ],
+        "test_ids": [
+          "TEST-006",
+          "TEST-007",
+          "TEST-019"
+        ],
+        "task_ids": [
+          "TASK-004",
+          "TASK-005",
+          "TASK-011"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v3-catalog-favorite-mail",
+          "Requirement": [
+            "REQ-002",
+            "REQ-003",
+            "REQ-004",
+            "REQ-006"
+          ],
+          "NFR": [
+            "NFR-002"
+          ],
+          "Defect": [],
+          "Acceptance": [
+            "AC-005",
+            "AC-018",
+            "AC-020"
+          ],
+          "Test": [
+            "TEST-006",
+            "TEST-007",
+            "TEST-019"
+          ],
+          "Task": [
+            "TASK-004",
+            "TASK-005",
+            "TASK-011"
           ]
         }
       }

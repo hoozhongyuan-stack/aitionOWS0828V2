@@ -1,0 +1,6 @@
+      Tests  91 passed (91)
+   Start at  23:45:00
+   Duration  7.15s (transform 1.25s, setup 23.17s, import 1.21s, tests 10.27s, environment 1ms)
+
+tsc exit_code: 0
+2026-08-30T15:45:08+0000

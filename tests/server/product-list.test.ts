@@ -33,6 +33,10 @@ beforeAll(async () => {
   const grandA = await mkCat("prod-grand-a", "product", childA.id); // 三级:验证"全部后代"
   await mkCat("prod-child-hidden", "product", root.id, false); // 隐藏子栏目:内容不出现在父栏目页
   const news = await mkCat("news-cat", "news", null);
+  // M-1 回归夹具:有子栏目的 news 父栏目树(父 → 子 → 孙)
+  const newsParent = await mkCat("news-parent", "news", null);
+  const newsChild = await mkCat("news-child", "news", newsParent.id);
+  const newsGrand = await mkCat("news-grand", "news", newsChild.id);
 
   const mkContent = (slug: string, categoryId: number, status = "PUBLISHED", extra: Record<string, unknown> = {}) =>
     prisma.content.create({
@@ -57,6 +61,9 @@ beforeAll(async () => {
   await mkContent("item-draft", childA.id, "DRAFT"); // 未发布不出现
   await mkContent("item-hidden-cat", (await prisma.category.findUnique({ where: { slug: "prod-child-hidden" } }))!.id);
   await mkContent("article-1", news.id);
+  await mkContent("news-item-parent", newsParent.id);
+  await mkContent("news-item-child", newsChild.id);
+  await mkContent("news-item-grand", newsGrand.id); // news 孙栏目内容:非 product 不得聚合(M-1)
 });
 
 describe("TEST-005:栏目列表按栏目及全部后代栏目过滤", () => {
@@ -79,6 +86,21 @@ describe("TEST-005:栏目列表按栏目及全部后代栏目过滤", () => {
     const data = await listPublishedByCategory("news-cat", "zh-CN");
     expect(data!.items.map((i) => i.slug)).toEqual(["article-1"]);
     expect(data!.category.moduleType).toBe("news");
+  });
+
+  it("M-1 回归:有子栏目的 news 父栏目,列表仅含本栏+直接子栏内容(不含孙栏)", async () => {
+    const data = await listPublishedByCategory("news-parent", "zh-CN");
+    expect(data).toBeTruthy();
+    const slugs = data!.items.map((i) => i.slug).sort();
+    // 基线行为恢复:本栏目 + 直接子栏目;孙栏目(news-grand)内容不得被聚合
+    expect(slugs).toEqual(["news-item-child", "news-item-parent"]);
+    expect(data!.total).toBe(2);
+    // 子栏目页按基线语义聚合:本栏目 + 其直接子栏(news-grand 即 news-child 的直接子栏)
+    const childData = await listPublishedByCategory("news-child", "zh-CN");
+    expect(childData!.items.map((i) => i.slug).sort()).toEqual([
+      "news-item-child",
+      "news-item-grand",
+    ]);
   });
 
   it("保留分页参数语义(page/pageSize/total)", async () => {

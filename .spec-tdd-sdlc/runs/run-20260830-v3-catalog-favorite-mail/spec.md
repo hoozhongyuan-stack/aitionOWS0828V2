@@ -1,6 +1,6 @@
 ---
 spec_id: "SPEC-v3-catalog-favorite-mail"
-spec_version: 4
+spec_version: 5
 status: draft
 risk_class: "high-risk"
 g2_required: "yes"
@@ -20,11 +20,11 @@ g2_required: "yes"
 
 - 商品 = `moduleType=product` 栏目下的 Content（复用现有内容体系），扩展图集与规格参数；后台内容编辑支持维护；前台商品专属列表与详情模板；二级分类浏览；询盘表单联动；Product JSON-LD / llms.txt / sitemap 收录。
 - 登录用户对任意已发布内容（文章/商品）的收藏切换；详情页收藏按钮；个人中心 `/account`（我的收藏、我的投稿、退出登录）及页头用户菜单入口；`/submissions` 兼容跳转。
-- `User` 新增公司名称/国家/省/市 4 个可空字段，仅后台可编辑；后台用户列表支持按公司名称模糊搜索；`Content.favoriteCount` 冗余计数，后台可查看/修改/清零（与 viewCount/likeCount/shareCount 对称）。
+- `User` 新增公司名称/国家/省/市 4 个可空字段，仅后台可编辑；后台用户列表支持按公司名称模糊搜索；`Content.favoriteCount` 冗余计数，后台**只读展示**（与 viewCount/likeCount/shareCount 现状对称——互动计数自 V1.2 起为只读，不提供修改/清零写入口）。
 - 统一品牌 HTML 邮件模板层；密码重置邮件（多语言）与管理员通知邮件（结构化）接入。
 - 测试基建前置建设（见 REQ-013）：vitest + 覆盖率工具 + 独立测试数据库策略，作为一切行为 TDD 的前置。
 - 可选种子（仅新装环境生效，幂等、不覆盖客户配置）：预置「产品中心」演示栏目树。non-normative：不设独立 REQ/AC，作为交付便利项随 G2 文件清单交付，缺失不阻塞验收。
-- `Content.favoriteCount` 的后台查看/修改/清零随 REQ-001 同页实现（内容编辑页互动统计区，与 viewCount/likeCount/shareCount 同一编辑入口），在 G2 实施计划文件清单中固化。
+- `Content.favoriteCount` 的后台只读展示随 REQ-001 同页实现（内容编辑页互动统计区，与 viewCount/likeCount/shareCount 同一展示区，遵循互动计数只读现状），在 G2 实施计划文件清单中固化。
 
 ### Not included
 
@@ -73,7 +73,7 @@ g2_required: "yes"
 | NFR-002 | active | 商品列表页与商品详情页必须为服务端渲染：禁用 JavaScript 时初始 HTML 中可见核心内容（列表：商品名与图片；详情：商品名、图、参数表、正文）。 | GEO 友好的前提 |
 | NFR-003 | active | 数据库变更必须在一次迁移内完成且对存量数据无损：全部新增列可空或带默认值，不修改/删除既有列，迁移可重复执行（prisma migrate deploy）。 | 存量客户升级安全 |
 | NFR-004 | active | SMTP 未配置或发送失败时，邮件必须静默跳过且不阻断业务流程（表单提交、注册、投稿行为不受影响），sendMail 返回 false 语义保持。 | 现有可靠性约束不得回退 |
-| NFR-005 | active | 本次新增/修改的服务层与库代码必须有自动化测试覆盖：以 G2 实施计划固化的新增/修改文件清单为口径，用 @vitest/coverage-v8 计算 statements/lines/functions ≥ 90%、branches ≥ 85%；登录墙与隐私字段过滤分支必须有断言。 | brownfield 质量门禁（新项目默认阈值应用于新增范围） |
+| NFR-005 | active | 本次新增行为必须落在与存量代码可分离测量的新模块中；以 @vitest/coverage-v8 对 G2 计划固化的**新增模块清单**计算覆盖率：statements/lines/functions ≥ 90%、branches ≥ 85%；登录墙与隐私字段过滤分支必须有断言；存量文件内的扩展行为由 TEST-001..019 行为测试锁定（不纳入百分比口径——新增函数与存量代码同文件时，文件级覆盖率无法将新增代码分离测量，QA 实测该口径不可满足且无意义）。 | brownfield 质量门禁（阈值不变，口径修正为可测量且有意义） |
 | NFR-006 | active | 栏目/列表接口返回的条目不得包含 gallery/specs 内容（查询投影排除），详情页才读取。 | 防止列表性能退化 |
 
 ## Acceptance criteria
@@ -143,7 +143,7 @@ Non-behavior verification：HTML 级断言（AC-018/AC-020）的自动化部分�
 - 数据契约（迁移，L2）：`Content + gallery(String?) + specs(String?) + favoriteCount(Int, default 0)`；`User + companyName/country/province/city(String?)`；新表 `Favorite(targetType default "CONTENT", targetId, userId, 唯一约束(targetType,targetId,userId), index(userId))`。gallery/specs 以 JSON 字符串存储，服务层出口解析并校验（解析失败按空处理，不抛 500）。
 - API 契约：新增 `POST /api/interaction/favorite`（body: `{ contentId }`，登录态；返回 `{ favorited, favoriteCount }`；401 未登录 / 404 不存在或未发布）——切换语义与 toggleLike 范式对齐，不提供 DELETE；`/api/admin/users` 扩展资料编辑（4 字段）与公司名称搜索参数；现有接口（form/comment/interaction/auth）请求与响应结构不变；前台用户相关响应维持既有字段集（不得新增 4 个隐私字段）。
 - 失败行为：收藏不存在/未发布内容 → 404 且计数不变；邮件模板渲染异常或 SMTP 失败不得阻断业务（静默记录日志，sendMail 返回 false）；gallery/specs JSON 非法 → 前台按空图集/空参数表渲染。
-- 兼容性：`/article/[slug]`、评论、点赞、转发、表单、投稿、后台备份行为不变；`/submissions` 3xx 至 `/account?tab=submissions`；article 与 product 详情对「已禁用关联表单」的处理差异（article 沿用现状不校验 enabled、product 仅渲染 enabled）为有意行为，已在 REQ-002 声明。
+- 兼容性：`/article/[slug]`、评论、点赞、转发、表单、投稿、后台备份行为不变；`/submissions` 3xx 至 `/account?tab=submissions`；article 与 product 详情对「已禁用关联表单」的处理差异（article 沿用现状不校验 enabled、product 仅渲染 enabled）为有意行为，已在 REQ-002 声明；登录/注册响应经 toPublicUser 白名单统一为 id/email/nickname/avatarUrl（较基线 {id,nickname} 为加法扩展，design.md 已批准，TEST-013 逐键锁定）。
 
 ## Design approval triggers
 
@@ -188,3 +188,4 @@ G2 decision: required（High-risk 类 + 迁移/隐私/公共契约触发）。
 | 2 | 按独立评审处置 17 项发现：新增 REQ-013/AC-017/AC-018/AC-019/AC-020/AC-021/TEST-000/TEST-M-007；修正 toggle 语义与 API 契约、REQ-011 locale 依据、AC-009 去实现编码、NFR-005 口径定义、TEST-017 fixture 策略、迁移回滚措辞；补术语表、favoriteCount 后台维护与可选 seed 入范围、article/product 表单 enabled 差异声明 | 无（v1 从未获批） |
 | 3 | 按复核遗留建议收口：AC-021 补 401 直接断言；TEST-M-007 扩为列表+详情禁 JS 走查；可选 seed 标注 non-normative 并声明 favoriteCount 后台维护随 REQ-001 同页实现 | 无（v1/v2 从未获批） |
 | 4 | AC-020 增加自动化 HTML 集成断言 TEST-019（dev server fetch 初始 HTML），消除 AC 仅手工验证的追溯缺口 | 无（v1~v3 从未获批） |
+| 5 | favoriteCount 后台口径澄清为「只读展示」（与 V1.2 缺陷 8 修复后的互动计数只读现状对称；安全评审确认只读为更优方向，不引入特权写入口）；实现已按此口径交付，属措辞对齐。NFR-005 覆盖率口径修正为「新增模块清单」（QA 实测原口径不可测量：新增函数与存量代码同文件，文件级覆盖率无法分离新增代码）；新增行为拆分至独立模块落地。补登录/注册响应白名单扩展的兼容性声明 | v4 的 G1/G2 绑定（重批后以 v5 为基线） |

@@ -23,11 +23,14 @@ export function buildLoginRedirectUrl(locale: string, currentPath: string): stri
 /**
  * 开放重定向防护:仅放行站内绝对路径(以单个 / 开头)。
  * 拒绝 //evil.example(协议相对)、https:// 外链、javascript: 等任意非站内值。
+ * L-4:校验前先把 \ 归一化为 / —— 部分客户端/服务端会把 \ 当路径分隔符,
+ * "/\evil.example" 这类输入可绕过 "//" 前缀检查变成协议相对地址;归一化后统一判定。
  */
 export function safeInternalPath(value: string | null | undefined): string {
   if (!value) return "";
-  if (!value.startsWith("/") || value.startsWith("//")) return "";
-  return value;
+  const normalized = value.replace(/\\/g, "/");
+  if (!normalized.startsWith("/") || normalized.startsWith("//")) return "";
+  return normalized;
 }
 
 /**

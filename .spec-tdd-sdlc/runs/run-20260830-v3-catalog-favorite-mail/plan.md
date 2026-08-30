@@ -35,7 +35,7 @@
 
 ## Release preparation
 
-- Coverage command and scope：`npx vitest run --coverage`，scope = G2 固化新增/修改清单：`src/server/content/**`（新增商品函数）、`src/server/ugc/**`（favorite 函数）、`src/server/user/**`（新增函数）、`src/server/notify/**`、`src/components/seo/json-ld.tsx`、`src/app/api/interaction/favorite/**`；阈值 90/90/90/85（NFR-005 / AC-019）。
+- Coverage command and scope（v5 口径）：`npx vitest run --coverage`，coverage.include = **新增模块清单**（G2 修订固化）：`src/server/ugc/favorite.ts`、`src/server/user/profile.ts`、`src/server/content/product.ts`、`src/server/notify/template.ts`、`src/app/api/interaction/favorite/route.ts`、`src/app/[locale]/(site)/account/logic.ts`；阈值 90/90/90/85（NFR-005 / AC-019）。存量文件内的扩展行为（content/ugc/user/notify 的 index.ts 等）由 TEST-001..019 行为测试锁定，不纳入百分比口径。
 - Independent review assignments：code-reviewer（Spec/diff 一致性、可维护性）、security-reviewer（隐私出口、登录墙、邮件注入、迁移安全——auth/sensitive data 在范围内，强制评审）、QA（AC 独立验证、回归、手工走查督导）；三身份互异且不参与实现。
 - Rollback rehearsal：TEST-017 已演练迁移前向；回滚 SQL 脚本随迁移提交交付并评审。
 - G4 actions, if any：本 run 无（不 push/merge/部署）；如需合并回 main 或推送远程，另行提交 G4 批准包。

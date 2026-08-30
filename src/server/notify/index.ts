@@ -95,7 +95,8 @@ export async function sendMail(payload: MailPayload): Promise<boolean> {
 
     const result = await transporter.sendMail({
       from,
-      to: payload.to,
+      // 收件人逐元素头部净化(L-5):adminEmail 等配置可能含多个地址,防换行注入
+      to: payload.to.map(headerSafe),
       subject: headerSafe(payload.subject),
       text,
       html,
@@ -110,8 +111,20 @@ export async function sendMail(payload: MailPayload): Promise<boolean> {
   }
 }
 
-/** 管理员通知(总开关控制,静默失败) */
-export async function notifyAdmin(subject: string, lines: string[]): Promise<void> {
+/**
+ * 管理员通知(总开关控制,静默失败)。
+ *
+ * V3.0(L-1 上提):第三可选参数携带品牌模板 HTML(取代散落在 form/ugc 服务里的
+ * 本地 notifyAdminBranded 过渡实现)。提供 html 时 sendMail 收到 html + text 降级
+ * (lines 空 → text 为剥离标签纯文本);开关/收件人/静默语义不变。
+ * html 可传 string 或渲染 Promise<string>:渲染在开关/收件人门禁通过后才 await,
+ * 调用方 `void notifyAdmin(...)` 保持 fire-and-forget,渲染/发送异常一律静默记录,不外抛。
+ */
+export async function notifyAdmin(
+  subject: string,
+  lines: string[],
+  html?: string | Promise<string>
+): Promise<void> {
   let cfg: NotifyConfig;
   try {
     cfg = await getNotifyConfig();
@@ -127,5 +140,10 @@ export async function notifyAdmin(subject: string, lines: string[]): Promise<voi
     .filter(Boolean);
   if (to.length === 0) return;
 
-  await sendMail({ to, subject, lines });
+  try {
+    const htmlValue = html ? await html : undefined;
+    await sendMail({ to, subject, lines, html: htmlValue });
+  } catch (e) {
+    console.error("[notify] 管理员通知生成/发送失败:", e);
+  }
 }

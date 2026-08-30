@@ -309,6 +309,7 @@ export async function renderFormSubmissionNotify(
  * 的中文文案口径(不随用户 locale 变化);如需多语言再扩展。
  */
 export async function renderUgcPendingNotify(opts: UgcPendingNotifyOptions): Promise<string> {
+  // kind:"comment" 分支为预置能力:基线评论流无管理员通知调用点,接线待后续需求
   const isComment = opts.kind === "comment";
   const rows: { k: string; v: string }[] = [
     { k: "类型", v: isComment ? "评论" : "用户投稿" },

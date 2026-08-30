@@ -6,7 +6,16 @@ import { sanitizeRichHtml } from "@/lib/sanitize";
 /**
  * UGC 服务(需求 4.8):阅读/点赞/转发计数、评论全流程、敏感词管理。
  * 铁律:任何 UGC 默认 PENDING,绝无自动上线分支。
+ *
+ * 收藏域(V3.0 REQ-005)已拆分至 ./favorite(独立可测量模块,NFR-005 覆盖率口径);
+ * 此处显式 re-export 保持既有导入路径(@/server/ugc)不变。
  */
+export {
+  toggleFavorite,
+  hasFavorited,
+  listMyFavorites,
+  FavoriteTargetNotFoundError,
+} from "./favorite";
 
 // ---------------- 阅读量 ----------------
 
@@ -73,135 +82,6 @@ export async function hasLiked(input: {
     where: { targetType: TARGET_TYPE.CONTENT, targetId: input.contentId, ...who },
   });
   return !!row;
-}
-
-// ---------------- 收藏(需求 V3.0 REQ-005) ----------------
-
-/** 收藏目标不存在或未发布的语义错误(路由层映射 HTTP 404;计数保持不变) */
-export class FavoriteTargetNotFoundError extends Error {
-  readonly status = 404;
-  constructor(message = "内容不存在或未发布") {
-    super(message);
-    this.name = "FavoriteTargetNotFoundError";
-  }
-}
-
-/** 收藏唯一键 @@unique([targetType, targetId, userId]) 对应的复合查询/写入键 */
-function favoriteKey(contentId: number, userId: number) {
-  return { targetType: TARGET_TYPE.CONTENT, targetId: contentId, userId };
-}
-
-/**
- * 收藏/取消收藏(切换语义):POST 一次调用 = 一次状态翻转。
- * 事务内维护 Favorite 行与 Content.favoriteCount 冗余计数;
- * 数据库唯一约束兜底并发重复:P2002 捕获后落到底部重查,返回当前真实状态。
- */
-export async function toggleFavorite(input: {
-  contentId: number;
-  userId: number;
-}): Promise<{ favorited: boolean; favoriteCount: number }> {
-  const { contentId, userId } = input;
-  const content = await prisma.content.findUnique({
-    where: { id: contentId },
-    select: { status: true },
-  });
-  if (!content || content.status !== CONTENT_STATUS.PUBLISHED) {
-    throw new FavoriteTargetNotFoundError();
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const key = favoriteKey(contentId, userId);
-    const existing = await tx.favorite.findUnique({
-      where: { targetType_targetId_userId: key },
-    });
-    try {
-      if (existing) {
-        await tx.favorite.delete({ where: { id: existing.id } });
-        await tx.content.updateMany({
-          where: { id: contentId, favoriteCount: { gt: 0 } },
-          data: { favoriteCount: { decrement: 1 } },
-        });
-      } else {
-        await tx.favorite.create({ data: key });
-        await tx.content.update({
-          where: { id: contentId },
-          data: { favoriteCount: { increment: 1 } },
-        });
-      }
-    } catch (e) {
-      // 唯一约束并发兜底:另一并发请求已插入同一条收藏 → 吞掉 P2002,按当前态返回
-      if ((e as { code?: string }).code !== "P2002") throw e;
-    }
-    const [row, favoritedRow] = await Promise.all([
-      tx.content.findUnique({ where: { id: contentId }, select: { favoriteCount: true } }),
-      tx.favorite.findUnique({ where: { targetType_targetId_userId: key } }),
-    ]);
-    return { favorited: !!favoritedRow, favoriteCount: row?.favoriteCount ?? 0 };
-  });
-}
-
-/** 查询当前用户是否已收藏该内容(未登录恒 false) */
-export async function hasFavorited(input: {
-  contentId: number;
-  userId?: number | null;
-}): Promise<boolean> {
-  if (!input.userId) return false;
-  const row = await prisma.favorite.findUnique({
-    where: {
-      targetType_targetId_userId: favoriteKey(input.contentId, input.userId),
-    },
-  });
-  return !!row;
-}
-
-/**
- * 个人收藏列表(个人中心「我的收藏」):按收藏时间倒序。
- * 标题/栏目名 locale 回退现有机制:指定语言 → 首条翻译 → slug;
- * moduleType 为文章/商品类型标识(news/product/…),供个人中心区分类型展示。
- */
-export async function listMyFavorites(userId: number, locale: string) {
-  const rows = await prisma.favorite.findMany({
-    where: { userId, targetType: TARGET_TYPE.CONTENT },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-  });
-  if (!rows.length) return [];
-  const contents = await prisma.content.findMany({
-    where: { id: { in: rows.map((r) => r.targetId) } },
-    include: {
-      // 「首条翻译」需要确定性:按 id 升序 = 创建顺序(无 ORDER BY 时 SQLite 返回顺序不稳定)
-      translations: { orderBy: { id: "asc" } },
-      category: { include: { translations: { orderBy: { id: "asc" } } } },
-    },
-  });
-  const byId = new Map(contents.map((c) => [c.id, c]));
-  const items: {
-    contentId: number;
-    slug: string;
-    title: string;
-    moduleType: string;
-    categoryName: string;
-    coverUrl: string | null;
-    favoriteCount: number;
-    favoritedAt: Date;
-  }[] = [];
-  for (const f of rows) {
-    const c = byId.get(f.targetId);
-    if (!c) continue; // 目标内容已被删除的残留收藏,列表中跳过
-    const t = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
-    const cat =
-      c.category.translations.find((x) => x.locale === locale) ?? c.category.translations[0];
-    items.push({
-      contentId: c.id,
-      slug: c.slug,
-      title: t?.title ?? c.slug,
-      moduleType: c.category.moduleType,
-      categoryName: cat?.name ?? c.category.slug,
-      coverUrl: c.coverUrl,
-      favoriteCount: c.favoriteCount,
-      favoritedAt: f.createdAt,
-    });
-  }
-  return items;
 }
 
 // ---------------- 转发 ----------------
@@ -315,32 +195,9 @@ export async function deleteComment(id: number) {
 // ---------------- 用户投稿(需求 4.8) ----------------
 
 import { CONTENT_SOURCE } from "@/types/domain";
-import { getNotifyConfig } from "@/lib/config";
-import { sendMail } from "@/server/notify";
+import { notifyAdmin } from "@/server/notify";
 import { renderUgcPendingNotify } from "@/server/notify/template";
-
-/**
- * 管理员品牌通知(V3.0 REQ-012):在 notifyAdmin 的开关/静默语义之上携带品牌 HTML。
- * notify/index.ts 的 notifyAdmin 暂不支持 html 参数,此处本地实现等价门禁:
- * 总开关 enabled + adminEmail + SMTP 配置缺一不发;任何异常静默记录,绝不向调用方抛出。
- * 调用方 `void` fire-and-forget,不 await,失败不影响用户投稿/评论。
- * 注:与 src/server/form/index.ts 中的同名助手保持语义一致(notify 层扩展前的过渡实现)。
- */
-async function notifyAdminBranded(subject: string, renderHtml: () => Promise<string>): Promise<void> {
-  try {
-    const cfg = await getNotifyConfig();
-    if (!cfg.enabled || !cfg.adminEmail.trim() || !cfg.smtpHost.trim()) return;
-    const to = cfg.adminEmail
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (to.length === 0) return;
-    const html = await renderHtml();
-    await sendMail({ to, subject, lines: [], html }); // lines 空 → text 自动降级为剥离标签纯文本
-  } catch (e) {
-    console.error("[notify] 投稿/评论待审通知生成/发送失败:", e);
-  }
-}
+import { routing } from "@/i18n/routing";
 
 /**
  * 用户投稿:入库为 Content(source=UGC, status=PENDING)。
@@ -403,16 +260,14 @@ export async function submitUserContent(input: {
   });
 
   // 管理员邮件通知(REQ-012 品牌模板):不 await,失败也不影响用户投稿;
-  // 开关/静默语义与原 notifyAdmin 完全一致
-  void notifyAdminBranded(`[AitionOWS] 收到新的用户投稿:${title}`, () =>
-    renderUgcPendingNotify({
-      kind: "submission",
-      title,
-      author: authorName,
-      // 后台「互动审核 → 投稿审核」页(绝对 URL)
-      adminUrl: `${(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "")}/${input.locale}/admin/ugc`,
-    })
-  );
+  // html 传渲染 Promise → notifyAdmin 在静默门禁内等待,开关/静默语义与原 notifyAdminBranded 等价
+  void notifyAdmin(`[AitionOWS] 收到新的用户投稿:${title}`, [], renderUgcPendingNotify({
+    kind: "submission",
+    title,
+    author: authorName,
+    // 后台「互动审核 → 投稿审核」页(绝对 URL);管理端语言固定为编译期默认语言(与表单调用点口径一致)
+    adminUrl: `${(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "")}/${routing.defaultLocale}/admin/ugc`,
+  }));
 
   return content;
 }

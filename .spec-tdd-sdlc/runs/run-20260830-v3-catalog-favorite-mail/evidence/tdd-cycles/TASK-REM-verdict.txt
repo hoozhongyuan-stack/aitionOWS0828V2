@@ -1,0 +1,24 @@
+# TASK-REM 三方评审修复清单 verdict(implementer-F,2026-08-30)
+# 格式:项ID → 改动文件 → 验证命令 → 退出码
+
+H-1 → src/app/api/interaction/favorite/route.ts(仅导出 POST)、src/app/llms.txt/route.ts(仅导出 GET) → npx tsc --noEmit(修复前 2 处 TS2344)/ npx next build → 0 / 0
+S-1 → 新建 src/server/ugc/favorite.ts(toggleFavorite/hasFavorited/listMyFavorites/FavoriteTargetNotFoundError + 移入 requireFavoriteActor/postFavorite);src/server/ugc/index.ts re-export 五成员;tests/server/favorite.test.ts 改 import 自 @/server/ugc/favorite → npx vitest run → 0
+S-2 → 新建 src/server/user/profile.ts(toPublicUser/PublicUser/adminUpdateProfile/userProfileSchema/USER_PROFILE_FIELDS)、src/server/content/product.ts(resolveContentDetailPath/getProductDetail/parseGallery/parseSpecs)、src/server/content/llms.ts(buildLlmsText 及类型);src/server/user/index.ts、src/server/content/index.ts re-export → npx tsc --noEmit / npx vitest run → 0 / 0
+H-2 → src/app/api/form/[slug]/route.ts(Referer 截断≤300 经 zod 传 sourceUrl)、src/server/form/index.ts(submitForm 增 sourceUrl 并传 renderFormSubmissionNotify);tests/notify/mail-integration.test.ts 补带/无 Referer 两分支用例 → npx vitest run tests/notify/mail-integration.test.ts → 0
+H-3 → vitest.config.ts(coverage.include 改 7 文件新增模块清单,阈值 90/90/90/85 不变);补测试:tests/server/llms-sitemap.test.ts(buildLlmsText 直测 4 例)、tests/server/product-detail.test.ts(非数组 JSON/无封面容错)、tests/server/user-profile.test.ts(toPublicUser 白名单直测/部分字段更新)、tests/server/favorite-ux.test.ts(submissionsRedirectPath/favoriteKind)、tests/server/favorite-route.test.ts(新建,POST handler 401/200/404)、tests/server/content-delete-favorite.test.ts(新建,M-2)、tests/server/favorite.test.ts(残留收藏跳过) → npx vitest run --coverage → 0(statements 96.47% / branches 85.48% / functions 100% / lines 97.93%,无 threshold ERROR)
+M-1 → src/server/content/index.ts listPublishedByCategory(product=全后代递归;非 product=本栏目+直接子栏目基线);tests/server/product-list.test.ts 补 news 三级树回归用例 → npx vitest run tests/server/product-list.test.ts → 0
+M-2 → src/server/content/index.ts deleteContent(事务内 favorite.deleteMany 级联);tests/server/content-delete-favorite.test.ts(新建) → npx vitest run tests/server/content-delete-favorite.test.ts → 0
+M-3 → src/server/ugc/favorite.ts toggleFavorite 删除分支改 deleteMany(count===0 按已取消处理,不抛 P2025);既有并发测试(tests/server/favorite.test.ts)保持通过 → npx vitest run tests/server/favorite.test.ts → 0
+L-1 → src/server/notify/index.ts notifyAdmin(subject,lines,html?:string|Promise<string>,静默门禁内 await 渲染);删除 src/server/form/index.ts 与 src/server/ugc/index.ts 两份本地 notifyAdminBranded,调用点改 void notifyAdmin(subject,[],renderX()) → npx vitest run tests/notify/mail-integration.test.ts → 0
+L-2 → src/server/ugc/index.ts 投稿通知 adminUrl locale 改 routing.defaultLocale(与 form 调用点一致) → npx vitest run → 0
+L-3 → src/app/[locale]/(site)/account/page.tsx getUserSession 改 getActiveUserSession(null 处理不变,禁用账号跳登录页) → npx tsc --noEmit → 0
+L-4 → src/app/[locale]/(site)/account/logic.ts safeInternalPath 校验前 \ 归一化为 /;tests/server/favorite-ux.test.ts 补绕过/放行断言 → npx vitest run tests/server/favorite-ux.test.ts → 0
+L-5 → src/server/notify/index.ts sendMail payload.to 逐元素 headerSafe → npx vitest run tests/notify → 0
+L-6 → messages/en.json、messages/zh-CN.json 补 EOF 换行(未改任何键值,json.load 校验通过) → python3 json.load → 0
+L-7 → src/server/notify/template.ts renderUgcPendingNotify kind:"comment" 分支加注(预置能力:基线评论流无管理员通知调用点,接线待后续需求) → npx vitest run tests/notify/mail-template.test.ts → 0
+
+# 统一验证(按序)
+# 1) npx vitest run            → exit 0(19 文件 / 110 测试,基线 91 + 新增 19)
+# 2) npx tsc --noEmit          → exit 0(修复前 TS2344 ×2 已消除)
+# 3) npx next build            → exit 0(编译 3.6s,41 静态页生成成功)
+# 4) npx vitest run --coverage → exit 0(statements 96.47 / branches 85.48 / functions 100 / lines 97.93,阈值 90/85/90/90 达标)

@@ -14,7 +14,9 @@ import type { PrismaClient } from "@prisma/client";
  */
 
 type UgcModule = typeof import("@/server/ugc");
-type FavoriteRouteModule = typeof import("@/app/api/interaction/favorite/route");
+// H-1/S-1 拆分:requireFavoriteActor/postFavorite 已从 route.ts 移至 @/server/ugc/favorite
+// (route.ts 仅允许导出 HTTP method);此处改 import 来源,断言语义不变
+type FavoriteServiceModule = typeof import("@/server/ugc/favorite");
 
 let db: PrismaClient;
 
@@ -22,10 +24,10 @@ async function loadUgc(): Promise<UgcModule> {
   return (await import("@/server/ugc")) as UgcModule;
 }
 
-/** RED 阶段路由模块尚不存在:捕获取消,由断言给出 missing_behavior 失败 */
-async function loadFavoriteRoute(): Promise<FavoriteRouteModule | undefined> {
+/** RED 阶段收藏服务模块尚不存在:捕获取消,由断言给出 missing_behavior 失败 */
+async function loadFavoriteService(): Promise<FavoriteServiceModule | undefined> {
   try {
-    return (await import("@/app/api/interaction/favorite/route")) as FavoriteRouteModule;
+    return (await import("@/server/ugc/favorite")) as FavoriteServiceModule;
   } catch {
     return undefined;
   }
@@ -288,28 +290,41 @@ describe("TEST-010: 个人收藏列表(AC-008)", () => {
     const product = list.find((x) => x.contentId === listProductId);
     expect(product?.title).toBe("商品A-中文");
   });
+
+  it("残留收藏:目标内容已被删除的收藏行在列表中跳过,其余条目不受影响", async () => {
+    const ugc = await loadUgc();
+    // 直插一条指向不存在内容的收藏(模拟内容删除后的历史残留,M-2 级联清理的兜底语义)
+    await db.favorite.create({
+      data: { targetType: "CONTENT", targetId: 9_999_999, userId: listUserId },
+    });
+    const list = await ugc.listMyFavorites(listUserId, "zh");
+    expect(list.find((x) => x.contentId === 9_999_999), "残留收藏必须被跳过").toBeUndefined();
+    // 正常条目不受影响
+    expect(list.some((x) => x.contentId === listProductId)).toBe(true);
+    expect(list.some((x) => x.contentId === listNewsId)).toBe(true);
+  });
 });
 
 describe("TEST-008/009: 收藏 API 薄封装(AC-021 登录墙 401)", () => {
   it("requireFavoriteActor:未登录 → 401;有效会话 → 放行并携带 userId", async () => {
-    const route = await loadFavoriteRoute();
-    expect(route, "missing_behavior:/api/interaction/favorite 路由模块尚未实现").toBeTruthy();
+    const svc = await loadFavoriteService();
+    expect(svc, "missing_behavior:收藏薄封装模块尚未实现(@/server/ugc/favorite)").toBeTruthy();
 
-    const walled = route!.requireFavoriteActor(null);
+    const walled = svc!.requireFavoriteActor(null);
     expect(walled.error, "missing_behavior:未登录必须返回 401 错误响应").toBeTruthy();
     expect(walled.error?.status).toBe(401);
     expect(((await walled.error?.json()) as { ok?: boolean }).ok).toBe(false);
 
-    const allowed = route!.requireFavoriteActor({ id: userId });
+    const allowed = svc!.requireFavoriteActor({ id: userId });
     expect(allowed.error).toBeUndefined();
     expect(allowed.actor?.userId).toBe(userId);
   });
 
   it("AC-021:未登录(401)时服务不被调用,favoriteCount 不变", async () => {
-    const route = await loadFavoriteRoute();
-    expect(route, "missing_behavior:/api/interaction/favorite 路由模块尚未实现").toBeTruthy();
+    const svc = await loadFavoriteService();
+    expect(svc, "missing_behavior:收藏薄封装模块尚未实现(@/server/ugc/favorite)").toBeTruthy();
 
-    const walled = route!.requireFavoriteActor(null);
+    const walled = svc!.requireFavoriteActor(null);
     expect(walled.error?.status).toBe(401);
     // 路由在 401 分支直接返回,不再触达服务层 → 计数必然不变;此处断言基线
     const before = await db.favorite.count({ where: { userId, targetId: apiId } });
@@ -317,10 +332,10 @@ describe("TEST-008/009: 收藏 API 薄封装(AC-021 登录墙 401)", () => {
   });
 
   it("postFavorite:合法请求完成切换并返回 jsonOk({ favorited, favoriteCount })", async () => {
-    const route = await loadFavoriteRoute();
-    expect(route, "missing_behavior:/api/interaction/favorite 路由模块尚未实现").toBeTruthy();
+    const svc = await loadFavoriteService();
+    expect(svc, "missing_behavior:收藏薄封装模块尚未实现(@/server/ugc/favorite)").toBeTruthy();
 
-    const res = await route!.postFavorite({ userId }, favRequest(apiId));
+    const res = await svc!.postFavorite({ userId }, favRequest(apiId));
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       ok: boolean;
@@ -329,16 +344,16 @@ describe("TEST-008/009: 收藏 API 薄封装(AC-021 登录墙 401)", () => {
     expect(body.ok).toBe(true);
     expect(body.data).toEqual({ favorited: true, favoriteCount: 1 });
 
-    const res2 = await route!.postFavorite({ userId }, favRequest(apiId));
+    const res2 = await svc!.postFavorite({ userId }, favRequest(apiId));
     const body2 = (await res2.json()) as typeof body;
     expect(body2.data).toEqual({ favorited: false, favoriteCount: 0 });
   });
 
   it("postFavorite:目标为草稿 → 404 且计数不变", async () => {
-    const route = await loadFavoriteRoute();
-    expect(route, "missing_behavior:/api/interaction/favorite 路由模块尚未实现").toBeTruthy();
+    const svc = await loadFavoriteService();
+    expect(svc, "missing_behavior:收藏薄封装模块尚未实现(@/server/ugc/favorite)").toBeTruthy();
 
-    const res = await route!.postFavorite({ userId }, favRequest(draftId));
+    const res = await svc!.postFavorite({ userId }, favRequest(draftId));
     expect(res.status, "missing_behavior:未发布内容应返回 404").toBe(404);
     const body = (await res.json()) as { ok: boolean };
     expect(body.ok).toBe(false);
@@ -346,10 +361,10 @@ describe("TEST-008/009: 收藏 API 薄封装(AC-021 登录墙 401)", () => {
   });
 
   it("postFavorite:请求体缺 contentId / 非法 JSON → 400", async () => {
-    const route = await loadFavoriteRoute();
-    expect(route, "missing_behavior:/api/interaction/favorite 路由模块尚未实现").toBeTruthy();
+    const svc = await loadFavoriteService();
+    expect(svc, "missing_behavior:收藏薄封装模块尚未实现(@/server/ugc/favorite)").toBeTruthy();
 
-    const badBody = await route!.postFavorite(
+    const badBody = await svc!.postFavorite(
       { userId },
       new Request("http://localhost/api/interaction/favorite", {
         method: "POST",
@@ -359,7 +374,7 @@ describe("TEST-008/009: 收藏 API 薄封装(AC-021 登录墙 401)", () => {
     );
     expect(badBody.status).toBe(400);
 
-    const badJson = await route!.postFavorite(
+    const badJson = await svc!.postFavorite(
       { userId },
       new Request("http://localhost/api/interaction/favorite", {
         method: "POST",

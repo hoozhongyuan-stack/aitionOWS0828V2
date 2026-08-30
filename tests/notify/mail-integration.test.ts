@@ -184,6 +184,8 @@ describe("REQ-012 调用点接入:表单提交通知走品牌模板(保持开关
     // text 纯文本兜底
     expect(arg.text).not.toContain("<");
     expect(arg.text).toContain("Acme 装备有限公司");
+    // H-2 分支:无 Referer(服务层未传 sourceUrl)→ 邮件不含来源页且不报错
+    expect(arg.html).not.toContain("来源页");
   });
 });
 
@@ -215,5 +217,58 @@ describe("REQ-012 调用点接入:投稿待审通知走品牌模板(保持开关
     expect(arg.html).toContain("<a href=");
     expect(arg.text).not.toContain("<");
     expect(arg.text).toContain("邮件链路投稿标题");
+  });
+});
+
+describe("REQ-012 / AC-014: 路由层接入 Referer 来源页(H-2)", () => {
+  it("带 Referer 头的路由提交 → 邮件含来源页 URL", async () => {
+    const { POST } = (await import("@/app/api/form/[slug]/route")) as {
+      POST: (req: Request, ctx: { params: Promise<{ slug: string }> }) => Promise<Response>;
+    };
+    const res = await POST(
+      new Request("http://localhost/api/form/mail-ux-form", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          referer: "https://customer.example.com/zh-CN/product/great-widget",
+        },
+        body: JSON.stringify({
+          data: { company: "获客链路公司", phone: "13900000000" },
+        }),
+      }),
+      { params: Promise.resolve({ slug: "mail-ux-form" }) }
+    );
+    expect(res.status).toBe(200);
+    await waitForSendCalls(5);
+
+    const arg = mocks.smtpSendMail.mock.calls.at(-1)![0] as { html: string; text: string };
+    expect(arg.html).toContain("来源页");
+    expect(arg.html).toContain("https://customer.example.com/zh-CN/product/great-widget");
+    // 其余结构化字段不受影响(表单名/CTA 仍在)
+    expect(arg.html).toContain("询盘获客表单");
+    expect(arg.html).toContain("去后台处理");
+    expect(arg.text).toContain("great-widget");
+  });
+
+  it("无 Referer 头的路由提交 → 正常入库与发信,邮件不含来源页且不报错", async () => {
+    const { POST } = (await import("@/app/api/form/[slug]/route")) as {
+      POST: (req: Request, ctx: { params: Promise<{ slug: string }> }) => Promise<Response>;
+    };
+    const res = await POST(
+      new Request("http://localhost/api/form/mail-ux-form", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: { company: "匿名直投公司" } }),
+      }),
+      { params: Promise.resolve({ slug: "mail-ux-form" }) }
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok: boolean };
+    expect(body.ok).toBe(true);
+    await waitForSendCalls(6);
+
+    const arg = mocks.smtpSendMail.mock.calls.at(-1)![0] as { html: string; text: string };
+    expect(arg.html).toContain("匿名直投公司");
+    expect(arg.html).not.toContain("来源页");
   });
 });

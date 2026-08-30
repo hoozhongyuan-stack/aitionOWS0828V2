@@ -118,6 +118,42 @@ describe("TEST-012: adminUpdateProfile 服务(AC-010)", () => {
     const after = await db.user.findUnique({ where: { id: targetUserId } });
     expect(after?.companyName).toBe(before?.companyName);
   });
+
+  it("部分字段更新:未传字段保持原值不被改动,传值字段正常写入", async () => {
+    const { adminUpdateProfile } = await loadUserModule();
+    // 先写入基线
+    await adminUpdateProfile(targetUserId, { country: "中国", city: "深圳" });
+    // 仅更新 city:country 未传 → 保持原值(REQ-009 局部更新语义)
+    await adminUpdateProfile(targetUserId, { city: "杭州" });
+    const row = await db.user.findUnique({ where: { id: targetUserId } });
+    expect(row?.city).toBe("杭州");
+    expect(row?.country).toBe("中国");
+    expect(row?.companyName).toBeNull();
+  });
+});
+
+describe("NFR-001: toPublicUser 前台白名单序列化(新模块 @/server/user/profile 直测)", () => {
+  it("仅输出 id/email/nickname/avatarUrl;昵称缺省回退邮箱前缀,再回退「用户{id}」", async () => {
+    const mod = await loadUserModule();
+    expectFn(mod, "toPublicUser", "@/server/user");
+
+    // 昵称为空 → 邮箱前缀
+    const byEmail = mod.toPublicUser!({ id: 7, email: "alice@b.com", nickname: null, avatarUrl: "/a.png" });
+    expect(byEmail).toEqual({ id: 7, email: "alice@b.com", nickname: "alice", avatarUrl: "/a.png" });
+
+    // 邮箱也为空 → 「用户{id}」兜底
+    const fallback = mod.toPublicUser!({ id: 8, email: null, nickname: null, avatarUrl: null });
+    expect(fallback).toEqual({ id: 8, email: null, nickname: "用户8", avatarUrl: null });
+
+    // 白名单:任何输入都不产生 4 个资料字段键(NFR-001)
+    for (const out of [byEmail, fallback]) {
+      expect(Object.keys(out).sort()).toEqual(["avatarUrl", "email", "id", "nickname"]);
+      expect(out).not.toHaveProperty("companyName");
+      expect(out).not.toHaveProperty("country");
+      expect(out).not.toHaveProperty("province");
+      expect(out).not.toHaveProperty("city");
+    }
+  });
 });
 
 describe("TEST-012: listUsersAdmin 按公司名称模糊搜索(AC-010)", () => {

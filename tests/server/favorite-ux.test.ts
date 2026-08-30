@@ -68,6 +68,16 @@ describe("AC-007:未登录点击收藏 → 登录跳转 URL 构造(登录后回�
     expect(mod.safeInternalPath!(null)).toBe("");
     expect(mod.safeInternalPath!(undefined)).toBe("");
   });
+
+  it("L-4:safeInternalPath 校验前把反斜杠归一化为斜杠(防 \\/ 绕过 // 前缀检查)", async () => {
+    const mod = (await loadLogic()) as Partial<AccountLogic>;
+    // "/\evil.example" 会被部分端归一化为 "//evil.example"(协议相对)→ 必须拒绝
+    expect(mod.safeInternalPath!("/\\evil.example/x")).toBe("");
+    // 反斜杠路径归一化后为合法站内绝对路径 → 放行且返回归一化结果
+    expect(mod.safeInternalPath!("\\zh-CN/article/a")).toBe("/zh-CN/article/a");
+    // 纯反斜杠开头的协议相对形态 "\\/evil.example" → "//evil.example" → 拒绝
+    expect(mod.safeInternalPath!("\\/evil.example")).toBe("");
+  });
 });
 
 describe("AC-007:收藏按钮乐观更新与失败回滚状态机", () => {
@@ -110,5 +120,27 @@ describe("AC-008:个人中心 Tab 解析(searchParams 切换,默认收藏)", () 
     expect(mod.parseAccountTab!("submissions")).toBe("submissions");
     expect(mod.parseAccountTab!("favorites")).toBe("favorites");
     expect(mod.parseAccountTab!("hacker-tab")).toBe("favorites");
+  });
+});
+
+describe("AC-009 / AC-008:旧入口跳转目标与收藏类型分流", () => {
+  it("submissionsRedirectPath:/{locale}/submissions → /{locale}/account?tab=submissions", async () => {
+    const mod = (await loadLogic()) as Partial<AccountLogic>;
+    expectExport(
+      mod,
+      "submissionsRedirectPath",
+      "submissionsRedirectPath 尚未实现(account/logic)"
+    );
+    expect(mod.submissionsRedirectPath!("zh-CN")).toBe("/zh-CN/account?tab=submissions");
+    expect(mod.submissionsRedirectPath!("en")).toBe("/en/account?tab=submissions");
+  });
+
+  it("favoriteKind:product 栏目 → 商品类型,其余 moduleType → 文章类型", async () => {
+    const mod = (await loadLogic()) as Partial<AccountLogic>;
+    expectExport(mod, "favoriteKind", "favoriteKind 尚未实现(account/logic)");
+    expect(mod.favoriteKind!("product")).toBe("product");
+    expect(mod.favoriteKind!("news")).toBe("article");
+    expect(mod.favoriteKind!("article")).toBe("article");
+    expect(mod.favoriteKind!("case")).toBe("article");
   });
 });

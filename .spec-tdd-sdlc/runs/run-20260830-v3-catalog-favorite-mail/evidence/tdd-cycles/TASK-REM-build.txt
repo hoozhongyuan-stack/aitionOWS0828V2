@@ -1,0 +1,39 @@
+# TASK-REM 修复后 npx next build 输出尾部(H-1 关键验证)
+# 执行时间:2026-08-30  exit code: 0
+# 分支: feat/v3.0-spec-tdd(spec-tdd-sdlc 禁 git 操作,分支名按任务书记录)
+
+├ ƒ /api/admin/ugc/words                   255 B         102 kB
+├ ƒ /api/admin/ui-translations             255 B         102 kB
+├ ƒ /api/admin/upload                      255 B         102 kB
+├ ƒ /api/admin/users                       255 B         102 kB
+├ ƒ /api/auth/login                        255 B         102 kB
+├ ƒ /api/auth/logout                       255 B         102 kB
+├ ƒ /api/auth/me                           255 B         102 kB
+├ ƒ /api/auth/password/forgot              255 B         102 kB
+├ ƒ /api/auth/password/reset               255 B         102 kB
+├ ƒ /api/auth/register                     255 B         102 kB
+├ ƒ /api/auth/wechat/callback              255 B         102 kB
+├ ƒ /api/auth/wechat/login                 255 B         102 kB
+├ ƒ /api/comment                           255 B         102 kB
+├ ƒ /api/flags                             255 B         102 kB
+├ ƒ /api/form/[slug]                       255 B         102 kB
+├ ƒ /api/interaction/favorite              255 B         102 kB
+├ ƒ /api/interaction/like                  255 B         102 kB
+├ ƒ /api/interaction/share                 255 B         102 kB
+├ ƒ /api/interaction/view                  255 B         102 kB
+├ ƒ /api/submission                        255 B         102 kB
+├ ƒ /api/track                             255 B         102 kB
+├ ƒ /api/upload                            255 B         102 kB
+├ ƒ /llms.txt                              255 B         102 kB
+├ ƒ /robots.txt                            255 B         102 kB
+├ ƒ /sitemap.xml                           255 B         102 kB
+└ ƒ /uploads/[...path]                     255 B         102 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1255-3bb47d32b13072b7.js      46.1 kB
+  ├ chunks/4bd1b696-f6bedae49f0827a5.js  54.2 kB
+  └ other shared chunks (total)          1.87 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

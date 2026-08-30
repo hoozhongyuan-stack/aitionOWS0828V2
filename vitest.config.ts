@@ -31,7 +31,19 @@ export default defineConfig({
       provider: "v8",
       reporter: ["json-summary", "text"],
       reportsDirectory: "tests/.coverage",
-      include: ["src/server/**", "src/lib/**"],
+      // NFR-005(v5 修订口径):仅对 G2 固化的「新增模块清单」计算覆盖率
+      // (存量文件内的扩展行为由 TEST-001..019 行为测试锁定,不纳入百分比口径)。
+      // 注:[locale] 是 glob 字符类语法,picomatch 无法可靠匹配字面方括号目录,
+      //     故用 ** 通配该段;目录树中仅 (site)/account 存在 logic.ts,无歧义。
+      include: [
+        "src/server/ugc/favorite.ts",
+        "src/server/user/profile.ts",
+        "src/server/content/product.ts",
+        "src/server/content/llms.ts",
+        "src/server/notify/template.ts",
+        "src/app/api/interaction/favorite/route.ts",
+        "src/app/**/account/logic.ts",
+      ],
       exclude: ["**/*.d.ts"],
       thresholds: {
         statements: 90,
