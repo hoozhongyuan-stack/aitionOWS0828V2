@@ -1,0 +1,90 @@
+== TASK-006 RED (TEST-001 扩展:后台商品编辑保存链路) ==
+UTC: 2026-08-30T14:57:30Z
+command: npx vitest run tests/server/admin-content.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ❯ tests/server/admin-content.test.ts (5 tests | 3 failed) 124ms
+     × PUT 携带 gallery/specs 保存成功,库内 JSON 与提交内容一致 7ms
+     × gallery 超过 20 张 → 请求被拒绝(400),内容不落库 2ms
+     × specs 键为空 → 请求被拒绝(400) 1ms
+     ✓ gallery >20 / specs >50 抛错拒绝保存 1ms
+     ✓ 空数组存 null;未传 gallery/specs 时保留既有值(不影响 article 编辑) 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/server/admin-content.test.ts > TASK-006:后台保存链路(API PUT)接受并持久化 gallery/specs > PUT 携带 gallery/specs 保存成功,库内 JSON 与提交内容一致
+AssertionError: expected null to deeply equal [ '/uploads/g1.webp', …(1) ]
+
+- Expected:
+[
+  "/uploads/g1.webp",
+  "/uploads/g2.webp",
+]
+
++ Received:
+null
+
+ ❯ tests/server/admin-content.test.ts:81:39
+     79|     const row = await prisma.content.findUnique({ where: { slug: "admi…
+     80|     expect(row).toBeTruthy();
+     81|     expect(JSON.parse(row!.gallery!)).toEqual(["/uploads/g1.webp", "/u…
+       |                                       ^
+     82|     expect(JSON.parse(row!.specs!)).toEqual([
+     83|       { k: "型号", v: "AX-100" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/server/admin-content.test.ts > TASK-006:后台保存链路(API PUT)接受并持久化 gallery/specs > gallery 超过 20 张 → 请求被拒绝(400),内容不落库
+AssertionError: expected 200 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 200
+
+ ❯ tests/server/admin-content.test.ts:92:24
+     90|       putReq(validBody({ slug: "admin-product-overflow", gallery: Arra…
+     91|     );
+     92|     expect(res.status).toBe(400);
+       |                        ^
+     93|     const json = (await res.json()) as { ok: boolean };
+     94|     expect(json.ok).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/server/admin-content.test.ts > TASK-006:后台保存链路(API PUT)接受并持久化 gallery/specs > specs 键为空 → 请求被拒绝(400)
+AssertionError: expected 200 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 200
+
+ ❯ tests/server/admin-content.test.ts:104:24
+    102|       )
+    103|     );
+    104|     expect(res.status).toBe(400);
+       |                        ^
+    105|     const json = (await res.json()) as { ok: boolean };
+    106|     expect(json.ok).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 2 passed (5)
+   Start at  22:57:29
+   Duration  743ms (transform 52ms, setup 532ms, import 20ms, tests 124ms, environment 0ms)
+
+
+exit_code=1
+
+说明:失败项均为行为缺失——API putSchema 尚不接受 gallery/specs(zod 静默剥离未知键),
+导致保存链路不落库、超限/空键不被拒绝;服务层兜底组为 TASK-003 GREEN 已交付行为的回归锁(预期通过,见 RED 记录 1 passed)。

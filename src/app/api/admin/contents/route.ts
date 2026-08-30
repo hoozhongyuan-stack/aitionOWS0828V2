@@ -7,11 +7,12 @@ import { CONTENT_STATUS } from "@/types/domain";
 /**
  * 内容管理:
  * GET  ?id= 单条 | ?page=&categoryId=&status=&keyword= 列表
- * PUT  新建/更新(含多语言翻译与单页 TDK)
+ * PUT  新建/更新(含多语言翻译、单页 TDK 与商品 gallery/specs)
  * DELETE ?id=
  *
- * 互动统计(阅读/赞/转)不提供任何写接口 —— 测试反馈缺陷8:后台不应可修改真实互动数据,
- * 一律只读展示,即使超级管理员也不例外。历史上的 POST(修改互动统计)接口已下线。
+ * 互动统计(阅读/赞/转/藏)不提供任何写接口 —— 测试反馈缺陷8:后台不应可修改真实互动数据,
+ * 一律只读展示,即使超级管理员也不例外。历史上的 POST(修改互动统计)接口已下线;
+ * favoriteCount(V3.0)与 viewCount 等对称,仅随收藏接口由应用层同步维护。
  */
 
 const putSchema = z.object({
@@ -31,6 +32,22 @@ const putSchema = z.object({
   coverUrl: z.string().nullable(),
   formId: z.number().int().nullable().optional(),
   publishAt: z.string().nullable(),
+  // 商品字段(V3.0,仅 product 栏目内容使用;服务层序列化为 JSON 串存储)
+  gallery: z
+    .array(z.string().trim().min(1, "图集图片路径不能为空"))
+    .max(20, "图集最多上传 20 张图片")
+    .nullable()
+    .optional(),
+  specs: z
+    .array(
+      z.object({
+        k: z.string().trim().min(1, "参数名不能为空"),
+        v: z.string().trim().min(1, "参数值不能为空"),
+      })
+    )
+    .max(50, "规格参数最多 50 行")
+    .nullable()
+    .optional(),
   translations: z.array(
     z.object({
       locale: z.string(),

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { CONTENT_STATUS, CONTENT_SOURCE, type ContentStatus } from "@/types/domain";
+import { parseFormFields } from "@/types/form";
 import { invalidateNavCache } from "./nav";
 
 /**
@@ -197,6 +198,8 @@ export interface ContentInput {
   coverUrl: string | null;
   formId?: number | null; // 挂载到详情页底部的表单
   publishAt: string | null; // ISO 字符串
+  gallery?: string[] | null; // 商品图集(有序图片路径,仅 product 栏目使用);未传=不改动
+  specs?: ProductSpec[] | null; // 商品规格参数(有序键值对);未传=不改动
   translations: {
     locale: string;
     title: string;
@@ -206,6 +209,26 @@ export interface ContentInput {
     seoKeywords?: string | null;
     seoDesc?: string | null;
   }[];
+}
+
+/** 图集序列化:数组 → JSON 串(空数组存 null);上限 20 张,应用层强约束(SQLite 无枚举/校验) */
+function serializeGallery(urls: string[] | null | undefined): string | null | undefined {
+  if (urls === undefined) return undefined; // 未传:不改动既有值
+  if (urls === null) return null; // 显式 null:清空
+  if (urls.length > 20) throw new Error("图集最多上传 20 张图片");
+  const clean = urls.map((u) => String(u).trim()).filter(Boolean);
+  return clean.length > 0 ? JSON.stringify(clean) : null;
+}
+
+/** 规格参数序列化:[{k,v}] → JSON 串(空数组存 null);上限 50 行,键值非空(空行丢弃) */
+function serializeSpecs(rows: ProductSpec[] | null | undefined): string | null | undefined {
+  if (rows === undefined) return undefined; // 未传:不改动既有值
+  if (rows === null) return null; // 显式 null:清空
+  if (rows.length > 50) throw new Error("规格参数最多 50 行");
+  const clean = rows
+    .map((r) => ({ k: String(r?.k ?? "").trim(), v: String(r?.v ?? "").trim() }))
+    .filter((r) => r.k !== "" && r.v !== "");
+  return clean.length > 0 ? JSON.stringify(clean) : null;
 }
 
 /** 新建/更新内容(后台) */
@@ -230,6 +253,8 @@ export async function saveContent(
     }
   }
 
+  const galleryJson = serializeGallery(input.gallery);
+  const specsJson = serializeSpecs(input.specs);
   const data = {
     slug: input.slug,
     categoryId: input.categoryId,
@@ -238,6 +263,9 @@ export async function saveContent(
     coverUrl: input.coverUrl || null,
     formId: input.formId ?? null,
     publishAt,
+    // 商品图集/规格参数(V3.0):传了才写(未传保留既有值),空数组存 null
+    ...(galleryJson !== undefined ? { gallery: galleryJson } : {}),
+    ...(specsJson !== undefined ? { specs: specsJson } : {}),
     ...(input.id ? {} : { source, authorUserId: authorUserId ?? null }),
   };
 
@@ -301,6 +329,7 @@ export async function listForLlms(locale: string) {
       summary: t?.summary ?? "",
       categorySlug: r.category.slug,
       categoryName: cat?.name ?? r.category.slug,
+      moduleType: r.category.moduleType, // 前台按模块类型分流(llms.txt 产品分区用)
     };
   });
 }
@@ -311,7 +340,22 @@ export async function deleteContent(id: number) {
 
 // ---------------- 内容(前台) ----------------
 
-/** 栏目页列表(仅已发布) */
+/** 收集栏目全部后代 id(逐层下探,不限层级;隐藏栏目及其子树不参与聚合,与既有可见性语义一致) */
+async function collectDescendantIds(rootId: number): Promise<number[]> {
+  const ids: number[] = [];
+  let frontier = [rootId];
+  while (frontier.length > 0) {
+    const children = await prisma.category.findMany({
+      where: { parentId: { in: frontier }, visible: true },
+      select: { id: true },
+    });
+    frontier = children.map((c) => c.id);
+    ids.push(...frontier);
+  }
+  return ids;
+}
+
+/** 栏目页列表(仅已发布;含其全部后代栏目,父栏目页聚合子栏目商品) */
 export async function listPublishedByCategory(
   categorySlug: string,
   locale: string,
@@ -328,7 +372,8 @@ export async function listPublishedByCategory(
   });
   if (!category || !category.visible) return null;
 
-  const catIds = [category.id, ...category.children.map((c) => c.id)];
+  const descendantIds = await collectDescendantIds(category.id);
+  const catIds = [category.id, ...descendantIds];
   const where = { categoryId: { in: catIds }, status: CONTENT_STATUS.PUBLISHED };
   const [total, items] = await Promise.all([
     prisma.content.count({ where }),
@@ -337,7 +382,17 @@ export async function listPublishedByCategory(
       orderBy: [{ publishAt: "desc" }, { id: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { translations: true },
+      // 投影排除 gallery/specs(NFR-006):大字段仅详情页读取,防止列表性能退化
+      select: {
+        id: true,
+        slug: true,
+        coverUrl: true,
+        viewCount: true,
+        likeCount: true,
+        publishAt: true,
+        createdAt: true,
+        translations: { select: { locale: true, title: true, summary: true } },
+      },
     }),
   ]);
 
@@ -357,6 +412,15 @@ export async function listPublishedByCategory(
         null,
       seo:
         category.translations.find((t) => t.locale === locale) ?? category.translations[0] ?? null,
+      // 可见直接子栏目(父栏目页子分类页签的数据基础;深层级过滤已含在列表查询内)
+      children: category.children.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        name:
+          c.translations.find((t) => t.locale === locale)?.name ??
+          c.translations[0]?.name ??
+          c.slug,
+      })),
     },
     total,
     page,
@@ -456,5 +520,144 @@ function shapeCard(
     publishedAt: c.publishAt ?? c.createdAt,
     title: t?.title ?? "",
     summary: t?.summary ?? null,
+  };
+}
+
+// ---------------- 商品(V3.0:REQ-001/002) ----------------
+
+/** 商品图集项 */
+export interface ProductGalleryImage {
+  url: string;
+}
+
+/** 商品规格参数行(有序键值对) */
+export interface ProductSpec {
+  k: string;
+  v: string;
+}
+
+/**
+ * 解析图集 JSON。返回 urls 与 invalid 标记:
+ * - 缺失(raw 为空)或为合法空数组 → 视为「未上传图集」,详情层可用封面图兜底
+ * - 非法 JSON / 结构不对 → invalid=true,按空图集返回(AC-021),不做封面兜底
+ */
+function parseGallery(raw: string | null | undefined): { invalid: boolean; urls: string[] } {
+  if (!raw) return { invalid: false, urls: [] };
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return { invalid: true, urls: [] };
+    return {
+      invalid: false,
+      urls: parsed.filter((x): x is string => typeof x === "string" && x.trim() !== ""),
+    };
+  } catch {
+    return { invalid: true, urls: [] };
+  }
+}
+
+/** 解析规格参数 JSON(非法/缺失/结构不对一律容错为 [],不抛错) */
+function parseSpecs(raw: string | null | undefined): ProductSpec[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (x): x is ProductSpec =>
+          !!x &&
+          typeof x === "object" &&
+          typeof x.k === "string" &&
+          typeof x.v === "string"
+      )
+      .map((x) => ({ k: x.k, v: x.v }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 详情链接按栏目模块类型分流(product 栏目走商品详情,其余沿用文章详情)。
+ * 列表卡片/JSON-LD/sitemap 等需要详情链接的场景统一经此函数,保证 /article/ 存量行为不变。
+ */
+export function resolveContentDetailPath(
+  moduleType: string,
+  slug: string,
+  locale: string
+): string {
+  return moduleType === "product"
+    ? `/${locale}/product/${slug}`
+    : `/${locale}/article/${slug}`;
+}
+
+/**
+ * 商品详情数据组装(仅已发布可见,语义与文章详情一致):
+ * - gallery 解析为 {url} 数组;缺失/非法容错为 [],封面图兜底插到首位
+ * - specs 解析为 {k,v} 数组;缺失/非法容错为 []
+ * - inquiryForm:formId 关联且表单 enabled===true 才返回表单数据,否则 null
+ *   (与文章详情「渲染关联表单不校验 enabled」为有意差异,见 REQ-002)
+ * - 单页 TDK 沿用 ContentTranslation(seoTitle/seoKeywords/seoDesc)
+ */
+export async function getProductDetail(slug: string, locale: string) {
+  await promoteScheduled();
+  const content = await prisma.content.findUnique({
+    where: { slug },
+    include: { translations: true, category: { include: { translations: true } } },
+  });
+  if (!content || content.status !== CONTENT_STATUS.PUBLISHED) return null;
+
+  const t = content.translations.find((x) => x.locale === locale) ?? content.translations[0];
+  if (!t) return null;
+
+  // 图集:缺失/空数组时用封面图兜底(插到首位);非法 JSON 按空图集返回(AC-021),不兜底
+  const parsedGallery = parseGallery(content.gallery);
+  const imageUrls =
+    !parsedGallery.invalid && parsedGallery.urls.length === 0 && content.coverUrl
+      ? [content.coverUrl]
+      : parsedGallery.urls;
+  const gallery: ProductGalleryImage[] = imageUrls.map((url) => ({ url }));
+
+  // 询盘表单:仅「启用中」的关联表单才返回数据
+  let inquiryForm: { id: number; slug: string; name: string; fields: ReturnType<typeof parseFormFields> } | null = null;
+  if (content.formId) {
+    const form = await prisma.form.findUnique({ where: { id: content.formId } });
+    if (form && form.enabled) {
+      inquiryForm = {
+        id: form.id,
+        slug: form.slug,
+        name: form.name,
+        fields: parseFormFields(form.schema),
+      };
+    }
+  }
+
+  return {
+    id: content.id,
+    slug: content.slug,
+    coverUrl: content.coverUrl,
+    formId: content.formId,
+    authorName: content.authorName,
+    favoriteCount: content.favoriteCount,
+    viewCount: content.viewCount,
+    likeCount: content.likeCount,
+    shareCount: content.shareCount,
+    publishedAt: content.publishAt ?? content.createdAt,
+    category: {
+      slug: content.category.slug,
+      moduleType: content.category.moduleType,
+      name:
+        content.category.translations.find((x) => x.locale === locale)?.name ??
+        content.category.translations[0]?.name ??
+        content.category.slug,
+    },
+    title: t.title,
+    summary: t.summary,
+    body: t.body,
+    seoTitle: t.seoTitle,
+    seoKeywords: t.seoKeywords,
+    seoDesc: t.seoDesc,
+    availableLocales: content.translations.map((x) => x.locale),
+    gallery,
+    specs: parseSpecs(content.specs),
+    inquiryForm,
   };
 }

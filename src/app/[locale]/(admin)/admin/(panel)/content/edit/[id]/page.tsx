@@ -20,12 +20,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { UploadField } from "@/components/admin/upload-field";
 import { apiGet, apiPut } from "@/components/admin/api-client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 /**
- * 内容编辑器(需求 4.4):
+ * 内容编辑器(需求 4.4 / V3.0 REQ-001):
  * - 基础:标识/栏目/封面/状态(草稿/发布/下架/定时)
  * - 多语言 Tab:标题/摘要/富文本正文 + 单页 TDK(需求 4.1)
+ * - 商品栏目(moduleType=product):图集多图上传 + 规格参数键值行 + 收藏数只读展示
+ *   (收藏数与阅读/赞/转对称:仅只读展示,不提供编辑入口)
  */
 
 interface Translation {
@@ -39,7 +41,12 @@ interface Translation {
 }
 interface Category {
   id: number;
+  moduleType: string;
   translations: { locale: string; name: string }[];
+}
+interface SpecRow {
+  k: string;
+  v: string;
 }
 
 const STATUS_OPTIONS = [
@@ -51,6 +58,34 @@ const STATUS_OPTIONS = [
 
 function emptyTranslation(locale: string): Translation {
   return { locale, title: "", summary: "", body: "", seoTitle: "", seoKeywords: "", seoDesc: "" };
+}
+
+/** 解析图集 JSON 串(容错:非法/缺失返回空数组,不抛错) */
+function parseGalleryJson(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 解析规格参数 JSON 串(容错:非法/缺失返回空数组,不抛错) */
+function parseSpecsJson(raw: string | null | undefined): SpecRow[] {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter(
+        (x): x is SpecRow =>
+          !!x && typeof x === "object" && typeof x.k === "string" && typeof x.v === "string"
+      )
+      .map((r) => ({ k: r.k, v: r.v }));
+  } catch {
+    return [];
+  }
 }
 
 /** 把 Date 转 datetime-local 输入格式(本地时区) */
@@ -76,6 +111,10 @@ export default function ContentEditPage() {
   const [coverUrl, setCoverUrl] = useState("");
   const [publishAt, setPublishAt] = useState("");
   const [trans, setTrans] = useState<Record<string, Translation>>({});
+  // —— 商品扩展字段(仅 product 栏目展示与提交;gallery/specs 存主表,跨语言通用)——
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [specs, setSpecs] = useState<SpecRow[]>([]);
+  const [favoriteCount, setFavoriteCount] = useState(0); // 只读展示,与阅读/赞/转对称
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -101,6 +140,9 @@ export default function ContentEditPage() {
             coverUrl: string | null;
             publishAt: string | null;
             formId: number | null;
+            gallery: string | null;
+            specs: string | null;
+            favoriteCount: number;
             translations: Partial<Translation>[];
           }>(`/api/admin/contents?id=${id}`);
           setSlug(c.slug);
@@ -110,6 +152,9 @@ export default function ContentEditPage() {
           setAuthorName(c.authorName ?? "");
           setCoverUrl(c.coverUrl ?? "");
           setPublishAt(c.publishAt ? toLocalInput(new Date(c.publishAt)) : "");
+          setGallery(parseGalleryJson(c.gallery)); // 保存后重开即回显(AC-001)
+          setSpecs(parseSpecsJson(c.specs));
+          setFavoriteCount(c.favoriteCount ?? 0);
           const map: Record<string, Translation> = {};
           for (const code of codes) {
             const t = c.translations.find((x) => x.locale === code);
@@ -162,6 +207,15 @@ export default function ContentEditPage() {
         authorName: authorName.trim(),
         coverUrl: coverUrl || null,
         publishAt: st === "SCHEDULED" && publishAt ? new Date(publishAt).toISOString() : null,
+        // 商品字段:仅商品栏目提交(切回 article 栏目时不传,服务层保留既有值)
+        ...(isProduct
+          ? {
+              gallery: gallery.map((u) => u.trim()).filter(Boolean),
+              specs: specs
+                .map((r) => ({ k: r.k.trim(), v: r.v.trim() }))
+                .filter((r) => r.k && r.v),
+            }
+          : {}),
         translations: Object.values(trans).map((t) => ({
           locale: t.locale,
           title: t.title,
@@ -184,6 +238,22 @@ export default function ContentEditPage() {
 
   const setT = (code: string, patch: Partial<Translation>) =>
     setTrans({ ...trans, [code]: { ...trans[code], ...patch } });
+
+  // 所选栏目为商品栏目时,展示并提交图集/规格参数(AC-001:article 编辑页不出现该区域)
+  const isProduct = cats.find((c) => c.id === categoryId)?.moduleType === "product";
+
+  /** 图集行:更新/上移/下移/删除(保持有序,保存时过滤空行) */
+  const updateGalleryAt = (idx: number, url: string) =>
+    setGallery(gallery.map((u, i) => (i === idx ? url : u)));
+  const moveGallery = (idx: number, dir: -1 | 1) => {
+    const next = [...gallery];
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setGallery(next);
+  };
+  const updateSpecAt = (idx: number, patch: Partial<SpecRow>) =>
+    setSpecs(specs.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -210,7 +280,7 @@ export default function ContentEditPage() {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>内容标识(URL:/article/标识)</Label>
+            <Label>内容标识(URL:{isProduct ? "/product" : "/article"}/{slug || "标识"})</Label>
             <Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} />
           </div>
           <div className="space-y-2">
@@ -296,6 +366,125 @@ export default function ContentEditPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* 商品信息(仅 product 栏目):图集/规格参数/收藏数(REQ-001) */}
+      {isProduct && (
+        <Card>
+          <CardHeader>
+            <CardTitle>商品信息</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label>
+                商品图集(有序,最多 20 张;详情页按此顺序展示,封面图仅在图集为空时兜底)
+              </Label>
+              {gallery.length === 0 && (
+                <p className="text-xs text-muted-foreground">暂无图集,点击下方按钮添加图片</p>
+              )}
+              <div className="space-y-3">
+                {gallery.map((url, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <div className="flex-1">
+                      <UploadField
+                        value={url}
+                        onChange={(u) => updateGalleryAt(idx, u)}
+                        label={`图集第 ${idx + 1} 张`}
+                        hint="JPG/PNG/WebP,≤3MB"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="上移"
+                      disabled={idx === 0}
+                      onClick={() => moveGallery(idx, -1)}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="下移"
+                      disabled={idx === gallery.length - 1}
+                      onClick={() => moveGallery(idx, 1)}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="删除"
+                      onClick={() => setGallery(gallery.filter((_, i) => i !== idx))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={gallery.length >= 20}
+                onClick={() => setGallery([...gallery, ""])}
+              >
+                <Plus className="h-4 w-4" /> 添加图片
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>规格参数(有序键值对,最多 50 行;键与值均必填)</Label>
+              <div className="space-y-2">
+                {specs.map((row, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      placeholder="参数名(如:型号)"
+                      value={row.k}
+                      onChange={(e) => updateSpecAt(idx, { k: e.target.value })}
+                      className="w-44"
+                    />
+                    <Input
+                      placeholder="参数值(如:AX-100)"
+                      value={row.v}
+                      onChange={(e) => updateSpecAt(idx, { v: e.target.value })}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="删除参数"
+                      onClick={() => setSpecs(specs.filter((_, i) => i !== idx))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={specs.length >= 50}
+                onClick={() => setSpecs([...specs, { k: "", v: "" }])}
+              >
+                <Plus className="h-4 w-4" /> 添加参数
+              </Button>
+            </div>
+
+            <div className="space-y-1">
+              <Label>收藏数(只读,随用户收藏行为自动增减)</Label>
+              <Input value={String(favoriteCount)} readOnly disabled className="w-24" />
+              <p className="text-xs text-muted-foreground">
+                与阅读/点赞/转发一致:互动统计仅展示,后台不可修改。
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue={locales[0]}>
         <TabsList>

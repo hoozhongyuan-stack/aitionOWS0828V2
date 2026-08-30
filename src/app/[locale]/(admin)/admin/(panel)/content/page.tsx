@@ -14,7 +14,8 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 
 /**
  * 内容列表(需求 4.4/4.8):筛选、增删改查入口、状态标识。
- * 互动数据(阅读/赞/转)仅展示,后台不可编辑(测试反馈缺陷8:防止人为篡改真实互动数据)。
+ * 互动数据(阅读/赞/转/藏)仅展示,后台不可编辑(测试反馈缺陷8:防止人为篡改真实互动数据;
+ * favoriteCount 为 V3.0 新增,与既有三项对称只读)。
  */
 
 interface ContentRow {
@@ -26,6 +27,7 @@ interface ContentRow {
   viewCount: number;
   likeCount: number;
   shareCount: number;
+  favoriteCount: number;
   publishAt: string | null;
   createdAt: string;
   translations: { locale: string; title: string }[];
@@ -174,7 +176,7 @@ export default function ContentAdminPage() {
             <TableHead>作者</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>来源</TableHead>
-            <TableHead>阅读/赞/转</TableHead>
+            <TableHead>阅读/赞/转/藏</TableHead>
             <TableHead>创建时间</TableHead>
             <TableHead className="text-right">操作</TableHead>
           </TableRow>
@@ -207,7 +209,7 @@ export default function ContentAdminPage() {
                 </TableCell>
                 <TableCell>{row.source === "UGC" ? <Badge variant="outline">投稿</Badge> : "后台"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {row.viewCount} / {row.likeCount} / {row.shareCount}
+                  {row.viewCount} / {row.likeCount} / {row.shareCount} / {row.favoriteCount}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(row.createdAt).toLocaleDateString("zh-CN")}

@@ -1,0 +1,276 @@
+== TASK-003 RED (TEST-001/002/003/004/005/018) ==
+UTC: 2026-08-30T14:50:27Z
+command: npx vitest run tests/server/content-product.test.ts tests/server/product-detail.test.ts tests/server/content-type.test.ts tests/server/product-list.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ❯ tests/server/content-type.test.ts (3 tests | 3 failed) 62ms
+     × product → /{locale}/product/{slug} 60ms
+     × article → /{locale}/article/{slug}(存量行为不变) 0ms
+     × 其他模块类型(news/case 等)统一回退 /article/ 0ms
+ ❯ tests/server/product-detail.test.ts (6 tests | 6 failed) 71ms
+     × 图集按序解析为 {url} 数组,规格参数解析为键值数组,TDK 取自翻译 2ms
+     × 图集缺失/为空时封面兜底插到首位;非法 JSON 容错为空数组不抛错 0ms
+     × 未发布(草稿)商品返回 null 0ms
+     × 关联启用中的表单 → 返回表单数据(slug/name/fields) 0ms
+     × 关联表单已停用 → 返回 null(与 article 不校验 enabled 为有意差异) 0ms
+     × 未关联表单 → 返回 null 0ms
+ ❯ tests/server/content-product.test.ts (4 tests | 4 failed) 75ms
+     × saveContent 保存后,库内 JSON 串与详情层解析回读一致且有序 4ms
+     × 未传/空数组时存 null,读出为空数组(不污染非商品内容) 1ms
+     × 非法 JSON 读出容错为空数组且不抛错(AC-021) 1ms
+     × 每条返回值带所属栏目的 moduleType 1ms
+ ❯ tests/server/product-list.test.ts (7 tests | 3 failed) 84ms
+     × 父商品栏目页包含所有直接/孙代子栏目商品,不含隐藏子栏目、草稿与非本树内容 6ms
+     ✓ 子栏目页包含本栏目及其后代商品,不含兄弟/父栏目商品 2ms
+     ✓ 非 product 栏目列表行为不变(仅本栏目内容) 1ms
+     × 保留分页参数语义(page/pageSize/total) 1ms
+     × 返回的 category 携带可见子栏目列表(父栏目页子分类页签的数据基础) 1ms
+     ✓ 不存在的栏目返回 null 1ms
+     ✓ 即使库内内容带 gallery/specs 数据,返回条目也不含这两个键 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/server/content-product.test.ts > TEST-001:商品 gallery/specs 服务层保存与回读一致 > saveContent 保存后,库内 JSON 串与详情层解析回读一致且有序
+AssertionError: expected null to deeply equal [ '/uploads/a.webp', …(2) ]
+
+- Expected:
+[
+  "/uploads/a.webp",
+  "/uploads/b.webp",
+  "/uploads/c.webp",
+]
+
++ Received:
+null
+
+ ❯ tests/server/content-product.test.ts:67:39
+     65|     expect(row).toBeTruthy();
+     66|     // 库内存储为 JSON 字符串
+     67|     expect(JSON.parse(row!.gallery!)).toEqual([
+       |                                       ^
+     68|       "/uploads/a.webp",
+     69|       "/uploads/b.webp",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  tests/server/content-product.test.ts > TEST-001:商品 gallery/specs 服务层保存与回读一致 > 未传/空数组时存 null,读出为空数组(不污染非商品内容)
+TypeError: content.getProductDetail is not a function
+ ❯ tests/server/content-product.test.ts:94:34
+     92|     expect(row?.gallery).toBeNull();
+     93|     expect(row?.specs).toBeNull();
+     94|     const detail = await content.getProductDetail("product-plain", "zh…
+       |                                  ^
+     95|     expect(detail?.gallery).toEqual([]);
+     96|     expect(detail?.specs).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  tests/server/content-product.test.ts > TEST-001:商品 gallery/specs 服务层保存与回读一致 > 非法 JSON 读出容错为空数组且不抛错(AC-021)
+TypeError: content.getProductDetail is not a function
+ ❯ tests/server/content-product.test.ts:106:15
+    104|     });
+    105|     await expect(
+    106|       content.getProductDetail("product-with-data", "zh-CN")
+       |               ^
+    107|     ).resolves.toMatchObject({ gallery: [], specs: [] });
+    108|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  tests/server/content-product.test.ts > listForLlms 增加 moduleType(Wave 3 预备) > 每条返回值带所属栏目的 moduleType
+AssertionError: expected undefined to be 'product' // Object.is equality
+
+- Expected:
+"product"
+
++ Received:
+undefined
+
+ ❯ tests/server/content-product.test.ts:124:32
+    122|     const rows = await content.listForLlms("zh-CN");
+    123|     const target = rows.find((r) => r.slug === "product-with-data");
+    124|     expect(target?.moduleType).toBe("product");
+       |                                ^
+    125|   });
+    126| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  tests/server/content-type.test.ts > TEST-004:resolveContentDetailPath 按栏目类型分流 > product → /{locale}/product/{slug}
+TypeError: resolveContentDetailPath is not a function
+ ❯ tests/server/content-type.test.ts:12:12
+     10|   it("product → /{locale}/product/{slug}", async () => {
+     11|     const { resolveContentDetailPath } = await import("@/server/conten…
+     12|     expect(resolveContentDetailPath("product", "ax-100", "zh-CN")).toB…
+       |            ^
+     13|     expect(resolveContentDetailPath("product", "widget", "en")).toBe("…
+     14|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  tests/server/content-type.test.ts > TEST-004:resolveContentDetailPath 按栏目类型分流 > article → /{locale}/article/{slug}(存量行为不变)
+TypeError: resolveContentDetailPath is not a function
+ ❯ tests/server/content-type.test.ts:18:12
+     16|   it("article → /{locale}/article/{slug}(存量行为不变)", async () => {
+     17|     const { resolveContentDetailPath } = await import("@/server/conten…
+     18|     expect(resolveContentDetailPath("article", "hello-world", "zh-CN")…
+       |            ^
+     19|       "/zh-CN/article/hello-world"
+     20|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  tests/server/content-type.test.ts > TEST-004:resolveContentDetailPath 按栏目类型分流 > 其他模块类型(news/case 等)统一回退 /article/
+TypeError: resolveContentDetailPath is not a function
+ ❯ tests/server/content-type.test.ts:25:12
+     23|   it("其他模块类型(news/case 等)统一回退 /article/", async () => {
+     24|     const { resolveContentDetailPath } = await import("@/server/conten…
+     25|     expect(resolveContentDetailPath("news", "n-1", "en")).toBe("/en/ar…
+       |            ^
+     26|     expect(resolveContentDetailPath("case", "c-1", "zh-CN")).toBe("/zh…
+     27|     expect(resolveContentDetailPath("", "x", "en")).toBe("/en/article/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  tests/server/product-detail.test.ts > TEST-002:商品详情数据组装(图集/参数/TDK) > 图集按序解析为 {url} 数组,规格参数解析为键值数组,TDK 取自翻译
+TypeError: getProductDetail is not a function
+ ❯ tests/server/product-detail.test.ts:95:21
+     93| describe("TEST-002:商品详情数据组装(图集/参数/TDK)", () => {
+     94|   it("图集按序解析为 {url} 数组,规格参数解析为键值数组,TDK 取自翻译", async () => {
+     95|     const d = await getProductDetail("full-product", "zh-CN");
+       |                     ^
+     96|     expect(d).toBeTruthy();
+     97|     expect(d!.gallery).toEqual([{ url: "/uploads/g1.webp" }, { url: "/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  tests/server/product-detail.test.ts > TEST-002:商品详情数据组装(图集/参数/TDK) > 图集缺失/为空时封面兜底插到首位;非法 JSON 容错为空数组不抛错
+TypeError: getProductDetail is not a function
+ ❯ tests/server/product-detail.test.ts:112:29
+    110|   it("图集缺失/为空时封面兜底插到首位;非法 JSON 容错为空数组不抛错", async () => {
+    111|     // 无图集 → 封面兜底
+    112|     const noGallery = await getProductDetail("no-gallery-product", "zh…
+       |                             ^
+    113|     expect(noGallery!.gallery).toEqual([{ url: "/uploads/cover-only.we…
+    114|     expect(noGallery!.specs).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  tests/server/product-detail.test.ts > TEST-002:商品详情数据组装(图集/参数/TDK) > 未发布(草稿)商品返回 null
+TypeError: getProductDetail is not a function
+ ❯ tests/server/product-detail.test.ts:122:18
+    120|
+    121|   it("未发布(草稿)商品返回 null", async () => {
+    122|     await expect(getProductDetail("draft-product", "zh-CN")).resolves.…
+       |                  ^
+    123|     await expect(getProductDetail("not-exist", "zh-CN")).resolves.toBe…
+    124|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  tests/server/product-detail.test.ts > TEST-003:询盘表单区块数据(formId → 启用表单才返回) > 关联启用中的表单 → 返回表单数据(slug/name/fields)
+TypeError: getProductDetail is not a function
+ ❯ tests/server/product-detail.test.ts:129:21
+    127| describe("TEST-003:询盘表单区块数据(formId → 启用表单才返回)", () => {
+    128|   it("关联启用中的表单 → 返回表单数据(slug/name/fields)", async () => {
+    129|     const d = await getProductDetail("full-product", "zh-CN");
+       |                     ^
+    130|     expect(d!.inquiryForm).toBeTruthy();
+    131|     expect(d!.inquiryForm).toMatchObject({ slug: "inquiry-on", name: "…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+ FAIL  tests/server/product-detail.test.ts > TEST-003:询盘表单区块数据(formId → 启用表单才返回) > 关联表单已停用 → 返回 null(与 article 不校验 enabled 为有意差异)
+TypeError: getProductDetail is not a function
+ ❯ tests/server/product-detail.test.ts:136:21
+    134|
+    135|   it("关联表单已停用 → 返回 null(与 article 不校验 enabled 为有意差异)", async () => {
+    136|     const d = await getProductDetail("no-gallery-product", "zh-CN");
+       |                     ^
+    137|     expect(d!.inquiryForm).toBeNull();
+    138|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯
+
+ FAIL  tests/server/product-detail.test.ts > TEST-003:询盘表单区块数据(formId → 启用表单才返回) > 未关联表单 → 返回 null
+TypeError: getProductDetail is not a function
+ ❯ tests/server/product-detail.test.ts:141:21
+    139|
+    140|   it("未关联表单 → 返回 null", async () => {
+    141|     const d = await getProductDetail("broken-json-product", "zh-CN");
+       |                     ^
+    142|     expect(d!.inquiryForm).toBeNull();
+    143|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯
+
+ FAIL  tests/server/product-list.test.ts > TEST-005:栏目列表按栏目及全部后代栏目过滤 > 父商品栏目页包含所有直接/孙代子栏目商品,不含隐藏子栏目、草稿与非本树内容
+AssertionError: expected [ Array(3) ] to deeply equal [ Array(4) ]
+
+- Expected
++ Received
+
+  [
+    "item-child-a",
+    "item-child-b",
+-   "item-grand",
+    "item-root",
+  ]
+
+ ❯ tests/server/product-list.test.ts:68:19
+     66|     const slugs = data!.items.map((i) => i.slug).sort();
+     67|     // root + child-a + child-b + grand(全部后代);不含 hidden/草稿/article
+     68|     expect(slugs).toEqual(["item-child-a", "item-child-b", "item-grand…
+       |                   ^
+     69|     expect(data!.total).toBe(4);
+     70|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯
+
+ FAIL  tests/server/product-list.test.ts > TEST-005:栏目列表按栏目及全部后代栏目过滤 > 保留分页参数语义(page/pageSize/total)
+AssertionError: expected 3 to be 4 // Object.is equality
+
+- Expected
++ Received
+
+- 4
++ 3
+
+ ❯ tests/server/product-list.test.ts:86:26
+     84|   it("保留分页参数语义(page/pageSize/total)", async () => {
+     85|     const page1 = await listPublishedByCategory("prod-root", "zh-CN", …
+     86|     expect(page1!.total).toBe(4);
+       |                          ^
+     87|     expect(page1!.pageSize).toBe(3);
+     88|     expect(page1!.items).toHaveLength(3);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/16]⎯
+
+ FAIL  tests/server/product-list.test.ts > TEST-005:栏目列表按栏目及全部后代栏目过滤 > 返回的 category 携带可见子栏目列表(父栏目页子分类页签的数据基础)
+TypeError: Cannot read properties of undefined (reading 'map')
+ ❯ tests/server/product-list.test.ts:98:49
+     96|   it("返回的 category 携带可见子栏目列表(父栏目页子分类页签的数据基础)", async () => {
+     97|     const data = await listPublishedByCategory("prod-root", "zh-CN");
+     98|     const childSlugs = data!.category.children!.map((c) => c.slug).sor…
+       |                                                 ^
+     99|     // 仅可见子栏目;隐藏栏目不出现
+    100|     expect(childSlugs).toEqual(["prod-child-a", "prod-child-b"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/16]⎯
+
+
+ Test Files  4 failed (4)
+      Tests  16 failed | 4 passed (20)
+   Start at  22:50:26
+   Duration  1.09s (transform 149ms, setup 3.65s, import 83ms, tests 292ms, environment 0ms)
+
+
+exit_code=1
+
+说明:16 失败均为行为缺失(函数不存在/字段未持久化/孙代栏目未纳入/children 未暴露/moduleType 缺失),非编译或基建错误;
+4 条通过项为存量行为回归锁(直接子级过滤、非 product 列表、未知栏目 null、条目键排除),其 RED 依赖上列新行为断言。

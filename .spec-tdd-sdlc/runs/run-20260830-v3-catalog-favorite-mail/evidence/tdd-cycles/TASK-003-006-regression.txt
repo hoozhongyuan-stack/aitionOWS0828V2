@@ -1,0 +1,298 @@
+== TASK-003 + TASK-006 全量回归 ==
+UTC: 2026-08-30T15:02:22Z
+
+--- npx vitest run(全仓) ---
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ✓ tests/server/content-product.test.ts (4 tests) 286ms
+ ✓ tests/server/product-detail.test.ts (6 tests) 298ms
+ ✓ tests/server/product-list.test.ts (7 tests) 331ms
+ ✓ tests/notify/mail-template.test.ts (14 tests) 37ms
+ ✓ tests/server/admin-content.test.ts (5 tests) 306ms
+ ❯ tests/server/user-profile.test.ts (7 tests | 7 failed) 323ms
+     × 保存公司名称/国家/省/市 4 字段后回读一致 21ms
+     × 全部留空保存成功(空串视为清空,字段可为 null) 0ms
+     × 任一字段超过 100 字符 → 拒绝保存 0ms
+     × q=公司名关键字 → 仅返回匹配用户;q=不匹配关键字 → 空结果 4ms
+     × PATCH:未带管理员会话 → 401 5ms
+     × PATCH:管理员更新资料 → 200 且响应回显 4 字段、库内一致 1ms
+     × GET:q 透传公司名搜索,列表项含 4 个资料字段(供后台编辑回显) 6ms
+ ✓ tests/server/favorite.test.ts (12 tests) 509ms
+ ❯ tests/server/user-privacy.test.ts (5 tests | 5 failed) 524ms
+     × 只返回 id/email/nickname/avatarUrl,绝不含 4 个资料字段 4ms
+     × getActiveUserInfo 经白名单序列化(全量 DB 行进、白名单出) 4ms
+     × 携带会话调用 me → 响应 data 不含 4 个隐私键且为白名单形状 2ms
+     × POST /api/auth/login → 响应 data 不含 4 个隐私键且为白名单形状 69ms
+     × POST /api/auth/register → 响应 data 不含 4 个隐私键(键不存在,而非 null) 60ms
+ ✓ tests/server/content-type.test.ts (3 tests) 21ms
+ ✓ tests/smoke.test.ts (3 tests) 39ms
+ ✓ tests/db/migration.test.ts (1 test) 1553ms
+     ✓ 应用 V3.0 迁移后:存量数据无损、新列空值/默认值、Favorite 唯一约束、迁移幂等  929ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/server/user-privacy.test.ts > TEST-013: toPublicUser 前台序列化白名单(NFR-001) > 只返回 id/email/nickname/avatarUrl,绝不含 4 个资料字段
+AssertionError: missing_behavior:toPublicUser 尚未实现(@/server/user): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectFn tests/server/user-privacy.test.ts:43:5
+     41|     typeof (mod as Record<string, unknown>)?.[name],
+     42|     `missing_behavior:${name} 尚未实现(${where})`
+     43|   ).toBe("function");
+       |     ^
+     44| }
+     45|
+ ❯ tests/server/user-privacy.test.ts:100:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  tests/server/user-privacy.test.ts > TEST-013: toPublicUser 前台序列化白名单(NFR-001) > getActiveUserInfo 经白名单序列化(全量 DB 行进、白名单出)
+AssertionError: expected { id: 1, …(2) } to deeply equal { id: 1, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "avatarUrl": "https://cdn.example.com/avatar.png",
+    "email": "secret@example.com",
+    "id": 1,
+    "nickname": "隐私用户",
+  }
+
+ ❯ tests/server/user-privacy.test.ts:118:17
+    116|     const pub = await userModule.getActiveUserInfo(secretUserId);
+    117|     assertNoPrivacyKeys(pub, "getActiveUserInfo");
+    118|     expect(pub).toEqual({
+       |                 ^
+    119|       id: secretUserId,
+    120|       email: "secret@example.com",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  tests/server/user-privacy.test.ts > TEST-013: /api/auth/me 出口(AC-011) > 携带会话调用 me → 响应 data 不含 4 个隐私键且为白名单形状
+AssertionError: missing_behavior:me 响应应统一为 toPublicUser 白名单形状: expected { id: 1, …(2) } to deeply equal { id: 1, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "avatarUrl": "https://cdn.example.com/avatar.png",
+    "email": "secret@example.com",
+    "id": 1,
+    "nickname": "隐私用户",
+  }
+
+ ❯ tests/server/user-privacy.test.ts:138:72
+    136|     expect(body.data).toBeTruthy();
+    137|     assertNoPrivacyKeys(body.data, "/api/auth/me");
+    138|     expect(body.data, "missing_behavior:me 响应应统一为 toPublicUser 白名单形状")…
+       |                                                                        ^
+    139|       id: secretUserId,
+    140|       email: "secret@example.com",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  tests/server/user-privacy.test.ts > TEST-013: 登录/注册出口(AC-011) > POST /api/auth/login → 响应 data 不含 4 个隐私键且为白名单形状
+AssertionError: missing_behavior:登录响应应统一为 toPublicUser 白名单形状: expected { id: 1, nickname: '隐私用户' } to deeply equal { id: 1, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "avatarUrl": "https://cdn.example.com/avatar.png",
+-   "email": "secret@example.com",
+    "id": 1,
+    "nickname": "隐私用户",
+  }
+
+ ❯ tests/server/user-privacy.test.ts:160:71
+    158|     expect(body.ok).toBe(true);
+    159|     assertNoPrivacyKeys(body.data, "登录响应");
+    160|     expect(body.data, "missing_behavior:登录响应应统一为 toPublicUser 白名单形状").…
+       |                                                                       ^
+    161|       id: secretUserId,
+    162|       email: "secret@example.com",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  tests/server/user-privacy.test.ts > TEST-013: 登录/注册出口(AC-011) > POST /api/auth/register → 响应 data 不含 4 个隐私键(键不存在,而非 null)
+AssertionError: 注册响应应为白名单键集: expected [ 'id', 'nickname' ] to deeply equal [ 'avatarUrl', 'email', 'id', …(1) ]
+
+- Expected
++ Received
+
+  [
+-   "avatarUrl",
+-   "email",
+    "id",
+    "nickname",
+  ]
+
+ ❯ tests/server/user-privacy.test.ts:182:58
+    180|     expect(body.ok).toBe(true);
+    181|     assertNoPrivacyKeys(body.data, "注册响应");
+    182|     expect(Object.keys(body.data).sort(), "注册响应应为白名单键集").toEqual(
+       |                                                          ^
+    183|       ["avatarUrl", "email", "id", "nickname"].sort()
+    184|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  tests/server/user-profile.test.ts > TEST-012: adminUpdateProfile 服务(AC-010) > 保存公司名称/国家/省/市 4 字段后回读一致
+AssertionError: missing_behavior:adminUpdateProfile 尚未实现(@/server/user): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectFn tests/server/user-profile.test.ts:43:5
+     41|     typeof (mod as Record<string, unknown>)?.[name],
+     42|     `missing_behavior:${name} 尚未实现(${where})`
+     43|   ).toBe("function");
+       |     ^
+     44| }
+     45|
+ ❯ tests/server/user-profile.test.ts:79:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  tests/server/user-profile.test.ts > TEST-012: adminUpdateProfile 服务(AC-010) > 全部留空保存成功(空串视为清空,字段可为 null)
+AssertionError: missing_behavior:adminUpdateProfile 尚未实现(@/server/user): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectFn tests/server/user-profile.test.ts:43:5
+     41|     typeof (mod as Record<string, unknown>)?.[name],
+     42|     `missing_behavior:${name} 尚未实现(${where})`
+     43|   ).toBe("function");
+       |     ^
+     44| }
+     45|
+ ❯ tests/server/user-profile.test.ts:96:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  tests/server/user-profile.test.ts > TEST-012: adminUpdateProfile 服务(AC-010) > 任一字段超过 100 字符 → 拒绝保存
+AssertionError: missing_behavior:adminUpdateProfile 尚未实现(@/server/user): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectFn tests/server/user-profile.test.ts:43:5
+     41|     typeof (mod as Record<string, unknown>)?.[name],
+     42|     `missing_behavior:${name} 尚未实现(${where})`
+     43|   ).toBe("function");
+       |     ^
+     44| }
+     45|
+ ❯ tests/server/user-profile.test.ts:112:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  tests/server/user-profile.test.ts > TEST-012: listUsersAdmin 按公司名称模糊搜索(AC-010) > q=公司名关键字 → 仅返回匹配用户;q=不匹配关键字 → 空结果
+AssertionError: missing_behavior:q 参数应按公司名称模糊搜索(当前疑似被忽略): expected [ 3, 2, 1 ] to deeply equal [ 2 ]
+
+- Expected
++ Received
+
+  [
++   3,
+    2,
++   1,
+  ]
+
+ ❯ tests/server/user-profile.test.ts:138:7
+    136|       hit.items.map((u) => u.id),
+    137|       "missing_behavior:q 参数应按公司名称模糊搜索(当前疑似被忽略)"
+    138|     ).toEqual([acmeUserId]);
+       |       ^
+    139|
+    140|     const miss = await listUsersAdmin({ q: "不存在的小宇宙公司" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  tests/server/user-profile.test.ts > TEST-012: /api/admin/users 路由(资料更新 + q 透传) > PATCH:未带管理员会话 → 401
+AssertionError: missing_behavior:PATCH 尚未实现(/api/admin/users): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectFn tests/server/user-profile.test.ts:43:5
+     41|     typeof (mod as Record<string, unknown>)?.[name],
+     42|     `missing_behavior:${name} 尚未实现(${where})`
+     43|   ).toBe("function");
+       |     ^
+     44| }
+     45|
+ ❯ tests/server/user-profile.test.ts:149:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  tests/server/user-profile.test.ts > TEST-012: /api/admin/users 路由(资料更新 + q 透传) > PATCH:管理员更新资料 → 200 且响应回显 4 字段、库内一致
+AssertionError: missing_behavior:PATCH 尚未实现(/api/admin/users): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectFn tests/server/user-profile.test.ts:43:5
+     41|     typeof (mod as Record<string, unknown>)?.[name],
+     42|     `missing_behavior:${name} 尚未实现(${where})`
+     43|   ).toBe("function");
+       |     ^
+     44| }
+     45|
+ ❯ tests/server/user-profile.test.ts:165:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  tests/server/user-profile.test.ts > TEST-012: /api/admin/users 路由(资料更新 + q 透传) > GET:q 透传公司名搜索,列表项含 4 个资料字段(供后台编辑回显)
+AssertionError: missing_behavior:GET 应透传 q 参数按公司名称过滤: expected [ 3, 2, 1 ] to deeply equal [ 2 ]
+
+- Expected
++ Received
+
+  [
++   3,
+    2,
++   1,
+  ]
+
+ ❯ tests/server/user-profile.test.ts:210:7
+    208|       body.data.items.map((u) => u.id),
+    209|       "missing_behavior:GET 应透传 q 参数按公司名称过滤"
+    210|     ).toEqual([acmeUserId]);
+       |       ^
+    211|     expect(
+    212|       body.data.items[0],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+
+
+ Test Files  2 failed | 9 passed (11)
+      Tests  12 failed | 55 passed (67)
+   Start at  23:02:18
+   Duration  3.43s (transform 1.18s, setup 14.54s, import 566ms, tests 4.23s, environment 1ms)
+
+vitest_exit=1
+
+--- npx tsc --noEmit(全仓) ---
+tests/server/user-privacy.test.ts(104,28): error TS2339: Property 'toPublicUser' does not exist on type 'typeof import("/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/src/server/user/index")'.
+tests/server/user-profile.test.ts(78,13): error TS2339: Property 'adminUpdateProfile' does not exist on type 'typeof import("/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/src/server/user/index")'.
+tests/server/user-profile.test.ts(95,13): error TS2339: Property 'adminUpdateProfile' does not exist on type 'typeof import("/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/src/server/user/index")'.
+tests/server/user-profile.test.ts(111,13): error TS2339: Property 'adminUpdateProfile' does not exist on type 'typeof import("/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/src/server/user/index")'.
+tests/server/user-profile.test.ts(125,13): error TS2339: Property 'adminUpdateProfile' does not exist on type 'typeof import("/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/src/server/user/index")'.
+tests/server/user-profile.test.ts(134,40): error TS2353: Object literal may only specify known properties, and 'q' does not exist in type '{ page?: number | undefined; keyword?: string | undefined; }'.
+tests/server/user-profile.test.ts(140,41): error TS2353: Object literal may only specify known properties, and 'q' does not exist in type '{ page?: number | undefined; keyword?: string | undefined; }'.
+tests/server/user-profile.test.ts(152,29): error TS2339: Property 'PATCH' does not exist on type 'typeof import("/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/src/app/api/admin/users/route")'.
+tests/server/user-profile.test.ts(168,29): error TS2339: Property 'PATCH' does not exist on type 'typeof import("/Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3/src/app/api/admin/users/route")'.
+tsc_exit=2
+
+--- 本任务范围核对 ---
+本任务新增/修改的 6 个测试文件(content-product/product-detail/content-type/product-list/admin-content)+ 全部 src/server/content、api/admin/contents、admin content 页面均 0 失败 0 类型错误。
+全仓剩余失败为并行 Wave 的 RED(tests/notify/mail-template.test.ts=TASK-010、tests/server/user-profile.test.ts=TASK-009),其实现尚未落地,与本任务无关。

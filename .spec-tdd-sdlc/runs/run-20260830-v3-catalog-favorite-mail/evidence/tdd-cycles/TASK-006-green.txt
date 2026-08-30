@@ -1,0 +1,20 @@
+== TASK-006 GREEN (TEST-001 扩展:后台商品编辑保存链路) ==
+UTC: 2026-08-30T15:00:49Z
+command: npx vitest run tests/server/admin-content.test.ts
+RED 证据: 见同目录 TASK-006-red.txt(3 failed / 2 passed, exit 1)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ✓ tests/server/admin-content.test.ts (5 tests) 129ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  23:00:48
+   Duration  798ms (transform 49ms, setup 471ms, import 16ms, tests 129ms, environment 0ms)
+
+
+exit_code=0
