@@ -1,0 +1,1038 @@
+{
+  "schema_version": "1.1",
+  "project_type": "brownfield",
+  "run_id": "run-20260830-v3-catalog-favorite-mail",
+  "state_revision": 5,
+  "orchestrator_id": "orchestrator-zcode-main",
+  "requirements": [
+    {
+      "id": "REQ-013",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-017"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-001",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-001"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-002",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-002",
+        "AC-020",
+        "AC-003"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-003",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-004"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-004",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-005"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-005",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-006",
+        "AC-021"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-006",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-007"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-007",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-008"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-008",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-009"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-009",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-010"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-010",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-012"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-011",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-013"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "REQ-012",
+      "level": "MUST",
+      "behavior_change": true,
+      "acceptance_ids": [
+        "AC-014"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-001",
+      "level": "MUST",
+      "acceptance_ids": [
+        "AC-011"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "NFR-002",
+      "level": "MUST",
+      "acceptance_ids": [
+        "AC-018"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "NFR-003",
+      "level": "MUST",
+      "acceptance_ids": [
+        "AC-015"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "NFR-004",
+      "level": "MUST",
+      "acceptance_ids": [
+        "AC-021",
+        "AC-012"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "NFR-005",
+      "level": "MUST",
+      "acceptance_ids": [
+        "AC-019"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    },
+    {
+      "id": "NFR-006",
+      "level": "MUST",
+      "acceptance_ids": [
+        "AC-016"
+      ],
+      "task_ids": [],
+      "evidence_ids": []
+    }
+  ],
+  "defects": [],
+  "decisions": [
+    {
+      "id": "ADR-001",
+      "status": "accepted",
+      "decision": "商品复用 Content 体系（moduleType=product），扩展 gallery/specs 字段，不建独立 Product 模型",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003"
+      ],
+      "nfr_ids": [
+        "NFR-003"
+      ]
+    },
+    {
+      "id": "ADR-002",
+      "status": "accepted",
+      "decision": "收藏采用 Favorite 表（targetType/targetId/userId 唯一），POST 切换语义对齐 toggleLike 范式，仅登录用户",
+      "requirement_ids": [
+        "REQ-005",
+        "REQ-006",
+        "REQ-007"
+      ],
+      "nfr_ids": [
+        "NFR-001"
+      ]
+    },
+    {
+      "id": "ADR-003",
+      "status": "accepted",
+      "decision": "商品详情独立路由 /product/[slug]，卡片链接按栏目 moduleType 分流；article 路由保持不变",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-003"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ]
+    },
+    {
+      "id": "ADR-004",
+      "status": "accepted",
+      "decision": "用户公司/地区 4 字段为自由文本、仅后台维护、前台任何响应不返回",
+      "requirement_ids": [
+        "REQ-009"
+      ],
+      "nfr_ids": [
+        "NFR-001"
+      ]
+    },
+    {
+      "id": "ADR-005",
+      "status": "accepted",
+      "decision": "brownfield 引入 vitest + @vitest/coverage-v8（dev-only）测试基建，临时 SQLite 测试库策略，新增代码覆盖率 90/90/90/85",
+      "requirement_ids": [
+        "REQ-013"
+      ],
+      "nfr_ids": [
+        "NFR-005"
+      ]
+    },
+    {
+      "id": "ADR-006",
+      "status": "accepted",
+      "decision": "邮件统一品牌 HTML 模板层（表格布局+内联样式），保持 headerSafe/静默失败/fire-and-forget 语义",
+      "requirement_ids": [
+        "REQ-010",
+        "REQ-011",
+        "REQ-012"
+      ],
+      "nfr_ids": [
+        "NFR-004"
+      ]
+    },
+    {
+      "id": "ADR-007",
+      "status": "accepted",
+      "decision": "一次 Prisma 迁移完成全部 schema 变更（可空加列+新表），回滚交付人工 SQL",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-005",
+        "REQ-009"
+      ],
+      "nfr_ids": [
+        "NFR-003"
+      ]
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC-017",
+      "requirement_ids": [
+        "REQ-013"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-000"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-001",
+      "requirement_ids": [
+        "REQ-001"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-001"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-002",
+      "requirement_ids": [
+        "REQ-002"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-002",
+        "TEST-003"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-020",
+      "requirement_ids": [
+        "REQ-002"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-019"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-003",
+      "requirement_ids": [
+        "REQ-002"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-004"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-004",
+      "requirement_ids": [
+        "REQ-003"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-005"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-005",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-006",
+        "TEST-007"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-006",
+      "requirement_ids": [
+        "REQ-005"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-008"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-007",
+      "requirement_ids": [
+        "REQ-006"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-009"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-008",
+      "requirement_ids": [
+        "REQ-007"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-010"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-009",
+      "requirement_ids": [
+        "REQ-008"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-011"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-010",
+      "requirement_ids": [
+        "REQ-009"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-012"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-011",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-001"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-013"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-021",
+      "requirement_ids": [
+        "REQ-005"
+      ],
+      "nfr_ids": [
+        "NFR-004"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-008",
+        "TEST-002",
+        "TEST-014"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-012",
+      "requirement_ids": [
+        "REQ-010"
+      ],
+      "nfr_ids": [
+        "NFR-004"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-014"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-013",
+      "requirement_ids": [
+        "REQ-011"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-015"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-014",
+      "requirement_ids": [
+        "REQ-012"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-016"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-015",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-003"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-017"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-016",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-006"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-018",
+        "TEST-005"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-018",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-005",
+        "TEST-019"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "AC-019",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-005"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-008",
+        "TEST-013"
+      ],
+      "manual_verification_ids": []
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "role": "implementation",
+      "agent_id": "orchestrator-zcode-main",
+      "requirement_ids": [
+        "REQ-013"
+      ],
+      "nfr_ids": [
+        "NFR-005"
+      ],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-001"
+      ],
+      "commit_ids": [],
+      "status": "complete"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EVID-001",
+      "path": "evidence/tdd-cycles/TEST-000-smoke-green.txt",
+      "sha256": "59f3012772d5346fe2902304eaac901898b91ad5d0452f349907dd0331793108",
+      "requirement_ids": [
+        "REQ-013"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-001"
+      ],
+      "cycle_ids": [
+        "TDD-001"
+      ],
+      "test_ids": [
+        "TEST-000"
+      ],
+      "manual_verification_ids": []
+    }
+  ],
+  "tests": [
+    {
+      "id": "TEST-000",
+      "requirement_ids": [
+        "REQ-013"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-017"
+      ],
+      "cycle_ids": [
+        "TDD-001"
+      ],
+      "evidence_ids": [
+        "EVID-001"
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "TEST-001",
+      "requirement_ids": [
+        "REQ-001"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-001"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-002",
+      "requirement_ids": [
+        "REQ-002"
+      ],
+      "nfr_ids": [
+        "NFR-004"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-002",
+        "AC-021"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-003",
+      "requirement_ids": [
+        "REQ-002"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-002"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-004",
+      "requirement_ids": [
+        "REQ-002"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-003"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-005",
+      "requirement_ids": [
+        "REQ-003"
+      ],
+      "nfr_ids": [
+        "NFR-006",
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-004",
+        "AC-016",
+        "AC-018"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-006",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-005"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-007",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-005"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-008",
+      "requirement_ids": [
+        "REQ-005"
+      ],
+      "nfr_ids": [
+        "NFR-005"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-006",
+        "AC-021",
+        "AC-019"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-009",
+      "requirement_ids": [
+        "REQ-006"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-007"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-010",
+      "requirement_ids": [
+        "REQ-007"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-008"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-011",
+      "requirement_ids": [
+        "REQ-008"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-009"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-012",
+      "requirement_ids": [
+        "REQ-009"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-010"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-013",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-001",
+        "NFR-005"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-011",
+        "AC-019"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-014",
+      "requirement_ids": [
+        "REQ-010"
+      ],
+      "nfr_ids": [
+        "NFR-004"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-012",
+        "AC-021"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-015",
+      "requirement_ids": [
+        "REQ-011"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-013"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-016",
+      "requirement_ids": [
+        "REQ-012"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-014"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-017",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-003"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-015"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-018",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-006"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-016"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    },
+    {
+      "id": "TEST-019",
+      "requirement_ids": [
+        "REQ-002"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "acceptance_ids": [
+        "AC-020",
+        "AC-018"
+      ],
+      "cycle_ids": [],
+      "evidence_ids": [],
+      "status": "planned"
+    }
+  ],
+  "manual_verifications": [],
+  "tdd_cycles": [
+    {
+      "id": "TDD-001",
+      "applicability": "not_applicable",
+      "applicability_justification": "测试基建为非行为变更(无用户可见行为);替代验证 = TEST-000 冒烟测试(运行器/别名/迁移链)通过",
+      "requirement_ids": [
+        "REQ-013"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-000"
+      ],
+      "manual_verification_ids": [],
+      "red": null,
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run",
+        "observed": "3 smoke tests passed",
+        "timestamp": "2026-08-30T14:08:59+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-001",
+        "sha256": "59f3012772d5346fe2902304eaac901898b91ad5d0452f349907dd0331793108"
+      },
+      "refactor": null
+    }
+  ],
+  "blockers": [],
+  "approvals": [
+    {
+      "id": "APR-001",
+      "version": 1,
+      "gate": "G1",
+      "status": "approved",
+      "supersedes": null,
+      "approver_type": "user",
+      "artifact_version": "spec-v4",
+      "requested_at": "2026-08-30T14:05:00+0000",
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "62bf6cffd04823b9b21c4f185ebc8bfdbed79a7a7c566215e45e1393da219897"
+        }
+      ],
+      "approved_at": "2026-08-30T13:58:01+0000",
+      "user_decision": "approved（用户于 G1 批准包对话中明确选择「批准（推荐）」）",
+      "accepted_risks": [
+        "Product JSON-LD 无 offers 的搜索引擎警告（展示型站点，已接受）",
+        "article 与 product 详情对已禁用关联表单的处理差异（有意行为）",
+        "迁移回滚依赖人工 SQL 脚本（Prisma 无 down）"
+      ],
+      "conditions": [
+        "G2 必须在实现前获批（High-risk）",
+        "合并/推送等外部动作需 G4"
+      ],
+      "manifest_hash_note": "绑定 spec.md sha256=62bf6cffd04823b9b21c4f185ebc8bfdbed79a7a7c566215e45e1393da219897"
+    },
+    {
+      "id": "APR-002",
+      "version": 1,
+      "gate": "G2",
+      "status": "pending",
+      "supersedes": null,
+      "approver_type": "user",
+      "artifact_version": "design-v1+plan-v1",
+      "requested_at": "2026-08-30T14:10:00+0000",
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "62bf6cffd04823b9b21c4f185ebc8bfdbed79a7a7c566215e45e1393da219897"
+        },
+        {
+          "kind": "design",
+          "path": "design.md",
+          "sha256": "50989d910fd5928a6acb6afb276f0240aa46dd7dfc7dd3bbf6f6d2d7810df3bb"
+        },
+        {
+          "kind": "plan",
+          "path": "plan.md",
+          "sha256": "3b4e82f764981606724aa848d282c2a874dc6bf663f2321d1cc26fb8e92cc9ed"
+        }
+      ]
+    }
+  ],
+  "git": {
+    "repository_root": "../../..",
+    "index_owner": "orchestrator",
+    "branch": "feat/v3.0-spec-tdd",
+    "branch_policy": {
+      "working_branch": "feat/v3.0-spec-tdd",
+      "direct_work_on_protected_branch": false,
+      "protected_branch_source": "unknown",
+      "risk_disclosure": "本地无法证明远程 main 分支保护状态；采取工作分支隔离实现，合并回 main 属 G4 动作需另行批准"
+    },
+    "baseline_commit": "ce96eb1cc56428eee4c1509e013c3692162d1cde",
+    "candidate_commit": null,
+    "current_commit": "ce96eb1cc56428eee4c1509e013c3692162d1cde",
+    "dirty_paths_before": [
+      {
+        "path": "docs/V3.0升级计划.md",
+        "sha256": "53cdc36b1ba8668b89c440306a47c2dec6dcb95a474e975dd83ebba7dc541053"
+      }
+    ],
+    "workflow_paths": [
+      "prisma/schema.prisma",
+      "prisma/seed.ts",
+      "prisma/migrations/*",
+      "src/server/content",
+      "src/server/ugc",
+      "src/server/user",
+      "src/server/notify",
+      "src/server/admin",
+      "src/server/seo",
+      "src/lib/config",
+      "src/types/domain.ts",
+      "src/components/seo",
+      "src/components/site",
+      "src/components/admin",
+      "src/app/[locale]/(site)",
+      "src/app/[locale]/(admin)",
+      "src/app/api",
+      "src/app/llms.txt",
+      "src/app/sitemap.ts",
+      "messages",
+      "package.json",
+      "vitest.config.ts",
+      "tests"
+    ],
+    "candidate_paths": [],
+    "unauthorized_actions": [],
+    "required_ci": [],
+    "ci_results": [],
+    "workflow_commits": []
+  },
+  "coverage": null
+}

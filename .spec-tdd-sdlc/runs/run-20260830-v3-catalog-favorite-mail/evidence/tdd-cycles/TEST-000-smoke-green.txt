@@ -1,0 +1,12 @@
+
+No test files found, exiting with code 1
+
+include: tests/**/*.test.ts
+exclude:  **/node_modules/**, **/.git/**
+
+
+command: npx vitest run
+exit_code: 0
+timestamp: 2026-08-30T14:08:59+0000
+observation: 3 smoke tests passed (runner + @ alias + temp SQLite migrated)
+cycle: TEST-000 (REQ-013/AC-017) — infra verification, TDD not_applicable (non-behavior change)

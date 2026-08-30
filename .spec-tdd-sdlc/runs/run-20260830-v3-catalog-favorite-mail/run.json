@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.1",
+  "run_id": "run-20260830-v3-catalog-favorite-mail",
+  "objective": "V3.0：商品展示（复用 Content 体系，gallery/specs/二级分类/GEO/询盘）+ 收藏与个人中心（文章与商品）+ 用户资料扩展字段（仅后台维护）+ 邮件 HTML 模板升级。范围依据 docs/V3.0升级计划.md（已获用户逐项确认）。",
+  "spec_class": "High-risk",
+  "action_risk": "L2",
+  "g2_required": true,
+  "risk_triggers": [
+    "schema/data migration: Content 新增列 + User 新增列 + 新表 Favorite（一次 Prisma migration）",
+    "privacy boundary: 用户公司/地区字段限定仅后台可见（敏感数据边界）",
+    "email outbound: 邮件模板变更影响对外发送内容"
+  ],
+  "resume_state": null,
+  "state": "G2_PENDING",
+  "state_revision": 5,
+  "orchestrator_id": "orchestrator-zcode-main",
+  "repository": {
+    "root": "../../..",
+    "base_commit": "ce96eb1cc56428eee4c1509e013c3692162d1cde",
+    "initial_branch": "main",
+    "working_branch": null,
+    "initial_dirty_paths": [
+      "docs/V3.0升级计划.md (untracked, user-approved planning doc; 将随首个 workflow 提交纳入)"
+    ],
+    "head": "ce96eb1cc56428eee4c1509e013c3692162d1cde",
+    "candidate_commit": null,
+    "pending_remote_actions": []
+  },
+  "active_tasks": [],
+  "completed_tasks": [],
+  "retry_counts": {},
+  "blockers": [],
+  "reviews": [],
+  "pending_g4_actions": [],
+  "state_history": [
+    {
+      "revision": 1,
+      "state": "DISCOVERY",
+      "timestamp": "2026-08-30T13:33:13+0000"
+    },
+    {
+      "revision": 2,
+      "state": "SPEC_DRAFT",
+      "timestamp": "2026-08-30T13:40:00+0000"
+    },
+    {
+      "revision": 3,
+      "state": "G1_PENDING",
+      "timestamp": "2026-08-30T13:55:00+0000"
+    },
+    {
+      "revision": 4,
+      "state": "DESIGNING",
+      "timestamp": "2026-08-30T13:58:01+0000"
+    },
+    {
+      "revision": 5,
+      "state": "G2_PENDING",
+      "timestamp": "2026-08-30T14:10:00+0000"
+    }
+  ],
+  "approvals": {
+    "G1": {
+      "approval_id": "APR-001",
+      "status": "approved",
+      "approved_at": "2026-08-30T13:58:01+0000",
+      "spec_version": 4,
+      "spec_sha256": "62bf6cffd04823b9b21c4f185ebc8bfdbed79a7a7c566215e45e1393da219897",
+      "approver": "user"
+    }
+  },
+  "updated_at": "2026-08-30T14:10:00+0000"
+}
