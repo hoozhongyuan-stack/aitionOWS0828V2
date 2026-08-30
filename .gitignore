@@ -44,3 +44,6 @@ Thumbs.db
 
 # TypeScript 增量构建缓存
 tsconfig.tsbuildinfo
+
+# 鏈湴杩愮淮澶囧繕(鍚湇鍔″櫒淇℃伅,涓ョ鍏ュ簱)
+/LOCAL.md
