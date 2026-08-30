@@ -40,7 +40,9 @@
     "commentGuestName": "昵称(选填)",
     "pendingReview": "提交成功,审核通过后展示",
     "noComments": "暂无评论,来抢沙发",
-    "submitComment": "发表评论"
+    "submitComment": "发表评论",
+    "favorite": "收藏",
+    "favorited": "已收藏"
   },
   "auth": {
     "login": "登录",
@@ -102,5 +104,23 @@
   },
   "errors": {
     "backHome": "返回首页"
+  },
+  "product": {
+    "gallery": "图集",
+    "specs": "规格参数",
+    "inquiry": "询盘",
+    "subCategories": "产品分类"
+  },
+  "account": {
+    "title": "个人中心",
+    "menu": "个人中心",
+    "tabFavorites": "我的收藏",
+    "tabSubmissions": "我的投稿",
+    "emptyFavorites": "还没有收藏内容,去逛逛吧",
+    "unfavorite": "取消收藏",
+    "favoritedAt": "收藏于",
+    "typeArticle": "文章",
+    "typeProduct": "商品",
+    "logout": "退出登录"
   }
 }

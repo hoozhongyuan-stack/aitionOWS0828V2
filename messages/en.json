@@ -40,7 +40,9 @@
     "commentGuestName": "Nickname (optional)",
     "pendingReview": "Submitted. It will appear after review.",
     "noComments": "No comments yet — be the first",
-    "submitComment": "Post comment"
+    "submitComment": "Post comment",
+    "favorite": "Favorite",
+    "favorited": "Favorited"
   },
   "auth": {
     "login": "Log in",
@@ -102,5 +104,23 @@
   },
   "errors": {
     "backHome": "Back to home"
+  },
+  "product": {
+    "gallery": "Gallery",
+    "specs": "Specifications",
+    "inquiry": "Inquiry",
+    "subCategories": "Product categories"
+  },
+  "account": {
+    "title": "My Account",
+    "menu": "My Account",
+    "tabFavorites": "My Favorites",
+    "tabSubmissions": "My Submissions",
+    "emptyFavorites": "No favorites yet",
+    "unfavorite": "Remove",
+    "favoritedAt": "Favorited on",
+    "typeArticle": "Article",
+    "typeProduct": "Product",
+    "logout": "Sign out"
   }
 }

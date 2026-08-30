@@ -94,18 +94,36 @@ export function ArticleJsonLd({
   );
 }
 
-/** 产品(moduleType=product 的详情页可用) */
+/**
+ * 商品(moduleType=product 的详情页用,V3.0 REQ-004):
+ * - image 相对路径用站点 URL 绝对化(与 ArticleJsonLd 同机制),支持图集数组
+ * - brand 为品牌配置站点名;category 为商品栏目名
+ * - specs 含 k 为「型号」的键值时输出 sku(展示型站点无 offers,警告已接受)
+ */
 export function ProductJsonLd({
   name,
   description,
   image,
   url,
+  category,
+  brand,
+  specs,
 }: {
   name: string;
   description: string;
-  image: string | null;
+  image: string | string[] | null;
   url: string;
+  category?: string | null;
+  brand?: string | null;
+  specs?: { k: string; v: string }[] | null;
 }) {
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const absolutize = (u: string) => new URL(u, base).toString();
+  // 单图输出单个绝对 URL(与 ArticleJsonLd 一致);图集数组逐项绝对化;空 → 省略字段
+  const list = Array.isArray(image) ? image.filter(Boolean) : image ? [image] : [];
+  const imageField =
+    list.length === 0 ? null : Array.isArray(image) ? list.map(absolutize) : absolutize(list[0]);
+  const model = specs?.find((s) => s.k?.trim() === "型号" && s.v?.trim());
   return (
     <JsonLd
       data={{
@@ -114,7 +132,10 @@ export function ProductJsonLd({
         name,
         description,
         url,
-        ...(image ? { image } : {}),
+        ...(imageField ? { image: imageField } : {}),
+        ...(brand ? { brand: { "@type": "Brand", name: brand } } : {}),
+        ...(category ? { category } : {}),
+        ...(model ? { sku: model.v.trim() } : {}),
       }}
     />
   );

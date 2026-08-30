@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { Eye, ThumbsUp } from "lucide-react";
 import { safeDateLocale } from "@/lib/utils";
+import { resolveContentDetailPath } from "@/server/content";
 
-/** 内容卡片(栏目页/首页共用):封面 + 标题 + 摘要 + 数据 */
+/**
+ * 内容卡片(栏目页/首页共用):封面 + 标题 + 摘要 + 数据。
+ * 详情链接按栏目模块类型分流(V3.0 REQ-003):product 栏目走 /product/[slug],
+ * 其余沿用 /article/[slug](存量行为不变);未传 moduleType 保持旧行为。
+ */
 export function ContentCard({
   locale,
   item,
   viewsLabel,
+  moduleType,
 }: {
   locale: string;
   item: {
@@ -19,11 +25,13 @@ export function ContentCard({
     publishedAt: Date | string;
   };
   viewsLabel: string;
+  /** 所属栏目模块类型(product → 商品详情路由);缺省按 article 处理 */
+  moduleType?: string;
 }) {
   const date = new Date(item.publishedAt);
   return (
     <Link
-      href={`/${locale}/article/${item.slug}`}
+      href={resolveContentDetailPath(moduleType ?? "article", item.slug, locale)}
       className="group flex flex-col overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md"
     >
       {item.coverUrl ? (

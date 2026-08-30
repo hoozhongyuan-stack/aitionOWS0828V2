@@ -261,6 +261,145 @@ async function main() {
   }
   void welcome;
 
+  // —— V3.0 演示数据(non-normative,可选交付便利项):「产品中心」栏目树 + 演示商品 ——
+  // 惯例与上方一致:全部 upsert 且 update 分支为空 → 存在即跳过,绝不覆盖客户在后台的改动。
+  const demoImage = (label: string, bg: string) =>
+    `data:image/svg+xml,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="${bg}"/><text x="50%" y="50%" fill="#ffffff" font-family="system-ui" font-size="44" text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`
+    )}`;
+
+  const productRoot = await prisma.category.upsert({
+    where: { slug: "products" },
+    update: {},
+    create: {
+      slug: "products",
+      moduleType: "product",
+      visible: true,
+      allowSubmit: false,
+      sort: 3,
+      translations: {
+        create: [
+          { locale: "zh-CN", name: "产品中心", description: "演示商品栏目:支持图集、规格参数与询盘表单。" },
+          { locale: "en", name: "Products", description: "Demo product catalog: gallery, specs and inquiry form." },
+        ],
+      },
+    },
+  });
+  const productChildA = await prisma.category.upsert({
+    where: { slug: "products-industrial" },
+    update: {},
+    create: {
+      slug: "products-industrial",
+      parentId: productRoot.id,
+      moduleType: "product",
+      visible: true,
+      allowSubmit: false,
+      sort: 1,
+      translations: {
+        create: [
+          { locale: "zh-CN", name: "工业设备" },
+          { locale: "en", name: "Industrial Equipment" },
+        ],
+      },
+    },
+  });
+  const productChildB = await prisma.category.upsert({
+    where: { slug: "products-smart" },
+    update: {},
+    create: {
+      slug: "products-smart",
+      parentId: productRoot.id,
+      moduleType: "product",
+      visible: true,
+      allowSubmit: false,
+      sort: 2,
+      translations: {
+        create: [
+          { locale: "zh-CN", name: "智能终端" },
+          { locale: "en", name: "Smart Devices" },
+        ],
+      },
+    },
+  });
+  const demoInquiryForm = await prisma.form.upsert({
+    where: { slug: "demo-inquiry" },
+    update: {},
+    create: {
+      slug: "demo-inquiry",
+      name: "产品询盘",
+      relatedKey: "demo-inquiry",
+      enabled: true,
+      antiDuplicate: true,
+      schema: JSON.stringify([
+        { id: "f_name", type: "text", label: "姓名", required: true, placeholder: "您的称呼" },
+        { id: "f_phone", type: "text", label: "联系电话", required: true, placeholder: "手机号码" },
+        { id: "f_msg", type: "textarea", label: "询盘内容", required: false, placeholder: "感兴趣的产品与需求" },
+      ]),
+    },
+  });
+  const demoProducts: {
+    slug: string;
+    categoryId: number;
+    model: string;
+    zhTitle: string;
+    enTitle: string;
+  }[] = [
+    {
+      slug: "demo-product-gateway",
+      categoryId: productChildA.id,
+      model: "AX-100",
+      zhTitle: "演示商品:工业智能网关",
+      enTitle: "Demo Product: Industrial Smart Gateway",
+    },
+    {
+      slug: "demo-product-terminal",
+      categoryId: productChildB.id,
+      model: "ST-200",
+      zhTitle: "演示商品:触控智能终端",
+      enTitle: "Demo Product: Touch Smart Terminal",
+    },
+  ];
+  for (const p of demoProducts) {
+    await prisma.content.upsert({
+      where: { slug: p.slug },
+      update: {},
+      create: {
+        slug: p.slug,
+        categoryId: p.categoryId,
+        status: "PUBLISHED",
+        source: "ADMIN",
+        authorName: "AitionOWS",
+        publishAt: new Date(),
+        coverUrl: demoImage("Demo 1", "#0f172a"),
+        gallery: JSON.stringify([demoImage("Demo 1", "#0f172a"), demoImage("Demo 2", "#334155")]),
+        specs: JSON.stringify([
+          { k: "型号", v: p.model },
+          { k: "材质", v: "铝合金机身" },
+          { k: "质保", v: "整机 24 个月" },
+        ]),
+        formId: demoInquiryForm.id,
+        translations: {
+          create: [
+            {
+              locale: "zh-CN",
+              title: p.zhTitle,
+              summary: "演示商品:含双图图集、三行规格参数与询盘表单,可在后台替换。",
+              body: "<h2>产品概述</h2><p>这是随系统预置的演示商品,用于展示商品图集、规格参数与询盘表单能力;可在后台内容管理中编辑或删除。</p>",
+              seoTitle: p.zhTitle,
+            },
+            {
+              locale: "en",
+              title: p.enTitle,
+              summary: "Demo product with gallery, specs and inquiry form; edit or remove in admin.",
+              body: "<h2>Overview</h2><p>This is a demo product seeded with the system to showcase gallery, specs and inquiry form; edit or remove it in the admin panel.</p>",
+              seoTitle: p.enTitle,
+            },
+          ],
+        },
+      },
+    });
+  }
+
   console.log("✔ 种子数据初始化完成(默认管理员 admin / admin888)");
 }
 

@@ -9,6 +9,13 @@ import path from "node:path";
  * - coverage:@vitest/coverage-v8,阈值按 NFR-005(新增代码 90/90/90/85)
  */
 export default defineConfig({
+  // JSX 转换(rolldown-vite 默认不转换 JSX):允许单测渲染 SEO JSON-LD 等纯服务端组件(TEST-006)
+  oxc: {
+    jsx: {
+      runtime: "automatic",
+      importSource: "react",
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

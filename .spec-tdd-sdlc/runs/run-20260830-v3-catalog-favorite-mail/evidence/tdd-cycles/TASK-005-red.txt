@@ -1,0 +1,176 @@
+== TASK-005 RED (TEST-006/007) ==
+UTC: 2026-08-30T15:29:12Z
+command: npx vitest run tests/seo/product-jsonld.test.ts tests/server/llms-sitemap.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ❯ tests/seo/product-jsonld.test.ts (5 tests | 4 failed) 9ms
+     × 输出 @type=Product 与 name/description/url,image 相对路径绝对化 5ms
+     × image 支持图集数组且逐项绝对化 2ms
+     × 输出 brand(品牌)与 category 字段 1ms
+     × specs 含「型号」键值时输出 sku;无「型号」时不输出 sku 0ms
+     ✓ image 为 null 时省略 image 字段,不抛错 0ms
+ ❯ tests/server/llms-sitemap.test.ts (3 tests | 2 failed) 110ms
+     ✓ listForLlms 返回条目携带 moduleType 且包含商品条目 2ms
+     × llms.txt 按 moduleType 分区:商品在「## 产品」分区,文章在「## 文章」分区 6ms
+     × sitemap 包含商品详情 URL,且商品不再以 /article/ URL 出现 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/seo/product-jsonld.test.ts > TEST-006:Product JSON-LD 结构化数据 > 输出 @type=Product 与 name/description/url,image 相对路径绝对化
+AssertionError: expected '/uploads/ax100.webp' to be 'https://seo.example.com/uploads/ax100…' // Object.is equality
+
+Expected: "https://seo.example.com/uploads/ax100.webp"
+Received: "/uploads/ax100.webp"
+
+ ❯ tests/seo/product-jsonld.test.ts:46:22
+     44|     expect(ld.description).toBe("工业级智能网关,支持多协议接入。");
+     45|     expect(ld.url).toBe("https://seo.example.com/zh-CN/product/ax100");
+     46|     expect(ld.image).toBe("https://seo.example.com/uploads/ax100.webp"…
+       |                      ^
+     47|   });
+     48|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  tests/seo/product-jsonld.test.ts > TEST-006:Product JSON-LD 结构化数据 > image 支持图集数组且逐项绝对化
+AssertionError: expected [ '/uploads/g1.webp', …(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "https://seo.example.com/uploads/g1.webp",
++   "/uploads/g1.webp",
+    "https://cdn.example.com/g2.webp",
+  ]
+
+ ❯ tests/seo/product-jsonld.test.ts:56:22
+     54|       url: "https://seo.example.com/zh-CN/product/p1",
+     55|     });
+     56|     expect(ld.image).toEqual([
+       |                      ^
+     57|       "https://seo.example.com/uploads/g1.webp",
+     58|       "https://cdn.example.com/g2.webp",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  tests/seo/product-jsonld.test.ts > TEST-006:Product JSON-LD 结构化数据 > 输出 brand(品牌)与 category 字段
+AssertionError: expected undefined to deeply equal { '@type': 'Brand', name: 'AitionOWS' }
+
+- Expected:
+{
+  "@type": "Brand",
+  "name": "AitionOWS",
+}
+
++ Received:
+undefined
+
+ ❯ tests/seo/product-jsonld.test.ts:71:22
+     69|       category: "产品中心",
+     70|     });
+     71|     expect(ld.brand).toEqual({ "@type": "Brand", name: "AitionOWS" });
+       |                      ^
+     72|     expect(ld.category).toBe("产品中心");
+     73|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  tests/seo/product-jsonld.test.ts > TEST-006:Product JSON-LD 结构化数据 > specs 含「型号」键值时输出 sku;无「型号」时不输出 sku
+AssertionError: expected undefined to be 'AX-100' // Object.is equality
+
+- Expected:
+"AX-100"
+
++ Received:
+undefined
+
+ ❯ tests/seo/product-jsonld.test.ts:86:27
+     84|       ],
+     85|     });
+     86|     expect(withModel.sku).toBe("AX-100");
+       |                           ^
+     87|
+     88|     const withoutModel = renderLd({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  tests/server/llms-sitemap.test.ts > TEST-007:llms.txt / sitemap 商品收录 > llms.txt 按 moduleType 分区:商品在「## 产品」分区,文章在「## 文章」分区
+AssertionError: expected '# AitionOWS\n> AitionOWS 企业官网:产品与服务介绍…' to contain '## 产品'
+
+- Expected
++ Received
+
+- ## 产品
++ # AitionOWS
++ > AitionOWS 企业官网:产品与服务介绍、新闻动态、联系方式。
++
++ 主要语言:zh-CN(其他语言:无)
++
++ ## 页面
++ - [首页](http://localhost:3000/zh-CN):企业首页与最新动态
++ - [联系我们](http://localhost:3000/zh-CN/contact):联系电话、邮箱与在线咨询表单
++
++ ## 栏目
++ - [产品栏目](http://localhost:3000/zh-CN/c/llms-prod-cat)
++ - [新闻栏目](http://localhost:3000/zh-CN/c/llms-news-cat)
++
++ ## 文章
++ - [文章乙](http://localhost:3000/zh-CN/article/llms-article-item):文章乙摘要
++ - [商品甲](http://localhost:3000/zh-CN/article/llms-product-item):商品甲摘要
++
++ ## 站点地图
++ - [sitemap.xml](http://localhost:3000/sitemap.xml)
+
+ ❯ tests/server/llms-sitemap.test.ts:84:18
+     82|     expect(text).toContain("# ");
+     83|     // 两个分区都存在
+     84|     expect(text).toContain("## 产品");
+       |                  ^
+     85|     expect(text).toContain("## 文章");
+     86|     // 商品条目走 /product/ 详情链接,含摘要(base 随 NEXT_PUBLIC_SITE_URL 变化,断言路径)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  tests/server/llms-sitemap.test.ts > TEST-007:llms.txt / sitemap 商品收录 > sitemap 包含商品详情 URL,且商品不再以 /article/ URL 出现
+AssertionError: expected [ 'http://localhost:3000/zh-CN', …(9) ] to deep equally contain StringContaining{…}
+
+- Expected:
+StringContaining "/zh-CN/product/llms-product-item"
+
++ Received:
+[
+  "http://localhost:3000/zh-CN",
+  "http://localhost:3000/zh-CN/c/llms-prod-cat",
+  "http://localhost:3000/zh-CN/c/llms-news-cat",
+  "http://localhost:3000/zh-CN/article/llms-product-item",
+  "http://localhost:3000/zh-CN/article/llms-article-item",
+  "http://localhost:3000/en",
+  "http://localhost:3000/en/c/llms-prod-cat",
+  "http://localhost:3000/en/c/llms-news-cat",
+  "http://localhost:3000/en/article/llms-product-item",
+  "http://localhost:3000/en/article/llms-article-item",
+]
+
+ ❯ tests/server/llms-sitemap.test.ts:111:18
+    109|
+    110|     // 商品详情 URL(/zh-CN 与 /en 两个语言)
+    111|     expect(urls).toContainEqual(expect.stringContaining("/zh-CN/produc…
+       |                  ^
+    112|     expect(urls).toContainEqual(expect.stringContaining("/en/product/l…
+    113|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  6 failed | 2 passed (8)
+   Start at  23:29:12
+   Duration  810ms (transform 68ms, setup 1.00s, import 33ms, tests 119ms, environment 0ms)
+
+EXIT_CODE: 1

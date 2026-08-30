@@ -18,6 +18,10 @@ const DB_FILE = path.join(TMP_DIR, "test.db");
 
 process.env.DATABASE_URL = `file:${DB_FILE}`;
 
+/** 临时测试库绝对路径与 DATABASE_URL(导出供集成测试派生子进程时注入,如 TEST-019 dev server) */
+export const TEST_DB_PATH = DB_FILE;
+export const TEST_DB_URL = process.env.DATABASE_URL;
+
 execSync("npx prisma migrate deploy", {
   cwd: path.resolve(__dirname, "../.."),
   env: { ...process.env },
