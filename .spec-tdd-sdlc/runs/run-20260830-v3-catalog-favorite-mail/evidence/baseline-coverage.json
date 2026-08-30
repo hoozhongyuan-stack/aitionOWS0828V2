@@ -1,0 +1,24 @@
+{
+  "metrics": {
+    "statements": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100.0
+    },
+    "lines": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100.0
+    },
+    "functions": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100.0
+    },
+    "branches": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100.0
+    }
+  }
+}

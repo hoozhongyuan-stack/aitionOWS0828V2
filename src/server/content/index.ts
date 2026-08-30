@@ -494,9 +494,9 @@ export async function listLatestPublished(locale: string, take = 6) {
     where: { status: CONTENT_STATUS.PUBLISHED, category: { visible: true } },
     orderBy: [{ publishAt: "desc" }, { id: "desc" }],
     take,
-    include: { translations: true },
+    include: { translations: true, category: { select: { moduleType: true } } },
   });
-  return items.map((c) => shapeCard(c, locale));
+  return items.map((c) => shapeCard(c, locale, c.category?.moduleType));
 }
 
 /** 站点地图数据:全部已发布内容与可见栏目 */
@@ -526,8 +526,10 @@ function shapeCard(
     publishAt: Date | null;
     createdAt: Date;
     translations: { locale: string; title: string; summary: string | null }[];
+    category?: { moduleType: string };
   },
-  locale: string
+  locale: string,
+  moduleType?: string
 ) {
   const t = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
   return {
@@ -539,5 +541,6 @@ function shapeCard(
     publishedAt: c.publishAt ?? c.createdAt,
     title: t?.title ?? "",
     summary: t?.summary ?? null,
+    moduleType: moduleType ?? c.category?.moduleType,
   };
 }

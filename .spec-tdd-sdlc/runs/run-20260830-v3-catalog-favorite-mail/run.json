@@ -11,8 +11,8 @@
     "email outbound: 邮件模板变更影响对外发送内容"
   ],
   "resume_state": null,
-  "state": "EXECUTING",
-  "state_revision": 7,
+  "state": "RELEASE_READY",
+  "state_revision": 15,
   "orchestrator_id": "orchestrator-zcode-main",
   "repository": {
     "root": "../../..",
@@ -22,15 +22,56 @@
     "initial_dirty_paths": [
       "docs/V3.0升级计划.md (untracked, user-approved planning doc; 将随首个 workflow 提交纳入)"
     ],
-    "head": "d0d71c5474e9f0e67bdc1abacf380bb05dcc72a7",
-    "candidate_commit": null,
-    "pending_remote_actions": []
+    "head": "1d42424b740706a1410968d97511f4922a680d77",
+    "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+    "pending_remote_actions": [],
+    "baseline_commit": "e61ae57950636f137fe1c01d514849cc65134b1c"
   },
   "active_tasks": [],
   "completed_tasks": [],
   "retry_counts": {},
   "blockers": [],
-  "reviews": [],
+  "reviews": [
+    {
+      "id": "REV-001",
+      "role": "code-review",
+      "agent_id": "agent_4f7a88e3-code-reviewer",
+      "subject_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "status": "passed",
+      "timestamp": "2026-08-31T00:55:00+0000",
+      "evidence_id": "EVID-029",
+      "evidence_ids": [
+        "EVID-029"
+      ],
+      "note": "初评 changes_requested(3H/4M/6L) → 修复后复核 passed"
+    },
+    {
+      "id": "REV-002",
+      "role": "security-review",
+      "agent_id": "agent_0ab7a2e9-security-reviewer",
+      "subject_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "status": "passed",
+      "timestamp": "2026-08-31T00:58:00+0000",
+      "evidence_id": "EVID-030",
+      "evidence_ids": [
+        "EVID-030"
+      ],
+      "note": "初评 changes_requested(2M/3L,无C/H) → 复核 passed"
+    },
+    {
+      "id": "REV-003",
+      "role": "qa",
+      "agent_id": "agent_3ec67e2f-qa",
+      "subject_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "status": "passed",
+      "timestamp": "2026-08-31T01:05:00+0000",
+      "evidence_id": "EVID-031",
+      "evidence_ids": [
+        "EVID-031"
+      ],
+      "note": "初评 changes_requested(AC-019) → 修复后独立复验 passed"
+    }
+  ],
   "pending_g4_actions": [],
   "state_history": [
     {
@@ -61,32 +102,56 @@
     {
       "revision": 6,
       "state": "TEST_DESIGN",
-      "timestamp": "2026-08-30T14:18:27+0000",
-      "note": "测试设计已在批准的 Spec 中完成（TEST-000..019 + MANUAL-001..007），无新增设计"
+      "timestamp": "2026-08-30T14:18:28+0000"
     },
     {
       "revision": 7,
       "state": "EXECUTING",
-      "timestamp": "2026-08-30T14:18:28+0000"
+      "timestamp": "2026-08-30T14:19:00+0000"
+    },
+    {
+      "revision": 8,
+      "state": "G1_PENDING",
+      "timestamp": "2026-08-31T00:50:00+0000"
+    },
+    {
+      "revision": 9,
+      "state": "DESIGNING",
+      "timestamp": "2026-08-31T00:51:00+0000"
+    },
+    {
+      "revision": 10,
+      "state": "G2_PENDING",
+      "timestamp": "2026-08-31T00:52:00+0000"
+    },
+    {
+      "revision": 11,
+      "state": "TEST_DESIGN",
+      "timestamp": "2026-08-31T00:53:00+0000"
+    },
+    {
+      "revision": 12,
+      "state": "EXECUTING",
+      "timestamp": "2026-08-31T00:54:00+0000"
+    },
+    {
+      "revision": 13,
+      "state": "VERIFYING",
+      "timestamp": "2026-08-31T02:39:00+0000"
+    },
+    {
+      "revision": 14,
+      "state": "G3_PENDING",
+      "timestamp": "2026-08-31T02:40:00+0000",
+      "g3_request_id": "G3REQ-003",
+      "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77"
+    },
+    {
+      "revision": 15,
+      "state": "RELEASE_READY",
+      "timestamp": "2026-08-31T02:41:00+0000",
+      "note": "G3 已批准（APR-008）；无待执行外部动作，合并/推送需另行 G4"
     }
   ],
-  "approvals": {
-    "G1": {
-      "approval_id": "APR-001",
-      "status": "approved",
-      "approved_at": "2026-08-30T13:58:01+0000",
-      "spec_version": 4,
-      "spec_sha256": "62bf6cffd04823b9b21c4f185ebc8bfdbed79a7a7c566215e45e1393da219897",
-      "approver": "user"
-    },
-    "G2": {
-      "approval_id": "APR-002",
-      "status": "approved",
-      "approved_at": "2026-08-30T14:18:27+0000",
-      "design_sha256": "50989d910fd5928a6acb6afb276f0240aa46dd7dfc7dd3bbf6f6d2d7810df3bb",
-      "plan_sha256": "3b4e82f764981606724aa848d282c2a874dc6bf663f2321d1cc26fb8e92cc9ed",
-      "approver": "user"
-    }
-  },
-  "updated_at": "2026-08-30T14:18:28+0000"
+  "updated_at": "2026-08-31T02:41:00+0000"
 }

@@ -1,0 +1,24 @@
+{
+  "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+  "files": [
+    {
+      "path": "traceability.snapshot.json",
+      "sha256": "fb507dd84fd009c006e85283817788a0e72e348400182401c6e476f82dfac379"
+    },
+    {
+      "path": "run.snapshot.json",
+      "sha256": "9abeca43d92d3495f84cc44a4cf82ab3b08304b6dad3c3df620d105bb245bcff"
+    },
+    {
+      "path": "evidence-manifest.json",
+      "sha256": "61bf15d37ba5f215690340b684edad724f923866bf7982e304217f6add5fb43c"
+    },
+    {
+      "path": "review-manifest.json",
+      "sha256": "04095aa03baf0c77c9a804927b84e78d41388bc63215fec274a132a85d1ce67a"
+    }
+  ],
+  "gate": "G3",
+  "request_id": "G3REQ-003",
+  "schema_version": "1.1"
+}

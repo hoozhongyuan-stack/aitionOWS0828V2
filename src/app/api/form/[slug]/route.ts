@@ -11,7 +11,6 @@ import { rateLimit } from "@/lib/ugc/anti-spam";
  */
 const schema = z.object({
   data: z.record(z.string(), z.unknown()),
-  sourceUrl: z.string().max(300).optional(),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ slug: string }> }) {

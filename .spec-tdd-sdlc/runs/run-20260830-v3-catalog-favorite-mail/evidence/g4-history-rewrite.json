@@ -1,0 +1,15 @@
+{
+  "id": "G4REC-001",
+  "type": "local-history-rewrite",
+  "action": "history-rewrite (rebase/fixup) on local unpushed branch feat/v3.0-spec-tdd",
+  "authorization": "用户对合并批准请求回复「批准」（含 G4 授权项：仅改写 e61ae57 之后的 18 个提交，9+1 个纯追溯 chore squash 进相邻实现提交，树哈希零变化硬验证）",
+  "executed_at": "2026-08-31T02:20:00+0000",
+  "verification": {
+    "tree_before": "e8b97bd6a6d3dbca89fd0873290ba37011fb64f8",
+    "tree_after": "e8b97bd6a6d3dbca89fd0873290ba37011fb64f8",
+    "vitest": "19 files / 110 tests passed",
+    "tsc": "exit 0"
+  },
+  "result": "success",
+  "note": "树哈希与批准时工作树终态逐字节一致；备份分支 feat/v3.0-spec-tdd-backup 保留"
+}

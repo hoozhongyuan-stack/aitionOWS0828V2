@@ -2,7 +2,7 @@
   "schema_version": "1.1",
   "project_type": "brownfield",
   "run_id": "run-20260830-v3-catalog-favorite-mail",
-  "state_revision": 7,
+  "state_revision": 15,
   "orchestrator_id": "orchestrator-zcode-main",
   "requirements": [
     {
@@ -13,10 +13,12 @@
         "AC-017"
       ],
       "task_ids": [
-        "TASK-001"
+        "TASK-001",
+        "TASK-012"
       ],
       "evidence_ids": [
-        "EVID-001"
+        "EVID-001",
+        "EVID-026"
       ]
     },
     {
@@ -103,7 +105,8 @@
       ],
       "task_ids": [
         "TASK-002",
-        "TASK-007"
+        "TASK-007",
+        "TASK-012"
       ],
       "evidence_ids": [
         "EVID-002",
@@ -220,7 +223,8 @@
       ],
       "task_ids": [
         "TASK-008",
-        "TASK-010"
+        "TASK-010",
+        "TASK-012"
       ],
       "evidence_ids": [
         "EVID-010",
@@ -239,7 +243,8 @@
       ],
       "task_ids": [
         "TASK-007",
-        "TASK-009"
+        "TASK-009",
+        "TASK-012"
       ],
       "evidence_ids": [
         "EVID-013",
@@ -287,14 +292,16 @@
       ],
       "task_ids": [
         "TASK-008",
-        "TASK-010"
+        "TASK-010",
+        "TASK-012"
       ],
       "evidence_ids": [
         "EVID-010",
         "EVID-011",
         "EVID-012",
         "EVID-018",
-        "EVID-019"
+        "EVID-019",
+        "EVID-027"
       ]
     },
     {
@@ -304,9 +311,14 @@
         "AC-019"
       ],
       "task_ids": [
-        "TASK-001"
+        "TASK-001",
+        "TASK-012"
       ],
-      "evidence_ids": []
+      "evidence_ids": [
+        "EVID-026",
+        "EVID-028",
+        "EVID-032"
+      ]
     },
     {
       "id": "NFR-006",
@@ -322,7 +334,124 @@
       ]
     }
   ],
-  "defects": [],
+  "defects": [
+    {
+      "id": "DEF-001",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-020"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026",
+        "EVID-027"
+      ],
+      "description": "route.ts 非 HTTP 导出致 next build 类型检查失败（代码评审 High-1）"
+    },
+    {
+      "id": "DEF-002",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-014"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026"
+      ],
+      "description": "AC-014 来源页在生产链路缺失（代码评审 High-2/安全评审 Medium-1）：/api/form 提取 Referer 传入通知并补集成断言"
+    },
+    {
+      "id": "DEF-003",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-019"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026",
+        "EVID-028"
+      ],
+      "description": "NFR-005 覆盖率口径不可测量（QA/代码评审 High-3）：Spec v5 修订为新增模块清单口径，新增行为拆分独立模块，门禁 96.47/85.48/100/97.93 达标"
+    },
+    {
+      "id": "DEF-004",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-004"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026"
+      ],
+      "description": "非 product 栏目列表聚合深度偏离基线（Medium）：递归聚合仅对 product 启用，补三级树回归用例"
+    },
+    {
+      "id": "DEF-005",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-008"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026"
+      ],
+      "description": "deleteContent 不级联清理 Favorite（Medium，违背 design 约定）：事务内 deleteMany"
+    },
+    {
+      "id": "DEF-006",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-006"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026"
+      ],
+      "description": "并发取消收藏 P2025 边界（Medium）：删除改幂等 deleteMany"
+    },
+    {
+      "id": "DEF-007",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-001"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026"
+      ],
+      "description": "favoriteCount 后台口径与 Spec 文本冲突（安全评审 Medium-2）：Spec v5 澄清为只读展示，实现已一致"
+    },
+    {
+      "id": "DEF-008",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-007",
+        "AC-008",
+        "AC-013"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-026"
+      ],
+      "description": "Low 加固批次：notifyAdminBranded 三份拷贝上提 notifyAdmin(html)、adminUrl locale 统一、/account 会话改 getActiveUserSession、safeInternalPath 反斜杠归一化、sendMail to 逐元素 headerSafe、messages EOF 换行、comment 分支预置注释"
+    }
+  ],
   "decisions": [
     {
       "id": "ADR-001",
@@ -430,7 +559,9 @@
         "REQ-001"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-007"
+      ],
       "test_ids": [
         "TEST-001"
       ],
@@ -455,7 +586,9 @@
         "REQ-002"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-001"
+      ],
       "test_ids": [
         "TEST-019"
       ],
@@ -479,7 +612,9 @@
         "REQ-003"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-004"
+      ],
       "test_ids": [
         "TEST-005"
       ],
@@ -504,7 +639,9 @@
         "REQ-005"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-006"
+      ],
       "test_ids": [
         "TEST-008"
       ],
@@ -516,7 +653,9 @@
         "REQ-006"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-008"
+      ],
       "test_ids": [
         "TEST-009"
       ],
@@ -528,7 +667,10 @@
         "REQ-007"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-005",
+        "DEF-008"
+      ],
       "test_ids": [
         "TEST-010"
       ],
@@ -606,7 +748,9 @@
         "REQ-011"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-008"
+      ],
       "test_ids": [
         "TEST-015"
       ],
@@ -618,7 +762,9 @@
         "REQ-012"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-002"
+      ],
       "test_ids": [
         "TEST-016"
       ],
@@ -668,7 +814,9 @@
       "nfr_ids": [
         "NFR-005"
       ],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-003"
+      ],
       "test_ids": [
         "TEST-008",
         "TEST-013"
@@ -692,7 +840,7 @@
         "EVID-001"
       ],
       "commit_ids": [
-        "d0d71c5474e9f0e67bdc1abacf380bb05dcc72a7"
+        "af3ccb08e6ace7cbaafad8dbae38592f31b4b868"
       ],
       "status": "complete"
     },
@@ -715,7 +863,7 @@
         "EVID-004"
       ],
       "commit_ids": [
-        "36883a8a52f9da6f3bde03c2b2d38852190192f9"
+        "221842780ee3a96ac340707eab17051452de5184"
       ],
       "status": "complete"
     },
@@ -738,7 +886,7 @@
         "EVID-009"
       ],
       "commit_ids": [
-        "8def6da876ed6c494425e491ac01ecc9848af64c"
+        "b1654fd376572ef60891f037e294f785c0540acd"
       ],
       "status": "complete"
     },
@@ -757,7 +905,7 @@
         "EVID-009"
       ],
       "commit_ids": [
-        "8def6da876ed6c494425e491ac01ecc9848af64c"
+        "b1654fd376572ef60891f037e294f785c0540acd"
       ],
       "status": "complete"
     },
@@ -780,7 +928,7 @@
         "EVID-012"
       ],
       "commit_ids": [
-        "63d860657d1cb1c7f7c6e5d9e7998ca81c9448e0"
+        "713bae3aa32fe1b642c0e01463581479a7519b21"
       ],
       "status": "complete"
     },
@@ -801,7 +949,7 @@
         "EVID-017"
       ],
       "commit_ids": [
-        "198f5e1e80c5c683ddfa9194eb84872ccfc82d19"
+        "fb4de0b320ee180e3e55807fe90f23b5a081c06a"
       ],
       "status": "complete"
     },
@@ -822,7 +970,7 @@
         "EVID-017"
       ],
       "commit_ids": [
-        "198f5e1e80c5c683ddfa9194eb84872ccfc82d19"
+        "fb4de0b320ee180e3e55807fe90f23b5a081c06a"
       ],
       "status": "complete"
     },
@@ -847,7 +995,7 @@
         "EVID-020"
       ],
       "commit_ids": [
-        "748479fd139343852f6b9c187fadec8b0a64f4da"
+        "fbe6d3a7b02300ada4997079b92d8bb0b58f3362"
       ],
       "status": "complete"
     },
@@ -870,7 +1018,7 @@
         "EVID-025"
       ],
       "commit_ids": [
-        "e41782838f658982d0ba962fb023d1d17dca6bdc"
+        "2a8f52e4903aea9432691091ed32de69b4a9aa88"
       ],
       "status": "complete"
     },
@@ -889,7 +1037,7 @@
         "EVID-025"
       ],
       "commit_ids": [
-        "e41782838f658982d0ba962fb023d1d17dca6bdc"
+        "2a8f52e4903aea9432691091ed32de69b4a9aa88"
       ],
       "status": "complete"
     },
@@ -904,10 +1052,51 @@
         "EVID-025"
       ],
       "commit_ids": [
-        "e41782838f658982d0ba962fb023d1d17dca6bdc"
+        "2a8f52e4903aea9432691091ed32de69b4a9aa88"
       ],
       "status": "complete",
       "note": "non-normative 种子（Spec Included 声明），幂等不覆盖客户数据"
+    },
+    {
+      "id": "TASK-012",
+      "role": "implementation",
+      "agent_id": "agent_146b7cd2-implementerF-remediation",
+      "requirement_ids": [
+        "REQ-005",
+        "REQ-012",
+        "REQ-013"
+      ],
+      "nfr_ids": [
+        "NFR-001",
+        "NFR-004",
+        "NFR-005"
+      ],
+      "defect_ids": [
+        "DEF-001",
+        "DEF-002",
+        "DEF-003",
+        "DEF-004",
+        "DEF-005",
+        "DEF-006",
+        "DEF-007",
+        "DEF-008"
+      ],
+      "evidence_ids": [
+        "EVID-026",
+        "EVID-027",
+        "EVID-028",
+        "EVID-029",
+        "EVID-030",
+        "EVID-031",
+        "EVID-032"
+      ],
+      "commit_ids": [
+        "80e82933471e038a5875f2d07219cf798015174f",
+        "42aee7fdcbb4023195bfc6b6438b2289dd626155",
+        "1d42424b740706a1410968d97511f4922a680d77",
+        "1d42424b740706a1410968d97511f4922a680d77"
+      ],
+      "status": "complete"
     }
   ],
   "evidence": [
@@ -1467,6 +1656,145 @@
       ],
       "test_ids": [],
       "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-026",
+      "path": "evidence/tdd-cycles/TASK-REM-verdict.txt",
+      "sha256": "a75ba2e58151cd60a4f60596616011034debeadde9d023004ac6e424da9e837d",
+      "requirement_ids": [
+        "REQ-013"
+      ],
+      "nfr_ids": [
+        "NFR-005"
+      ],
+      "defect_ids": [
+        "DEF-001",
+        "DEF-002",
+        "DEF-003",
+        "DEF-004",
+        "DEF-005",
+        "DEF-006",
+        "DEF-007",
+        "DEF-008"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [
+        "TDD-011"
+      ],
+      "test_ids": [],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-027",
+      "path": "evidence/tdd-cycles/TASK-REM-build.txt",
+      "sha256": "3e272c03039f23c861b5674b69f8f978332fab583a2f81381231053760bcdd7e",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-004"
+      ],
+      "defect_ids": [
+        "DEF-001"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [
+        "TDD-011"
+      ],
+      "test_ids": [],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-028",
+      "path": "evidence/tdd-cycles/TASK-REM-coverage.txt",
+      "sha256": "4a23fadf2b86e0ea46c9f447aa52e3c521f2d6c8ac4841a665e85fd22f5424d9",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-005"
+      ],
+      "defect_ids": [
+        "DEF-003"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [
+        "TDD-011"
+      ],
+      "test_ids": [
+        "TEST-008",
+        "TEST-013"
+      ],
+      "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-029",
+      "path": "evidence/review-code-recheck.md",
+      "sha256": "7528327e502bc35cc52b5575b46eebeb76a9f037347990ff1beaa68a9191e1fb",
+      "requirement_ids": [],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [],
+      "test_ids": [],
+      "manual_verification_ids": [],
+      "review_ids": [
+        "REV-001"
+      ]
+    },
+    {
+      "id": "EVID-030",
+      "path": "evidence/review-security-recheck.md",
+      "sha256": "1c93f39b886d6b7098b4383d249695168e15af80f3f383a93d72bb582d96544a",
+      "requirement_ids": [],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [],
+      "test_ids": [],
+      "manual_verification_ids": [],
+      "review_ids": [
+        "REV-002"
+      ]
+    },
+    {
+      "id": "EVID-031",
+      "path": "evidence/review-qa-recheck.md",
+      "sha256": "bc3c0fd739b1195f51d47331c8c3442d5d54c99fe6690d9500fd1e68c9f2a78a",
+      "requirement_ids": [],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [],
+      "test_ids": [],
+      "manual_verification_ids": [],
+      "review_ids": [
+        "REV-003"
+      ]
+    },
+    {
+      "id": "EVID-032",
+      "path": "evidence/coverage-final.txt",
+      "sha256": "80d050c4906232493fedd987f0053d75bd0da7145d0a1b9b972d3fb6c334ec65",
+      "requirement_ids": [],
+      "nfr_ids": [
+        "NFR-005"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [],
+      "test_ids": [],
+      "manual_verification_ids": []
     }
   ],
   "tests": [
@@ -1644,11 +1972,13 @@
         "AC-019"
       ],
       "cycle_ids": [
-        "TDD-007"
+        "TDD-007",
+        "TDD-011"
       ],
       "evidence_ids": [
         "EVID-013",
-        "EVID-014"
+        "EVID-014",
+        "EVID-028"
       ],
       "status": "passed"
     },
@@ -1741,11 +2071,13 @@
         "AC-019"
       ],
       "cycle_ids": [
-        "TDD-009"
+        "TDD-009",
+        "TDD-011"
       ],
       "evidence_ids": [
         "EVID-015",
-        "EVID-016"
+        "EVID-016",
+        "EVID-028"
       ],
       "status": "passed"
     },
@@ -1801,7 +2133,8 @@
         "AC-014"
       ],
       "cycle_ids": [
-        "TDD-010"
+        "TDD-010",
+        "TDD-011"
       ],
       "evidence_ids": [
         "EVID-010",
@@ -1861,7 +2194,8 @@
         "AC-018"
       ],
       "cycle_ids": [
-        "TDD-004"
+        "TDD-004",
+        "TDD-011"
       ],
       "evidence_ids": [
         "EVID-021",
@@ -2300,6 +2634,63 @@
         "evidence_id": "EVID-025",
         "sha256": "8f6a0c37329f7d1364044168684dc4498fa3e551d713a867f376d4e98bbcec93"
       }
+    },
+    {
+      "id": "TDD-011",
+      "applicability": "required",
+      "requirement_ids": [
+        "REQ-012",
+        "REQ-013"
+      ],
+      "nfr_ids": [
+        "NFR-004",
+        "NFR-005"
+      ],
+      "defect_ids": [
+        "DEF-001",
+        "DEF-002",
+        "DEF-003",
+        "DEF-004",
+        "DEF-005",
+        "DEF-006",
+        "DEF-007",
+        "DEF-008"
+      ],
+      "test_ids": [
+        "TEST-008",
+        "TEST-013",
+        "TEST-016",
+        "TEST-019"
+      ],
+      "manual_verification_ids": [],
+      "red": {
+        "status": "failed",
+        "failure_kind": "missing_behavior",
+        "command": "npx tsc --noEmit && npx vitest run --coverage && npx next build",
+        "observed": "修复前基线：tsc TS2344 ×2、coverage 四项 41.18/33.99/40.84/45.13 低于阈值、mail-integration 缺来源页断言（三方评审报告在案）",
+        "timestamp": "2026-08-30T17:30:00+0000",
+        "exit_code": 1,
+        "evidence_id": "EVID-026",
+        "sha256": "a75ba2e58151cd60a4f60596616011034debeadde9d023004ac6e424da9e837d"
+      },
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run && npx tsc --noEmit && npx next build && npx vitest run --coverage",
+        "observed": "110/110 全绿、tsc 0 错、build 成功 41 静态页、coverage 96.47/85.48/100/97.93 达标",
+        "timestamp": "2026-08-31T00:30:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-028",
+        "sha256": "4a23fadf2b86e0ea46c9f447aa52e3c521f2d6c8ac4841a665e85fd22f5424d9"
+      },
+      "refactor": {
+        "status": "passed",
+        "command": "npx vitest run --coverage",
+        "observed": "修复后全量含覆盖率复跑通过（编排方独立复跑 110/110 + TSC + build）",
+        "timestamp": "2026-08-31T00:45:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-027",
+        "sha256": "3e272c03039f23c861b5674b69f8f978332fab583a2f81381231053760bcdd7e"
+      }
     }
   ],
   "blockers": [],
@@ -2308,7 +2699,7 @@
       "id": "APR-001",
       "version": 1,
       "gate": "G1",
-      "status": "approved",
+      "status": "superseded",
       "supersedes": null,
       "approver_type": "user",
       "artifact_version": "spec-v4",
@@ -2331,13 +2722,15 @@
         "G2 必须在实现前获批（High-risk）",
         "合并/推送等外部动作需 G4"
       ],
-      "manifest_hash_note": "绑定 spec.md sha256=62bf6cffd04823b9b21c4f185ebc8bfdbed79a7a7c566215e45e1393da219897"
+      "manifest_hash_note": "绑定 spec.md sha256=62bf6cffd04823b9b21c4f185ebc8bfdbed79a7a7c566215e45e1393da219897",
+      "superseded_by": "APR-004",
+      "stale_reason": "Spec v5 字节变更（favoriteCount 口径澄清+NFR-005 口径修正），按规则失效"
     },
     {
       "id": "APR-002",
       "version": 1,
       "gate": "G2",
-      "status": "approved",
+      "status": "superseded",
       "supersedes": null,
       "approver_type": "user",
       "artifact_version": "design-v1+plan-v1",
@@ -2370,7 +2763,236 @@
         "后续设计实质变更需重新过 G2",
         "push/merge 等外部动作需 G4",
         "schema 一次迁移完成后不得再改（如需回 G2）"
+      ],
+      "superseded_by": "APR-005",
+      "stale_reason": "plan coverage 清单修订（随 Spec v5）"
+    },
+    {
+      "id": "APR-004",
+      "version": 2,
+      "gate": "G1",
+      "status": "approved",
+      "supersedes": "APR-001",
+      "approver_type": "user",
+      "artifact_version": "SPEC-v3-catalog-favorite-mail",
+      "approved_at": "2026-08-31T01:26:05+0000",
+      "user_decision": "approved（用户对合并批准请求明确回复「批准」）",
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "b7ee035fed2fc0edc4f1afc4e64704ef5f5104191735755e81a9b869c27ecc0f"
+        },
+        {
+          "kind": "coverage-baseline",
+          "path": "coverage-baseline.json",
+          "sha256": "ea5136c1281afc02a621102f3509279fb0abf6c43136ea095a68c6cf916af702"
+        }
       ]
+    },
+    {
+      "id": "APR-006",
+      "version": 1,
+      "gate": "G3",
+      "status": "superseded",
+      "supersedes": null,
+      "approver_type": "user",
+      "artifact_version": "candidate-v1",
+      "requested_at": "2026-08-31T01:20:00+0000",
+      "candidate_commit": "15710b785a827fc0ad307815933e7b049758c488",
+      "g3_request": {
+        "id": "G3REQ-001",
+        "revision": 1,
+        "state": "G3_PENDING",
+        "candidate_commit": "15710b785a827fc0ad307815933e7b049758c488",
+        "traceability_content_sha256": "bf017b038f70a2336339803522c4191b83ce03bac764b4a75652391a3695e465",
+        "run_content_sha256": "26bffa700ee9f7782e72d9408a12dfc0e71e1c0c06de0ab6f8ce0f6aba843b5a"
+      },
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "b7ee035fed2fc0edc4f1afc4e64704ef5f5104191735755e81a9b869c27ecc0f"
+        },
+        {
+          "kind": "traceability",
+          "path": "traceability.snapshot.json",
+          "sha256": "0cb33643a0ec0353e056e5ab744f9858f9a240999d3a1cd182e8964f4c9bc7ba"
+        },
+        {
+          "kind": "run",
+          "path": "run.snapshot.json",
+          "sha256": "b79bfd1e191099ceed7e8ad11412de1d5428c3220a05708d6d204299267f6c1c"
+        },
+        {
+          "kind": "release",
+          "path": "release-packet.md",
+          "sha256": "18f94224f979549eaecb00d5d2d2ac19bcac94b9a53d248c9bdd014bc5ee8c9e"
+        },
+        {
+          "kind": "evidence-manifest",
+          "path": "evidence-manifest.json",
+          "sha256": "61bf15d37ba5f215690340b684edad724f923866bf7982e304217f6add5fb43c"
+        },
+        {
+          "kind": "review-manifest",
+          "path": "review-manifest.json",
+          "sha256": "64f85efa1aa00b6a247e3814c010d26fd487ae948ab5d9af9729e2340849d304"
+        },
+        {
+          "kind": "gate-manifest",
+          "path": "gate-manifest.json",
+          "sha256": "1a45fba504ac767d3d8f42b1e07ede4f06d76e605322a713dd3b66b2197d312a"
+        }
+      ],
+      "superseded_by": "APR-007",
+      "stale_reason": "编排方操作事故：approved 包文件被误删且状态字段被覆盖；按保留陈旧证据规则归档。批准语义由 APR-007 完整继承。"
+    },
+    {
+      "id": "APR-005",
+      "version": 2,
+      "gate": "G2",
+      "status": "approved",
+      "supersedes": "APR-002",
+      "approver_type": "user",
+      "artifact_version": "SPEC-v3-catalog-favorite-mail",
+      "approved_at": "2026-08-31T01:26:05+0000",
+      "user_decision": "approved（同上，含 plan v2 覆盖率清单对齐）",
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "b7ee035fed2fc0edc4f1afc4e64704ef5f5104191735755e81a9b869c27ecc0f"
+        },
+        {
+          "kind": "design",
+          "path": "design.md",
+          "sha256": "50989d910fd5928a6acb6afb276f0240aa46dd7dfc7dd3bbf6f6d2d7810df3bb"
+        },
+        {
+          "kind": "plan",
+          "path": "plan.md",
+          "sha256": "f61517d884630047110bc83dd2b1546b377b2e2961ac6c619771c02a919f940b"
+        }
+      ]
+    },
+    {
+      "id": "APR-007",
+      "version": 2,
+      "gate": "G3",
+      "status": "superseded",
+      "supersedes": "APR-006",
+      "approver_type": "user",
+      "artifact_version": "candidate-v2",
+      "requested_at": "2026-08-31T02:30:00+0000",
+      "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "g3_request": {
+        "id": "G3REQ-002",
+        "revision": 14,
+        "state": "G3_PENDING",
+        "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+        "traceability_content_sha256": "9f04e5ef05b4baeec6b72ca7b678655488e127a4d7018292c02652613be9aac8",
+        "run_content_sha256": "b9f5647d90a9f8dfea6d438067146f04d80709ab682ca6e37f23f363c2c815d9"
+      },
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "b7ee035fed2fc0edc4f1afc4e64704ef5f5104191735755e81a9b869c27ecc0f"
+        },
+        {
+          "kind": "traceability",
+          "path": "traceability.snapshot.json",
+          "sha256": "fb507dd84fd009c006e85283817788a0e72e348400182401c6e476f82dfac379"
+        },
+        {
+          "kind": "run",
+          "path": "run.snapshot.json",
+          "sha256": "13a96c88ab19e209f7561685d509aead6684b21bdd4ce313cfe04ed79a942e4f"
+        },
+        {
+          "kind": "release",
+          "path": "release-packet.md",
+          "sha256": "18f94224f979549eaecb00d5d2d2ac19bcac94b9a53d248c9bdd014bc5ee8c9e"
+        },
+        {
+          "kind": "evidence-manifest",
+          "path": "evidence-manifest.json",
+          "sha256": "61bf15d37ba5f215690340b684edad724f923866bf7982e304217f6add5fb43c"
+        },
+        {
+          "kind": "review-manifest",
+          "path": "review-manifest.json",
+          "sha256": "04095aa03baf0c77c9a804927b84e78d41388bc63215fec274a132a85d1ce67a"
+        },
+        {
+          "kind": "gate-manifest",
+          "path": "gate-manifest.json",
+          "sha256": "922a1530cddb135f1415b8d5c72ccb007c658ed8311f8eb354c7b0190b710321"
+        }
+      ],
+      "approved_at": "2026-08-31T01:37:39+0000",
+      "user_decision": "approved（用户对 G3/G4 合并批准请求回复「批准」；G4 rebase 已按授权执行并通过树哈希 e8b97bd6 零变化硬验证，候选更新为 1d42424）",
+      "superseded_by": "APR-008",
+      "stale_reason": "包文件在 approved 记录写入后因 run 收尾字段更新而过期；按规则以 APR-008 重新出包（同一用户批准语义、同一候选 1d42424）"
+    },
+    {
+      "id": "APR-008",
+      "version": 3,
+      "gate": "G3",
+      "status": "approved",
+      "supersedes": "APR-007",
+      "approver_type": "user",
+      "artifact_version": "candidate-v3",
+      "requested_at": "2026-08-31T02:40:00+0000",
+      "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "g3_request": {
+        "id": "G3REQ-003",
+        "revision": 14,
+        "state": "G3_PENDING",
+        "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+        "traceability_content_sha256": "9f04e5ef05b4baeec6b72ca7b678655488e127a4d7018292c02652613be9aac8",
+        "run_content_sha256": "00dfb50f2f56c1efb9f9360c84ab0a93b7b6301283819f90345829df56f14ab3"
+      },
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "b7ee035fed2fc0edc4f1afc4e64704ef5f5104191735755e81a9b869c27ecc0f"
+        },
+        {
+          "kind": "traceability",
+          "path": "traceability.snapshot.json",
+          "sha256": "fb507dd84fd009c006e85283817788a0e72e348400182401c6e476f82dfac379"
+        },
+        {
+          "kind": "run",
+          "path": "run.snapshot.json",
+          "sha256": "9abeca43d92d3495f84cc44a4cf82ab3b08304b6dad3c3df620d105bb245bcff"
+        },
+        {
+          "kind": "release",
+          "path": "release-packet.md",
+          "sha256": "18f94224f979549eaecb00d5d2d2ac19bcac94b9a53d248c9bdd014bc5ee8c9e"
+        },
+        {
+          "kind": "evidence-manifest",
+          "path": "evidence-manifest.json",
+          "sha256": "61bf15d37ba5f215690340b684edad724f923866bf7982e304217f6add5fb43c"
+        },
+        {
+          "kind": "review-manifest",
+          "path": "review-manifest.json",
+          "sha256": "04095aa03baf0c77c9a804927b84e78d41388bc63215fec274a132a85d1ce67a"
+        },
+        {
+          "kind": "gate-manifest",
+          "path": "gate-manifest.json",
+          "sha256": "78079dcc86736e3fcd68c823257b2959d2d77d5ce3f32b664fd66a8a018fc21e"
+        }
+      ],
+      "approved_at": "2026-08-31T01:46:27+0000",
+      "user_decision": "approved（用户对 G3/G4 合并批准请求回复「批准」；G4 rebase 已按授权执行，树哈希 e8b97bd6 零变化验证通过，候选以 1d42424 固定）"
     }
   ],
   "git": {
@@ -2383,61 +3005,283 @@
       "protected_branch_source": "unknown",
       "risk_disclosure": "本地无法证明远程 main 分支保护状态；采取工作分支隔离实现，合并回 main 属 G4 动作需另行批准"
     },
-    "baseline_commit": "ce96eb1cc56428eee4c1509e013c3692162d1cde",
-    "candidate_commit": null,
-    "current_commit": "d0d71c5474e9f0e67bdc1abacf380bb05dcc72a7",
-    "dirty_paths_before": [
-      {
-        "path": "docs/V3.0升级计划.md",
-        "sha256": "53cdc36b1ba8668b89c440306a47c2dec6dcb95a474e975dd83ebba7dc541053"
-      }
-    ],
+    "baseline_commit": "e61ae57950636f137fe1c01d514849cc65134b1c",
+    "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+    "current_commit": "1d42424b740706a1410968d97511f4922a680d77",
+    "dirty_paths_before": [],
     "workflow_paths": [
+      "\"docs/V3.0\\345\\215\\207\\347\\272\\247\\350\\256\\241\\345\\210\\222.md\"",
       ".spec-tdd-sdlc/**",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/**",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/coverage-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/design.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/coverage-final.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-code-recheck.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-qa-recheck.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-security-recheck.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-002-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-002-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-002-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-003-006-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-003-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-003-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-004-005-011-integration-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-004-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-004-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-005-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-005-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-006-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-006-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-007-009-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-007-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-007-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-008-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-008-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-008-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-009-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-009-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-010-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-010-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-010-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-REM-build.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-REM-coverage.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-REM-verdict.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TEST-000-smoke-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/gate-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/plan.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/release-packet.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/review-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/run.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/run.snapshot.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/spec.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/traceability.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/traceability.snapshot.json",
       "docs/**",
       "messages",
+      "messages/en.json",
+      "messages/zh-CN.json",
       "package-lock.json",
       "package.json",
       "prisma/migrations/*",
+      "prisma/migrations/20260830120000_v3_product_favorite_user_profile/migration.sql",
+      "prisma/rollback-v3.sql",
       "prisma/schema.prisma",
       "prisma/seed.ts",
       "src/app/[locale]/(admin)",
+      "src/app/[locale]/(admin)/admin/(panel)/content/edit/[id]/page.tsx",
+      "src/app/[locale]/(admin)/admin/(panel)/content/page.tsx",
+      "src/app/[locale]/(admin)/admin/(panel)/users/page.tsx",
       "src/app/[locale]/(site)",
+      "src/app/[locale]/(site)/account/logic.ts",
+      "src/app/[locale]/(site)/account/logout-button.tsx",
+      "src/app/[locale]/(site)/account/page.tsx",
+      "src/app/[locale]/(site)/account/unfavorite-button.tsx",
+      "src/app/[locale]/(site)/article/[slug]/page.tsx",
+      "src/app/[locale]/(site)/c/[slug]/page.tsx",
+      "src/app/[locale]/(site)/login/page.tsx",
+      "src/app/[locale]/(site)/product/[slug]/page.tsx",
+      "src/app/[locale]/(site)/submissions/page.ts",
+      "src/app/[locale]/(site)/submissions/page.tsx",
       "src/app/api",
+      "src/app/api/admin/contents/route.ts",
+      "src/app/api/admin/users/route.ts",
+      "src/app/api/auth/login/route.ts",
+      "src/app/api/auth/register/route.ts",
+      "src/app/api/form/[slug]/route.ts",
+      "src/app/api/interaction/favorite/route.ts",
       "src/app/llms.txt",
+      "src/app/llms.txt/route.ts",
       "src/app/sitemap.ts",
       "src/components/admin",
       "src/components/seo",
+      "src/components/seo/json-ld.tsx",
       "src/components/site",
+      "src/components/site/content-card.tsx",
+      "src/components/site/header.tsx",
+      "src/components/site/interaction-bar.tsx",
       "src/lib/config",
       "src/server/admin",
       "src/server/content",
+      "src/server/content/index.ts",
+      "src/server/content/llms.ts",
+      "src/server/content/product.ts",
+      "src/server/form/index.ts",
       "src/server/notify",
+      "src/server/notify/index.ts",
+      "src/server/notify/template.ts",
       "src/server/seo",
       "src/server/ugc",
+      "src/server/ugc/favorite.ts",
+      "src/server/ugc/index.ts",
       "src/server/user",
+      "src/server/user/index.ts",
+      "src/server/user/password-reset.ts",
+      "src/server/user/profile.ts",
       "src/types/domain.ts",
       "tests",
       "tests/**",
+      "tests/.coverage/coverage-summary.json",
+      "tests/app/product-page.test.ts",
+      "tests/app/submissions-redirect.test.ts",
+      "tests/db/migration.test.ts",
+      "tests/notify/mail-integration.test.ts",
+      "tests/notify/mail-template.test.ts",
+      "tests/seo/product-jsonld.test.ts",
+      "tests/server/admin-content.test.ts",
+      "tests/server/content-delete-favorite.test.ts",
+      "tests/server/content-product.test.ts",
+      "tests/server/content-type.test.ts",
+      "tests/server/favorite-route.test.ts",
+      "tests/server/favorite-ux.test.ts",
+      "tests/server/favorite.test.ts",
+      "tests/server/llms-sitemap.test.ts",
+      "tests/server/product-detail.test.ts",
+      "tests/server/product-list.test.ts",
+      "tests/server/user-privacy.test.ts",
+      "tests/server/user-profile.test.ts",
       "tests/setup/db.ts",
       "tests/smoke.test.ts",
       "vitest.config.ts"
     ],
     "candidate_paths": [
-      "package.json",
+      "\"docs/V3.0\\345\\215\\207\\347\\272\\247\\350\\256\\241\\345\\210\\222.md\"",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/coverage-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/design.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/coverage-final.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-code-recheck.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-qa-recheck.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-security-recheck.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-002-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-002-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-002-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-003-006-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-003-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-003-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-004-005-011-integration-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-004-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-004-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-005-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-005-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-006-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-006-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-007-009-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-007-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-007-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-008-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-008-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-008-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-009-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-009-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-010-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-010-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-010-regression.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-REM-build.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-REM-coverage.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TASK-REM-verdict.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/tdd-cycles/TEST-000-smoke-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/gate-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/plan.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/release-packet.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/review-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/run.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/run.snapshot.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/spec.md",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/traceability.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/traceability.snapshot.json",
+      "messages/en.json",
+      "messages/zh-CN.json",
       "package-lock.json",
-      "vitest.config.ts",
+      "package.json",
+      "prisma/migrations/20260830120000_v3_product_favorite_user_profile/migration.sql",
+      "prisma/rollback-v3.sql",
+      "prisma/schema.prisma",
+      "prisma/seed.ts",
+      "src/app/[locale]/(admin)/admin/(panel)/content/edit/[id]/page.tsx",
+      "src/app/[locale]/(admin)/admin/(panel)/content/page.tsx",
+      "src/app/[locale]/(admin)/admin/(panel)/users/page.tsx",
+      "src/app/[locale]/(site)/account/logic.ts",
+      "src/app/[locale]/(site)/account/logout-button.tsx",
+      "src/app/[locale]/(site)/account/page.tsx",
+      "src/app/[locale]/(site)/account/unfavorite-button.tsx",
+      "src/app/[locale]/(site)/article/[slug]/page.tsx",
+      "src/app/[locale]/(site)/c/[slug]/page.tsx",
+      "src/app/[locale]/(site)/login/page.tsx",
+      "src/app/[locale]/(site)/product/[slug]/page.tsx",
+      "src/app/[locale]/(site)/submissions/page.ts",
+      "src/app/[locale]/(site)/submissions/page.tsx",
+      "src/app/api/admin/contents/route.ts",
+      "src/app/api/admin/users/route.ts",
+      "src/app/api/auth/login/route.ts",
+      "src/app/api/auth/register/route.ts",
+      "src/app/api/form/[slug]/route.ts",
+      "src/app/api/interaction/favorite/route.ts",
+      "src/app/llms.txt/route.ts",
+      "src/app/sitemap.ts",
+      "src/components/seo/json-ld.tsx",
+      "src/components/site/content-card.tsx",
+      "src/components/site/header.tsx",
+      "src/components/site/interaction-bar.tsx",
+      "src/server/content/index.ts",
+      "src/server/content/llms.ts",
+      "src/server/content/product.ts",
+      "src/server/form/index.ts",
+      "src/server/notify/index.ts",
+      "src/server/notify/template.ts",
+      "src/server/ugc/favorite.ts",
+      "src/server/ugc/index.ts",
+      "src/server/user/index.ts",
+      "src/server/user/password-reset.ts",
+      "src/server/user/profile.ts",
+      "tests/.coverage/coverage-summary.json",
+      "tests/app/product-page.test.ts",
+      "tests/app/submissions-redirect.test.ts",
+      "tests/db/migration.test.ts",
+      "tests/notify/mail-integration.test.ts",
+      "tests/notify/mail-template.test.ts",
+      "tests/seo/product-jsonld.test.ts",
+      "tests/server/admin-content.test.ts",
+      "tests/server/content-delete-favorite.test.ts",
+      "tests/server/content-product.test.ts",
+      "tests/server/content-type.test.ts",
+      "tests/server/favorite-route.test.ts",
+      "tests/server/favorite-ux.test.ts",
+      "tests/server/favorite.test.ts",
+      "tests/server/llms-sitemap.test.ts",
+      "tests/server/product-detail.test.ts",
+      "tests/server/product-list.test.ts",
+      "tests/server/user-privacy.test.ts",
+      "tests/server/user-profile.test.ts",
       "tests/setup/db.ts",
       "tests/smoke.test.ts",
-      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/**"
+      "vitest.config.ts"
     ],
     "unauthorized_actions": [],
     "required_ci": [],
     "ci_results": [],
     "workflow_commits": [
       {
-        "commit": "d0d71c5474e9f0e67bdc1abacf380bb05dcc72a7",
+        "commit": "72ebbd90dcb56eb7d331b6e4b053b269d2373e29",
+        "requirement_ids": [],
+        "nfr_ids": [],
+        "defect_ids": [],
+        "acceptance_ids": [],
+        "test_ids": [],
+        "task_ids": [],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v3-catalog-favorite-mail",
+          "Requirement": [],
+          "NFR": [],
+          "Defect": [],
+          "Acceptance": [],
+          "Test": [],
+          "Task": []
+        }
+      },
+      {
+        "commit": "af3ccb08e6ace7cbaafad8dbae38592f31b4b868",
         "requirement_ids": [
           "REQ-013"
         ],
@@ -2476,7 +3320,7 @@
         }
       },
       {
-        "commit": "36883a8a52f9da6f3bde03c2b2d38852190192f9",
+        "commit": "221842780ee3a96ac340707eab17051452de5184",
         "requirement_ids": [
           "REQ-001",
           "REQ-005",
@@ -2519,7 +3363,7 @@
         }
       },
       {
-        "commit": "8def6da876ed6c494425e491ac01ecc9848af64c",
+        "commit": "b1654fd376572ef60891f037e294f785c0540acd",
         "requirement_ids": [
           "REQ-001",
           "REQ-002",
@@ -2584,7 +3428,7 @@
         }
       },
       {
-        "commit": "63d860657d1cb1c7f7c6e5d9e7998ca81c9448e0",
+        "commit": "713bae3aa32fe1b642c0e01463581479a7519b21",
         "requirement_ids": [
           "REQ-010",
           "REQ-011",
@@ -2637,7 +3481,7 @@
         }
       },
       {
-        "commit": "198f5e1e80c5c683ddfa9194eb84872ccfc82d19",
+        "commit": "fb4de0b320ee180e3e55807fe90f23b5a081c06a",
         "requirement_ids": [
           "REQ-005",
           "REQ-009"
@@ -2700,7 +3544,7 @@
         }
       },
       {
-        "commit": "748479fd139343852f6b9c187fadec8b0a64f4da",
+        "commit": "fbe6d3a7b02300ada4997079b92d8bb0b58f3362",
         "requirement_ids": [
           "REQ-006",
           "REQ-007",
@@ -2755,7 +3599,7 @@
         }
       },
       {
-        "commit": "e41782838f658982d0ba962fb023d1d17dca6bdc",
+        "commit": "2a8f52e4903aea9432691091ed32de69b4a9aa88",
         "requirement_ids": [
           "REQ-002",
           "REQ-003",
@@ -2810,8 +3654,147 @@
             "TASK-011"
           ]
         }
+      },
+      {
+        "commit": "80e82933471e038a5875f2d07219cf798015174f",
+        "requirement_ids": [],
+        "nfr_ids": [],
+        "defect_ids": [
+          "DEF-001",
+          "DEF-002",
+          "DEF-003",
+          "DEF-004",
+          "DEF-005",
+          "DEF-006"
+        ],
+        "acceptance_ids": [],
+        "test_ids": [],
+        "task_ids": [
+          "TASK-012"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v3-catalog-favorite-mail",
+          "Requirement": [],
+          "NFR": [],
+          "Defect": [
+            "DEF-001",
+            "DEF-002",
+            "DEF-003",
+            "DEF-004",
+            "DEF-005",
+            "DEF-006"
+          ],
+          "Acceptance": [],
+          "Test": [],
+          "Task": [
+            "TASK-012"
+          ]
+        }
+      },
+      {
+        "commit": "42aee7fdcbb4023195bfc6b6438b2289dd626155",
+        "requirement_ids": [],
+        "nfr_ids": [],
+        "defect_ids": [],
+        "acceptance_ids": [],
+        "test_ids": [],
+        "task_ids": [
+          "TASK-012"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v3-catalog-favorite-mail",
+          "Requirement": [],
+          "NFR": [],
+          "Defect": [],
+          "Acceptance": [],
+          "Test": [],
+          "Task": [
+            "TASK-012"
+          ]
+        }
+      },
+      {
+        "commit": "1d42424b740706a1410968d97511f4922a680d77",
+        "requirement_ids": [],
+        "nfr_ids": [],
+        "defect_ids": [],
+        "acceptance_ids": [],
+        "test_ids": [],
+        "task_ids": [
+          "TASK-012"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v3-catalog-favorite-mail",
+          "Requirement": [],
+          "NFR": [],
+          "Defect": [],
+          "Acceptance": [],
+          "Test": [],
+          "Task": [
+            "TASK-012"
+          ]
+        }
       }
     ]
   },
-  "coverage": null
+  "coverage": {
+    "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+    "project_type": "brownfield",
+    "format": "normalized-v1",
+    "scope": [
+      "src/server/ugc/favorite.ts",
+      "src/server/user/profile.ts",
+      "src/server/content/product.ts",
+      "src/server/content/llms.ts",
+      "src/server/notify/template.ts",
+      "src/app/api/interaction/favorite/route.ts",
+      "src/app/**/account/logic.ts"
+    ],
+    "exclusions": [],
+    "important_uncovered_paths": [
+      "src/server/ugc/favorite.ts:72,178 防御性分支（无自然触发途径，低风险）",
+      "src/server/notify/template.ts 配置读取失败兜底 catch（NFR-004 静默语义，行为测试佐证）"
+    ],
+    "report": {
+      "path": "evidence/coverage-final.json",
+      "sha256": "b284d8eb5aa8267e2eb90127e5f6bddae299d304c5bd6b6e2dd4a97d5235a166"
+    },
+    "metrics": {
+      "statements": {
+        "covered": 219,
+        "total": 227,
+        "percentage": 96.48,
+        "threshold": 90.0
+      },
+      "lines": {
+        "covered": 190,
+        "total": 194,
+        "percentage": 97.94,
+        "threshold": 90.0
+      },
+      "functions": {
+        "covered": 53,
+        "total": 53,
+        "percentage": 100.0,
+        "threshold": 90.0
+      },
+      "branches": {
+        "covered": 159,
+        "total": 186,
+        "percentage": 85.48,
+        "threshold": 85.0
+      }
+    },
+    "baseline_approval_id": "APR-004",
+    "baseline_thresholds": {
+      "statements": 90.0,
+      "lines": 90.0,
+      "functions": 90.0,
+      "branches": 85.0
+    },
+    "baseline_commit": "e61ae57950636f137fe1c01d514849cc65134b1c"
+  }
 }

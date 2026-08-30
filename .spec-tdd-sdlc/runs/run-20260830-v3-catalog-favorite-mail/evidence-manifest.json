@@ -1,0 +1,164 @@
+{
+  "evidence": [
+    {
+      "id": "EVID-001",
+      "path": "evidence/tdd-cycles/TEST-000-smoke-green.txt",
+      "sha256": "59f3012772d5346fe2902304eaac901898b91ad5d0452f349907dd0331793108"
+    },
+    {
+      "id": "EVID-002",
+      "path": "evidence/tdd-cycles/TASK-002-red.txt",
+      "sha256": "a104c5421d6bbeef132a7c2e8a1d440f7772a2989c8da2065f760b9c542f9776"
+    },
+    {
+      "id": "EVID-003",
+      "path": "evidence/tdd-cycles/TASK-002-green.txt",
+      "sha256": "654fe43e1ddcfdd66ddce03afccd2b6e05b3f1c79ed320a0012c7a5339891093"
+    },
+    {
+      "id": "EVID-004",
+      "path": "evidence/tdd-cycles/TASK-002-regression.txt",
+      "sha256": "78216d5a2a88c66a0bea26dee74b814f84122afb04ff636b219b866aabecbe7a"
+    },
+    {
+      "id": "EVID-005",
+      "path": "evidence/tdd-cycles/TASK-003-red.txt",
+      "sha256": "d0983b426a69844021e4eb30bcf3a91a03641839ed78af4dcb9b56f13b69d47b"
+    },
+    {
+      "id": "EVID-006",
+      "path": "evidence/tdd-cycles/TASK-003-green.txt",
+      "sha256": "9be48b8b747d39534e63ec0a9cdb7af92bfdc21f1a2b9741499d6961f330dfaa"
+    },
+    {
+      "id": "EVID-007",
+      "path": "evidence/tdd-cycles/TASK-006-red.txt",
+      "sha256": "4e46be1d30b13ba37062b6e32b1a3ad23bcc61f9d9178812233dab70ccb62959"
+    },
+    {
+      "id": "EVID-008",
+      "path": "evidence/tdd-cycles/TASK-006-green.txt",
+      "sha256": "47f5826778d4125a469e1bd82824dfe8c27330604cbe046ba5aa6b1d0815a677"
+    },
+    {
+      "id": "EVID-009",
+      "path": "evidence/tdd-cycles/TASK-003-006-regression.txt",
+      "sha256": "047eae86be40492688817cdc43e92396bd523e58f141339952614c9e2da57d35"
+    },
+    {
+      "id": "EVID-010",
+      "path": "evidence/tdd-cycles/TASK-010-red.txt",
+      "sha256": "f75ad746345dee6d23b7d0957b0947ba41c9e6dc95cedd1e663ee7a22b06fd66"
+    },
+    {
+      "id": "EVID-011",
+      "path": "evidence/tdd-cycles/TASK-010-green.txt",
+      "sha256": "9df42fe71e75ff812721a46141af59778c5d24797c2f18b4aa10f40bd5d1e656"
+    },
+    {
+      "id": "EVID-012",
+      "path": "evidence/tdd-cycles/TASK-010-regression.txt",
+      "sha256": "f3d951132c698ea5776d6bf41f674472dab6b0463da82fa6340d8f56555a2fd5"
+    },
+    {
+      "id": "EVID-013",
+      "path": "evidence/tdd-cycles/TASK-007-red.txt",
+      "sha256": "d0e8cb30eb3c061313b64002550c1f1ebabebcce25467722b607efcc5c413da6"
+    },
+    {
+      "id": "EVID-014",
+      "path": "evidence/tdd-cycles/TASK-007-green.txt",
+      "sha256": "26021f87908b6afdda5d5585fd36e8d21e1cc1970b7bd437b1f166245503f1cf"
+    },
+    {
+      "id": "EVID-015",
+      "path": "evidence/tdd-cycles/TASK-009-red.txt",
+      "sha256": "94dc6bae05b3ec5f7945b299770988e1af74538410c61b7399d4d3c4d9fd0d9b"
+    },
+    {
+      "id": "EVID-016",
+      "path": "evidence/tdd-cycles/TASK-009-green.txt",
+      "sha256": "ae9c841d8678ab930b5b77b259321fec85daeb71e733007085656fd3f90e94ee"
+    },
+    {
+      "id": "EVID-017",
+      "path": "evidence/tdd-cycles/TASK-007-009-regression.txt",
+      "sha256": "2dc0fcee3f34e4a69534b4da8ba96dcacc298f94e0798ebed1bf8810519d0f5d"
+    },
+    {
+      "id": "EVID-018",
+      "path": "evidence/tdd-cycles/TASK-008-red.txt",
+      "sha256": "42bf75b261958b655e9318f65d4ea338712a1271195330f0a5579f77047f8496"
+    },
+    {
+      "id": "EVID-019",
+      "path": "evidence/tdd-cycles/TASK-008-green.txt",
+      "sha256": "a8b2fb8d59c7582e4aa4bc7d90396ca1120d35b304e65f21c448b73879f14446"
+    },
+    {
+      "id": "EVID-020",
+      "path": "evidence/tdd-cycles/TASK-008-regression.txt",
+      "sha256": "1d66cd3d8adade46539d123731c7f688a777b3f9d6b2851408558d3bb19d4de2"
+    },
+    {
+      "id": "EVID-021",
+      "path": "evidence/tdd-cycles/TASK-004-red.txt",
+      "sha256": "c78c8f2788470a5a5c12ecf4756f2f811ed4cc060ffa12f3c5d9c3d681d9a68a"
+    },
+    {
+      "id": "EVID-022",
+      "path": "evidence/tdd-cycles/TASK-004-green.txt",
+      "sha256": "7c9fb03ac28671fa746f29a234b6d035d17bcecb5c971f32742f90fa335b3f3c"
+    },
+    {
+      "id": "EVID-023",
+      "path": "evidence/tdd-cycles/TASK-005-red.txt",
+      "sha256": "ff8cc69826903a5e3b94c94fa73708bcbb41e73989363e343d2948aaed94db0a"
+    },
+    {
+      "id": "EVID-024",
+      "path": "evidence/tdd-cycles/TASK-005-green.txt",
+      "sha256": "9d141fca4396a43e0423567fda5195f07b40773abbc7725e470830641ea83ea4"
+    },
+    {
+      "id": "EVID-025",
+      "path": "evidence/tdd-cycles/TASK-004-005-011-integration-regression.txt",
+      "sha256": "8f6a0c37329f7d1364044168684dc4498fa3e551d713a867f376d4e98bbcec93"
+    },
+    {
+      "id": "EVID-026",
+      "path": "evidence/tdd-cycles/TASK-REM-verdict.txt",
+      "sha256": "a75ba2e58151cd60a4f60596616011034debeadde9d023004ac6e424da9e837d"
+    },
+    {
+      "id": "EVID-027",
+      "path": "evidence/tdd-cycles/TASK-REM-build.txt",
+      "sha256": "3e272c03039f23c861b5674b69f8f978332fab583a2f81381231053760bcdd7e"
+    },
+    {
+      "id": "EVID-028",
+      "path": "evidence/tdd-cycles/TASK-REM-coverage.txt",
+      "sha256": "4a23fadf2b86e0ea46c9f447aa52e3c521f2d6c8ac4841a665e85fd22f5424d9"
+    },
+    {
+      "id": "EVID-029",
+      "path": "evidence/review-code-recheck.md",
+      "sha256": "7528327e502bc35cc52b5575b46eebeb76a9f037347990ff1beaa68a9191e1fb"
+    },
+    {
+      "id": "EVID-030",
+      "path": "evidence/review-security-recheck.md",
+      "sha256": "1c93f39b886d6b7098b4383d249695168e15af80f3f383a93d72bb582d96544a"
+    },
+    {
+      "id": "EVID-031",
+      "path": "evidence/review-qa-recheck.md",
+      "sha256": "bc3c0fd739b1195f51d47331c8c3442d5d54c99fe6690d9500fd1e68c9f2a78a"
+    },
+    {
+      "id": "EVID-032",
+      "path": "evidence/coverage-final.txt",
+      "sha256": "80d050c4906232493fedd987f0053d75bd0da7145d0a1b9b972d3fb6c334ec65"
+    }
+  ]
+}

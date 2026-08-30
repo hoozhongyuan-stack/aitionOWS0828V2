@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.1",
+  "commit": "e61ae57950636f137fe1c01d514849cc65134b1c",
+  "scope": [
+    "src/server/ugc/favorite.ts",
+    "src/server/user/profile.ts",
+    "src/server/content/product.ts",
+    "src/server/content/llms.ts",
+    "src/server/notify/template.ts",
+    "src/app/api/interaction/favorite/route.ts",
+    "src/app/**/account/logic.ts"
+  ],
+  "thresholds": {
+    "statements": 90.0,
+    "lines": 90.0,
+    "functions": 90.0,
+    "branches": 85.0
+  },
+  "report": {
+    "path": "evidence/baseline-coverage.json",
+    "sha256": "a3ed98994887924e9a7a9a5bb8f5ea0adba54eb40548b7579e532f2b4e8857cc"
+  },
+  "note": "brownfield 基线：存量代码无自动化测试（覆盖率零），本次新增模块清单的阈值 90/90/90/85（Spec v5 NFR-005）"
+}

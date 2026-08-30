@@ -1,0 +1,49 @@
+{
+  "candidate_commit": "15710b785a827fc0ad307815933e7b049758c488",
+  "project_type": "brownfield",
+  "format": "normalized-v1",
+  "scope": [
+    "src/server/ugc/favorite.ts",
+    "src/server/user/profile.ts",
+    "src/server/content/product.ts",
+    "src/server/content/llms.ts",
+    "src/server/notify/template.ts",
+    "src/app/api/interaction/favorite/route.ts",
+    "src/app/**/account/logic.ts"
+  ],
+  "exclusions": [],
+  "important_uncovered_paths": [
+    "src/server/ugc/favorite.ts:72,178 防御性分支（非 P2002 异常重抛/通用兜底）——无自然触发途径，风险低",
+    "src/server/notify/template.ts 配置读取失败兜底 catch——NFR-004 静默语义，有行为测试佐证"
+  ],
+  "report": {
+    "path": "evidence/tdd-cycles/TASK-REM-coverage.txt",
+    "sha256": "4a23fadf2b86e0ea46c9f447aa52e3c521f2d6c8ac4841a665e85fd22f5424d9"
+  },
+  "metrics": {
+    "statements": {
+      "covered": 9647,
+      "total": 10000,
+      "percentage": 96.47,
+      "threshold": 90.0
+    },
+    "lines": {
+      "covered": 9793,
+      "total": 10000,
+      "percentage": 97.93,
+      "threshold": 90.0
+    },
+    "functions": {
+      "covered": 100,
+      "total": 100,
+      "percentage": 100.0,
+      "threshold": 90.0
+    },
+    "branches": {
+      "covered": 8548,
+      "total": 10000,
+      "percentage": 85.48,
+      "threshold": 85.0
+    }
+  }
+}
