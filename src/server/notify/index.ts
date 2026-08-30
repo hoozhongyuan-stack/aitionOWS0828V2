@@ -15,7 +15,34 @@ import { getNotifyConfig, type NotifyConfig } from "@/lib/config";
 export interface MailPayload {
   to: string[];
   subject: string;
+  /** 纯文本正文;也是 html 缺省时的 text/降级 html 数据源 */
   lines: string[];
+  /**
+   * 品牌模板 HTML(由 template.ts 渲染,TASK-010)。提供时:
+   *  - html 原样发送;
+   *  - text 自动兜底为纯文本 —— lines 非空用 lines,否则剥离 HTML 标签的降级文本。
+   * 未提供时保持旧行为(text=lines 拼接,html=转义 <p> 列表)。
+   */
+  html?: string;
+}
+
+/** html → 纯文本降级(text part 兜底用):剥 <style>/<script>/标签,还原常见实体 */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|tr|h[1-6]|table|li)>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**
@@ -58,12 +85,20 @@ export async function sendMail(payload: MailPayload): Promise<boolean> {
     const from =
       fromEmail ? `"${fromName}" <${fromEmail}>` : cfg.smtpUser || undefined;
 
+    const html =
+      payload.html ?? payload.lines.map((l) => `<p>${l.replace(/</g, "&lt;")}</p>`).join("");
+    const text = payload.html
+      ? payload.lines.length > 0
+        ? payload.lines.join("\n")
+        : htmlToText(payload.html)
+      : payload.lines.join("\n");
+
     const result = await transporter.sendMail({
       from,
       to: payload.to,
       subject: headerSafe(payload.subject),
-      text: payload.lines.join("\n"),
-      html: payload.lines.map((l) => `<p>${l.replace(/</g, "&lt;")}</p>`).join(""),
+      text,
+      html,
     });
     return !!result;
   } catch (e) {

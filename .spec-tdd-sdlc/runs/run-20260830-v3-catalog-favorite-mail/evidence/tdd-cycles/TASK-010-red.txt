@@ -1,0 +1,217 @@
+== TASK-010 RED (TEST-014/015/016 / AC-012/013/014 + AC-021/NFR-004) ==
+command: npx vitest run tests/notify/mail-template.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ❯ tests/notify/mail-template.test.ts (14 tests | 13 failed) 13ms
+     × 含品牌名与 LOGO 绝对 URL、无 <style>/<link>、主题色注入内联样式、页脚版权/备案、CTA href 2ms
+     × LOGO 缺省时头部兜底为品牌文字(不输出 <img>) 0ms
+     × 支持 paragraph / kvTable / highlight 三种区块 0ms
+     × escapeHtml 转义 & < > " ' 0ms
+     × locale=en:英文文案 + 绝对重置链接 + 有效期提示 0ms
+     × locale=zh-CN:中文文案 + 重置链接 + 有效期提示 0ms
+     × 非法 locale(如 fr/空串)回退英文(规则:非 zh 开头一律 en) 0ms
+     × 含表单名、3 个字段键值、来源页、IP、时间与后台 CTA;用户可控值被转义 0ms
+     × kind=submission:含类型/标题/作者与后台 CTA 0ms
+     × kind=comment:文案区分评论待审 0ms
+     ✓ 临时测试库无 notify 配置:返回 false 且不抛错、不建连 4ms
+     × 未提供 html 时保持旧行为:text=lines 拼接、html 为转义 <p> 列表(现状锁定) 2ms
+     × 提供 html 时:html 原样透传,text 用 lines 纯文本兜底 0ms
+     × 提供 html 且 lines 为空时:text 降级为剥离标签的纯文本 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-014:品牌 HTML 模板(AC-012) > 含品牌名与 LOGO 绝对 URL、无 <style>/<link>、主题色注入内联样式、页脚版权/备案、CTA href
+Error: TODO(TASK-010): renderBrandEmail 尚未实现
+ ❯ renderBrandEmail src/server/notify/template.ts:36:9
+     34|
+     35| export async function renderBrandEmail(_opts: BrandEmailOptions): Prom…
+     36|   throw new Error("TODO(TASK-010): renderBrandEmail 尚未实现");
+       |         ^
+     37| }
+     38|
+ ❯ tests/notify/mail-template.test.ts:56:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-014:品牌 HTML 模板(AC-012) > LOGO 缺省时头部兜底为品牌文字(不输出 <img>)
+Error: TODO(TASK-010): renderBrandEmail 尚未实现
+ ❯ renderBrandEmail src/server/notify/template.ts:36:9
+     34|
+     35| export async function renderBrandEmail(_opts: BrandEmailOptions): Prom…
+     36|   throw new Error("TODO(TASK-010): renderBrandEmail 尚未实现");
+       |         ^
+     37| }
+     38|
+ ❯ tests/notify/mail-template.test.ts:93:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-014:品牌 HTML 模板(AC-012) > 支持 paragraph / kvTable / highlight 三种区块
+Error: TODO(TASK-010): renderBrandEmail 尚未实现
+ ❯ renderBrandEmail src/server/notify/template.ts:36:9
+     34|
+     35| export async function renderBrandEmail(_opts: BrandEmailOptions): Prom…
+     36|   throw new Error("TODO(TASK-010): renderBrandEmail 尚未实现");
+       |         ^
+     37| }
+     38|
+ ❯ tests/notify/mail-template.test.ts:103:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-014:品牌 HTML 模板(AC-012) > escapeHtml 转义 & < > " '
+Error: TODO(TASK-010): escapeHtml 尚未实现
+ ❯ escapeHtml src/server/notify/template.ts:32:9
+     30|
+     31| export function escapeHtml(_value: string): string {
+     32|   throw new Error("TODO(TASK-010): escapeHtml 尚未实现");
+       |         ^
+     33| }
+     34|
+ ❯ tests/notify/mail-template.test.ts:120:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-015:密码重置邮件(AC-013) > locale=en:英文文案 + 绝对重置链接 + 有效期提示
+Error: TODO(TASK-010): renderPasswordResetEmail 尚未实现
+ ❯ renderPasswordResetEmail src/server/notify/template.ts:49:9
+     47|
+     48| export async function renderPasswordResetEmail(_opts: PasswordResetEma…
+     49|   throw new Error("TODO(TASK-010): renderPasswordResetEmail 尚未实现");
+       |         ^
+     50| }
+     51|
+ ❯ tests/notify/mail-template.test.ts:130:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-015:密码重置邮件(AC-013) > locale=zh-CN:中文文案 + 重置链接 + 有效期提示
+Error: TODO(TASK-010): renderPasswordResetEmail 尚未实现
+ ❯ renderPasswordResetEmail src/server/notify/template.ts:49:9
+     47|
+     48| export async function renderPasswordResetEmail(_opts: PasswordResetEma…
+     49|   throw new Error("TODO(TASK-010): renderPasswordResetEmail 尚未实现");
+       |         ^
+     50| }
+     51|
+ ❯ tests/notify/mail-template.test.ts:146:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-015:密码重置邮件(AC-013) > 非法 locale(如 fr/空串)回退英文(规则:非 zh 开头一律 en)
+Error: TODO(TASK-010): renderPasswordResetEmail 尚未实现
+ ❯ renderPasswordResetEmail src/server/notify/template.ts:49:9
+     47|
+     48| export async function renderPasswordResetEmail(_opts: PasswordResetEma…
+     49|   throw new Error("TODO(TASK-010): renderPasswordResetEmail 尚未实现");
+       |         ^
+     50| }
+     51|
+ ❯ tests/notify/mail-template.test.ts:162:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > TEST-016:表单提交管理员通知(AC-014) > 含表单名、3 个字段键值、来源页、IP、时间与后台 CTA;用户可控值被转义
+Error: TODO(TASK-010): renderFormSubmissionNotify 尚未实现
+ ❯ renderFormSubmissionNotify src/server/notify/template.ts:65:9
+     63|
+     64| export async function renderFormSubmissionNotify(_opts: FormSubmission…
+     65|   throw new Error("TODO(TASK-010): renderFormSubmissionNotify 尚未实现");
+       |         ^
+     66| }
+     67|
+ ❯ tests/notify/mail-template.test.ts:177:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > renderUgcPendingNotify:投稿/评论待审提醒(REQ-012) > kind=submission:含类型/标题/作者与后台 CTA
+Error: TODO(TASK-010): renderUgcPendingNotify 尚未实现
+ ❯ renderUgcPendingNotify src/server/notify/template.ts:79:9
+     77|
+     78| export async function renderUgcPendingNotify(_opts: UgcPendingNotifyOp…
+     79|   throw new Error("TODO(TASK-010): renderUgcPendingNotify 尚未实现");
+       |         ^
+     80| }
+     81|
+ ❯ tests/notify/mail-template.test.ts:216:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > renderUgcPendingNotify:投稿/评论待审提醒(REQ-012) > kind=comment:文案区分评论待审
+Error: TODO(TASK-010): renderUgcPendingNotify 尚未实现
+ ❯ renderUgcPendingNotify src/server/notify/template.ts:79:9
+     77|
+     78| export async function renderUgcPendingNotify(_opts: UgcPendingNotifyOp…
+     79|   throw new Error("TODO(TASK-010): renderUgcPendingNotify 尚未实现");
+       |         ^
+     80| }
+     81|
+ ❯ tests/notify/mail-template.test.ts:232:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > sendMail 品牌 HTML 扩展(html 字段,AC-012/NFR-004) > 未提供 html 时保持旧行为:text=lines 拼接、html 为转义 <p> 列表(现状锁定)
+AssertionError: expected '<p>行一</p><p>&lt;b>行二&lt;/b></p>' to be '<p>行一</p><p>&lt;b&gt;行二&lt;/b&gt;</p>' // Object.is equality
+
+Expected: "<p>行一</p><p>&lt;b&gt;行二&lt;/b&gt;</p>"
+Received: "<p>行一</p><p>&lt;b>行二&lt;/b></p>"
+
+ ❯ tests/notify/mail-template.test.ts:276:22
+    274|     const arg = mocks.smtpSendMail.mock.calls.at(-1)![0] as { text: st…
+    275|     expect(arg.text).toBe("行一\n<b>行二</b>");
+    276|     expect(arg.html).toBe("<p>行一</p><p>&lt;b&gt;行二&lt;/b&gt;</p>");
+       |                      ^
+    277|   });
+    278|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > sendMail 品牌 HTML 扩展(html 字段,AC-012/NFR-004) > 提供 html 时:html 原样透传,text 用 lines 纯文本兜底
+AssertionError: expected '<p>纯文本兜底第一行</p>' to contain '品牌 HTML 正文'
+
+Expected: "品牌 HTML 正文"
+Received: "<p>纯文本兜底第一行</p>"
+
+ ❯ tests/notify/mail-template.test.ts:288:22
+    286|     expect(ok).toBe(true);
+    287|     const arg = mocks.smtpSendMail.mock.calls.at(-1)![0] as { text: st…
+    288|     expect(arg.html).toContain("品牌 HTML 正文");
+       |                      ^
+    289|     expect(arg.text).toBe("纯文本兜底第一行");
+    290|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  tests/notify/mail-template.test.ts > sendMail 品牌 HTML 扩展(html 字段,AC-012/NFR-004) > 提供 html 且 lines 为空时:text 降级为剥离标签的纯文本
+AssertionError: expected '' to contain '第一段'
+
+- Expected
++ Received
+
+- 第一段
+
+ ❯ tests/notify/mail-template.test.ts:301:22
+    299|     expect(ok).toBe(true);
+    300|     const arg = mocks.smtpSendMail.mock.calls.at(-1)![0] as { text: st…
+    301|     expect(arg.text).toContain("第一段");
+       |                      ^
+    302|     expect(arg.text).toContain("第二段");
+    303|     expect(arg.text).not.toContain("<p>");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 1 passed (14)
+   Start at  23:00:36
+   Duration  691ms (transform 36ms, setup 513ms, import 96ms, tests 13ms, environment 0ms)
+
+
+exit_code: 1
+timestamp_utc: 2026-08-30T15:00:36+0000
+context: 模板层 template.ts 为 RED 脚手架(仅签名,全部抛 not-implemented),index.ts 尚未扩展 html 字段;失败原因为行为缺失(函数未实现/html 字段透传缺失),非模块解析或编译错误。escapeHtml/三个 render*/sendMail-html 断言全部红,仅 sendMail 未配置→false 的现状锁定断言为绿(符合预期,锁定既有行为)。

@@ -1,0 +1,20 @@
+== TASK-010 GREEN (TEST-014/015/016 / AC-012/013/014 + AC-021/NFR-004) ==
+command: npx vitest run tests/notify/mail-template.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ✓ tests/notify/mail-template.test.ts (14 tests) 9ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  23:02:26
+   Duration  599ms (transform 35ms, setup 448ms, import 62ms, tests 9ms, environment 0ms)
+
+
+exit_code: 0
+timestamp_utc: 2026-08-30T15:02:26+0000
+context: 最小实现 src/server/notify/template.ts(escapeHtml/renderBrandEmail/renderPasswordResetEmail/renderFormSubmissionNotify/renderUgcPendingNotify,表格布局+全内联样式)+ index.ts 扩展 MailPayload.html(text 纯文本兜底)。headerSafe/短超时/静默失败语义未动。注:首轮 GREEN 曾 1 失败,系『现状锁定』用例自身期望写错(旧实现仅转义 < 不转义 >),按实际现状修正断言后全绿;未为实现妥协改断言。
