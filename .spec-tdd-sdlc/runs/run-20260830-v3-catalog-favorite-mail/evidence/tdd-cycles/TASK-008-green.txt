@@ -1,0 +1,22 @@
+== TASK-008 GREEN (TEST-011 / AC-009 + AC-007/AC-008 前端纯逻辑 + REQ-011/012 调用点链路) ==
+command: npx vitest run tests/app/submissions-redirect.test.ts tests/server/favorite-ux.test.ts tests/notify/mail-integration.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ✓ tests/server/favorite-ux.test.ts (7 tests) 8ms
+ ✓ tests/app/submissions-redirect.test.ts (3 tests) 4ms
+ ✓ tests/notify/mail-integration.test.ts (4 tests) 121ms
+
+ Test Files  3 passed (3)
+      Tests  14 passed (14)
+   Start at  23:37:58
+   Duration  1.05s (transform 135ms, setup 2.03s, import 242ms, tests 133ms, environment 0ms)
+
+
+exit_code: 0
+timestamp_utc: 2026-08-30T15:37:59+0000
+context: 实现后 14/14 通过:submissions 页(page.ts)redirect 到 /{locale}/account?tab=submissions;account/logic.ts 四个纯函数实现并达标;三处邮件调用点(password-reset/form/ugc)接入品牌模板且 text 纯文本兜底。

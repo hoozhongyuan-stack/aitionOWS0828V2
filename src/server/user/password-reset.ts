@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { getBrandConfig } from "@/lib/config";
 import { sendMail } from "@/server/notify";
+import { renderPasswordResetEmail } from "@/server/notify/template";
 
 /**
  * 忘记密码(邮件重置)服务:
@@ -47,6 +48,10 @@ export async function requestPasswordReset(rawEmail: string, locale: string): Pr
   const resetUrl = `${base}/${locale}/reset-password?token=${token}`;
   const zh = locale.startsWith("zh");
 
+  // 品牌化 HTML 模板(REQ-011):按请求界面语言输出 zh/en 文案;
+  // 有效期 30 分钟与 TOKEN_TTL_MS 一致;lines 保留作为 text 纯文本兜底
+  const html = await renderPasswordResetEmail({ locale, resetUrl, expireMinutes: 30 });
+
   const sent = await sendMail({
     to: [email],
     subject: zh ? `【${brand.siteName}】密码重置链接` : `[${brand.siteName}] Password reset`,
@@ -63,6 +68,7 @@ export async function requestPasswordReset(rawEmail: string, locale: string): Pr
           resetUrl,
           "If you did not request this, please ignore this email. Your password will stay unchanged.",
         ],
+    html,
   });
 
   if (!sent) {

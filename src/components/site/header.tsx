@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Globe, User, LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Menu, X, Globe, User, LogOut, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { NavLink } from "@/server/content/nav";
@@ -11,6 +12,7 @@ import type { NavLink } from "@/server/content/nav";
 /**
  * 前台页头:LOGO/品牌名 + 导航 + 语言切换 + 登录态。
  * PC 横排,H5 折叠菜单,全响应式(需求 4.7)。
+ * V3.0:登录态用户菜单新增「个人中心」入口(REQ-007)。
  */
 
 export interface HeaderLocale {
@@ -53,6 +55,9 @@ export function SiteHeader({
   const [langOpen, setLangOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  // 「个人中心」入口文案走 i18n 命名空间 account(layout 无需新增 props,向后兼容)
+  const tAccount = useTranslations("account");
+  const accountLabel = tAccount("menu");
 
   /** 切换语言:替换路径中的语言段,保持当前页面 */
   function localeHref(code: string): string {
@@ -147,6 +152,13 @@ export function SiteHeader({
                 <User className="h-4 w-4" />
                 {user.name}
               </span>
+              <Link
+                href={`/${currentLocale}/account`}
+                className="flex items-center gap-1 rounded-md px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+              >
+                <UserRound className="h-4 w-4" />
+                {accountLabel}
+              </Link>
               {showSubmissions && (
                 <Link
                   href={`/${currentLocale}/submissions`}
@@ -201,6 +213,14 @@ export function SiteHeader({
             ))}
             {user ? (
               <>
+                <Link
+                  href={`/${currentLocale}/account`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-1.5 rounded px-2 py-2.5 text-sm hover:bg-accent"
+                >
+                  <UserRound className="h-4 w-4" />
+                  {accountLabel}
+                </Link>
                 {showSubmissions && (
                   <Link
                     href={`/${currentLocale}/submissions`}

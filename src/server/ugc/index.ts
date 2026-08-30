@@ -315,7 +315,32 @@ export async function deleteComment(id: number) {
 // ---------------- 用户投稿(需求 4.8) ----------------
 
 import { CONTENT_SOURCE } from "@/types/domain";
-import { notifyAdmin } from "@/server/notify";
+import { getNotifyConfig } from "@/lib/config";
+import { sendMail } from "@/server/notify";
+import { renderUgcPendingNotify } from "@/server/notify/template";
+
+/**
+ * 管理员品牌通知(V3.0 REQ-012):在 notifyAdmin 的开关/静默语义之上携带品牌 HTML。
+ * notify/index.ts 的 notifyAdmin 暂不支持 html 参数,此处本地实现等价门禁:
+ * 总开关 enabled + adminEmail + SMTP 配置缺一不发;任何异常静默记录,绝不向调用方抛出。
+ * 调用方 `void` fire-and-forget,不 await,失败不影响用户投稿/评论。
+ * 注:与 src/server/form/index.ts 中的同名助手保持语义一致(notify 层扩展前的过渡实现)。
+ */
+async function notifyAdminBranded(subject: string, renderHtml: () => Promise<string>): Promise<void> {
+  try {
+    const cfg = await getNotifyConfig();
+    if (!cfg.enabled || !cfg.adminEmail.trim() || !cfg.smtpHost.trim()) return;
+    const to = cfg.adminEmail
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (to.length === 0) return;
+    const html = await renderHtml();
+    await sendMail({ to, subject, lines: [], html }); // lines 空 → text 自动降级为剥离标签纯文本
+  } catch (e) {
+    console.error("[notify] 投稿/评论待审通知生成/发送失败:", e);
+  }
+}
 
 /**
  * 用户投稿:入库为 Content(source=UGC, status=PENDING)。
@@ -377,14 +402,17 @@ export async function submitUserContent(input: {
     },
   });
 
-  // 管理员邮件通知(新增需求):不 await,失败也不影响用户投稿
-  void notifyAdmin(`[AitionOWS] 收到新的用户投稿:${title}`, [
-    `标题:${title}`,
-    `栏目:${category.slug}`,
-    `投稿用户 ID:${input.userId}`,
-    `时间:${new Date().toLocaleString("zh-CN")}`,
-    "请前往后台「互动审核 → 投稿审核」处理。",
-  ]);
+  // 管理员邮件通知(REQ-012 品牌模板):不 await,失败也不影响用户投稿;
+  // 开关/静默语义与原 notifyAdmin 完全一致
+  void notifyAdminBranded(`[AitionOWS] 收到新的用户投稿:${title}`, () =>
+    renderUgcPendingNotify({
+      kind: "submission",
+      title,
+      author: authorName,
+      // 后台「互动审核 → 投稿审核」页(绝对 URL)
+      adminUrl: `${(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "")}/${input.locale}/admin/ugc`,
+    })
+  );
 
   return content;
 }

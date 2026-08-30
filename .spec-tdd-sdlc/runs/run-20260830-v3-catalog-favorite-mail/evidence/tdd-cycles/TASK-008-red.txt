@@ -1,0 +1,293 @@
+== TASK-008 RED (TEST-011 / AC-009 + AC-007 前端交互纯逻辑 + REQ-011/012 调用点链路) ==
+command: npx vitest run tests/app/submissions-redirect.test.ts tests/server/favorite-ux.test.ts tests/notify/mail-integration.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/hoo/Documents/Zcode_GLM/AitionOWS_V1.2.3
+
+ ❯ tests/app/submissions-redirect.test.ts (3 tests | 3 failed) 6ms
+     × zh-CN 访问触发 redirect(/zh-CN/account?tab=submissions) 4ms
+     × en 访问触发 redirect(/en/account?tab=submissions) 1ms
+     × 重定向目标是站内相对路径(非外链/非登录页) 1ms
+ ❯ tests/server/favorite-ux.test.ts (7 tests | 7 failed) 14ms
+     × buildLoginRedirectUrl 产出 /{locale}/login?redirect=<编码后的当前路径> 6ms
+     × en 场景与含查询串的路径原样保留(编码后可解码还原) 2ms
+     × safeInternalPath 拒绝外链/协议相对路径,放行站内绝对路径(登录后回跳防开放重定向) 1ms
+     × 未收藏 → 乐观置为已收藏且计数 +1 1ms
+     × 已收藏 → 乐观置为未收藏且计数 -1;计数为 0 时地板为 0 不出现负数 1ms
+     × 连续两次应用回到原状态(请求失败时恢复操作前快照即回滚) 1ms
+     × 缺省/空 → favorites;submissions → submissions;非法值回退 favorites 1ms
+ ❯ tests/notify/mail-integration.test.ts (4 tests | 4 failed) 145ms
+     × en:html 含品牌名、可点击重置链接与有效期提示;text 为纯文本兜底 5ms
+     × zh-CN:html 为中文品牌模板(重置密码标题 + 30 分钟提示) 1ms
+     × submitForm 后管理员收到 html:表单名 + 字段键值 + IP/时间 + 后台 CTA 73ms
+     × submitUserContent 后管理员收到 html:投稿待审 + 标题/作者 + 后台 CTA 56ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/app/submissions-redirect.test.ts > TEST-011:/submissions 兼容跳转到个人中心投稿视图(AC-009) > zh-CN 访问触发 redirect(/zh-CN/account?tab=submissions)
+AssertionError: expected "vi.fn()" to be called with arguments: [ '/zh-CN/account?tab=submissions' ]
+
+Received:
+
+  1st vi.fn() call:
+
+  [
+-   "/zh-CN/account?tab=submissions",
++   "/zh-CN/login?next=/zh-CN/submissions",
+  ]
+
+
+Number of calls: 1
+
+ ❯ tests/app/submissions-redirect.test.ts:49:26
+     47|   it("zh-CN 访问触发 redirect(/zh-CN/account?tab=submissions)", async () =…
+     48|     await expect(runPage("zh-CN")).rejects.toThrow("NEXT_REDIRECT");
+     49|     expect(nav.redirect).toHaveBeenCalledWith("/zh-CN/account?tab=subm…
+       |                          ^
+     50|   });
+     51|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  tests/app/submissions-redirect.test.ts > TEST-011:/submissions 兼容跳转到个人中心投稿视图(AC-009) > en 访问触发 redirect(/en/account?tab=submissions)
+AssertionError: expected "vi.fn()" to be called with arguments: [ '/en/account?tab=submissions' ]
+
+Received:
+
+  1st vi.fn() call:
+
+  [
+-   "/en/account?tab=submissions",
++   "/zh-CN/login?next=/zh-CN/submissions",
+  ]
+
+  2nd vi.fn() call:
+
+  [
+-   "/en/account?tab=submissions",
++   "/en/login?next=/en/submissions",
+  ]
+
+
+Number of calls: 2
+
+ ❯ tests/app/submissions-redirect.test.ts:54:26
+     52|   it("en 访问触发 redirect(/en/account?tab=submissions)", async () => {
+     53|     await expect(runPage("en")).rejects.toThrow("NEXT_REDIRECT");
+     54|     expect(nav.redirect).toHaveBeenCalledWith("/en/account?tab=submiss…
+       |                          ^
+     55|   });
+     56|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  tests/app/submissions-redirect.test.ts > TEST-011:/submissions 兼容跳转到个人中心投稿视图(AC-009) > 重定向目标是站内相对路径(非外链/非登录页)
+AssertionError: expected '/en/login?next=/en/submissions' not to contain '/login'
+
+Expected: "/login"
+Received: "/en/login?next=/en/submissions"
+
+ ❯ tests/app/submissions-redirect.test.ts:60:22
+     58|     const last = nav.redirect.mock.calls.at(-1)?.[0] as string;
+     59|     expect(last.startsWith("/")).toBe(true);
+     60|     expect(last).not.toContain("/login");
+       |                      ^
+     61|     expect(last).toContain("tab=submissions");
+     62|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  tests/notify/mail-integration.test.ts > REQ-011 链路锁定:密码重置邮件走品牌模板(AC-013) > en:html 含品牌名、可点击重置链接与有效期提示;text 为纯文本兜底
+AssertionError: expected '<p>Hello,</p><p>We received a passwor…' to contain '<a href='
+
+Expected: "<a href="
+Received: "<p>Hello,</p><p>We received a password reset request for your 邮件链路测试站 account. Please set a new password within 30 minutes via the link below:</p><p>http://localhost:3000/en/reset-password?token=404ddbdaa2a5633da4f48ab7c62328775683f892bc81aaf95022e8e625590e1a</p><p>If you did not request this, please ignore this email. Your password will stay unchanged.</p>"
+
+ ❯ tests/notify/mail-integration.test.ts:134:22
+    132|     // 品牌 HTML 模板特征:CTA 可点击重置链接 + 品牌名 + 有效期提示
+    133|     expect(arg.html).toContain(BRAND_SITE_NAME);
+    134|     expect(arg.html).toContain("<a href=");
+       |                      ^
+    135|     expect(arg.html).toContain("Reset your password");
+    136|     expect(arg.html).toContain("30 minutes");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  tests/notify/mail-integration.test.ts > REQ-011 链路锁定:密码重置邮件走品牌模板(AC-013) > zh-CN:html 为中文品牌模板(重置密码标题 + 30 分钟提示)
+AssertionError: expected '<p>你好:</p><p>我们收到了你在 邮件链路测试站 的密码重置请求。…' to contain '重置密码'
+
+Expected: "重置密码"
+Received: "<p>你好:</p><p>我们收到了你在 邮件链路测试站 的密码重置请求。请在 30 分钟内点击以下链接设置新密码:</p><p>http://localhost:3000/zh-CN/reset-password?token=34eded4badbc4260ad240d7267c22c0122c7c87c085e6c3efcaf7a948ef9d0d2</p><p>如果这不是你的操作,请忽略本邮件,你的密码不会改变。</p>"
+
+ ❯ tests/notify/mail-integration.test.ts:152:22
+    150|     const arg = mocks.smtpSendMail.mock.calls.at(-1)![0] as { html: st…
+    151|     expect(arg.html).toContain(BRAND_SITE_NAME);
+    152|     expect(arg.html).toContain("重置密码");
+       |                      ^
+    153|     expect(arg.html).toContain("30 分钟");
+    154|     expect(arg.html).toMatch(/\/zh-CN\/reset-password\?token=[0-9a-f]{…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  tests/notify/mail-integration.test.ts > REQ-012 调用点接入:表单提交通知走品牌模板(保持开关/静默/异步语义) > submitForm 后管理员收到 html:表单名 + 字段键值 + IP/时间 + 后台 CTA
+AssertionError: expected '<p>表单:询盘获客表单</p><p>公司名称:Acme 装备有限公司</…' to contain '去后台处理'
+
+Expected: "去后台处理"
+Received: "<p>表单:询盘获客表单</p><p>公司名称:Acme 装备有限公司</p><p>联系电话:13800000000</p><p>IP:203.0.113.9</p><p>时间:2026/8/30 23:26:47</p>"
+
+ ❯ tests/notify/mail-integration.test.ts:179:22
+    177|     expect(arg.html).toContain("Acme 装备有限公司");
+    178|     expect(arg.html).toContain("203.0.113.9");
+    179|     expect(arg.html).toContain("去后台处理");
+       |                      ^
+    180|     expect(arg.html).toContain("/admin/forms/data/");
+    181|     // 品牌 HTML(表格键值)而非旧的 <p> 行拼接
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  tests/notify/mail-integration.test.ts > REQ-012 调用点接入:投稿待审通知走品牌模板(保持开关/静默/异步语义) > submitUserContent 后管理员收到 html:投稿待审 + 标题/作者 + 后台 CTA
+AssertionError: expected '<p>标题:邮件链路投稿标题</p><p>栏目:mail-ux-cat</…' to contain '用户投稿'
+
+Expected: "用户投稿"
+Received: "<p>标题:邮件链路投稿标题</p><p>栏目:mail-ux-cat</p><p>投稿用户 ID:2</p><p>时间:2026/8/30 23:26:47</p><p>请前往后台「互动审核 → 投稿审核」处理。</p>"
+
+ ❯ tests/notify/mail-integration.test.ts:209:22
+    207|     };
+    208|     expect(arg.to).toEqual(["boss@test.local"]);
+    209|     expect(arg.html).toContain("用户投稿");
+       |                      ^
+    210|     expect(arg.html).toContain("邮件链路投稿标题");
+    211|     expect(arg.html).toContain("投稿作者本尊");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  tests/server/favorite-ux.test.ts > AC-007:未登录点击收藏 → 登录跳转 URL 构造(登录后回原详情页) > buildLoginRedirectUrl 产出 /{locale}/login?redirect=<编码后的当前路径>
+AssertionError: missing_behavior:buildLoginRedirectUrl 尚未实现(account/logic): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectExport tests/server/favorite-ux.test.ts:35:87
+     33|
+     34| function expectExport(mod: unknown, name: string, hint: string): void {
+     35|   expect(typeof (mod as Record<string, unknown>)?.[name], `missing_beh…
+       |                                                                                       ^
+     36|     "function"
+     37|   );
+ ❯ tests/server/favorite-ux.test.ts:43:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  tests/server/favorite-ux.test.ts > AC-007:未登录点击收藏 → 登录跳转 URL 构造(登录后回原详情页) > en 场景与含查询串的路径原样保留(编码后可解码还原)
+TypeError: mod.buildLoginRedirectUrl is not a function
+ ❯ tests/server/favorite-ux.test.ts:53:21
+     51|   it("en 场景与含查询串的路径原样保留(编码后可解码还原)", async () => {
+     52|     const mod = (await loadLogic()) as Partial<AccountLogic>;
+     53|     const url = mod.buildLoginRedirectUrl!("en", "/en/product/ax-100?s…
+       |                     ^
+     54|     expect(url.startsWith("/en/login?redirect=")).toBe(true);
+     55|     expect(new URL(`https://site.test${url}`).searchParams.get("redire…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  tests/server/favorite-ux.test.ts > AC-007:未登录点击收藏 → 登录跳转 URL 构造(登录后回原详情页) > safeInternalPath 拒绝外链/协议相对路径,放行站内绝对路径(登录后回跳防开放重定向)
+AssertionError: missing_behavior:safeInternalPath 尚未实现(account/logic): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectExport tests/server/favorite-ux.test.ts:35:87
+     33|
+     34| function expectExport(mod: unknown, name: string, hint: string): void {
+     35|   expect(typeof (mod as Record<string, unknown>)?.[name], `missing_beh…
+       |                                                                                       ^
+     36|     "function"
+     37|   );
+ ❯ tests/server/favorite-ux.test.ts:62:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  tests/server/favorite-ux.test.ts > AC-007:收藏按钮乐观更新与失败回滚状态机 > 未收藏 → 乐观置为已收藏且计数 +1
+AssertionError: missing_behavior:applyFavoriteOptimism 尚未实现(account/logic): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectExport tests/server/favorite-ux.test.ts:35:87
+     33|
+     34| function expectExport(mod: unknown, name: string, hint: string): void {
+     35|   expect(typeof (mod as Record<string, unknown>)?.[name], `missing_beh…
+       |                                                                                       ^
+     36|     "function"
+     37|   );
+ ❯ loadOptimism tests/server/favorite-ux.test.ts:76:5
+ ❯ tests/server/favorite-ux.test.ts:81:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  tests/server/favorite-ux.test.ts > AC-007:收藏按钮乐观更新与失败回滚状态机 > 已收藏 → 乐观置为未收藏且计数 -1;计数为 0 时地板为 0 不出现负数
+AssertionError: missing_behavior:applyFavoriteOptimism 尚未实现(account/logic): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectExport tests/server/favorite-ux.test.ts:35:87
+     33|
+     34| function expectExport(mod: unknown, name: string, hint: string): void {
+     35|   expect(typeof (mod as Record<string, unknown>)?.[name], `missing_beh…
+       |                                                                                       ^
+     36|     "function"
+     37|   );
+ ❯ loadOptimism tests/server/favorite-ux.test.ts:76:5
+ ❯ tests/server/favorite-ux.test.ts:86:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  tests/server/favorite-ux.test.ts > AC-007:收藏按钮乐观更新与失败回滚状态机 > 连续两次应用回到原状态(请求失败时恢复操作前快照即回滚)
+AssertionError: missing_behavior:applyFavoriteOptimism 尚未实现(account/logic): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectExport tests/server/favorite-ux.test.ts:35:87
+     33|
+     34| function expectExport(mod: unknown, name: string, hint: string): void {
+     35|   expect(typeof (mod as Record<string, unknown>)?.[name], `missing_beh…
+       |                                                                                       ^
+     36|     "function"
+     37|   );
+ ❯ loadOptimism tests/server/favorite-ux.test.ts:76:5
+ ❯ tests/server/favorite-ux.test.ts:98:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  tests/server/favorite-ux.test.ts > AC-008:个人中心 Tab 解析(searchParams 切换,默认收藏) > 缺省/空 → favorites;submissions → submissions;非法值回退 favorites
+AssertionError: missing_behavior:parseAccountTab 尚未实现(account/logic): expected 'undefined' to be 'function' // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ expectExport tests/server/favorite-ux.test.ts:35:87
+     33|
+     34| function expectExport(mod: unknown, name: string, hint: string): void {
+     35|   expect(typeof (mod as Record<string, unknown>)?.[name], `missing_beh…
+       |                                                                                       ^
+     36|     "function"
+     37|   );
+ ❯ tests/server/favorite-ux.test.ts:107:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  14 failed (14)
+   Start at  23:26:46
+   Duration  1.12s (transform 132ms, setup 2.13s, import 236ms, tests 166ms, environment 0ms)
+
+
+exit_code: 1
+timestamp_utc: 2026-08-30T15:27:06+0000
+context: 三文件 14 用例全红,失败均为行为缺失:① TEST-011 页面(RED 脚手架保持旧行为)redirect 到 login 而非 /account?tab=submissions;② favorite-ux 的 buildLoginRedirectUrl/safeInternalPath/applyFavoriteOptimism/parseAccountTab 尚未实现(missing_behavior);③ 邮件调用点仍旧纯文本 <p> 行拼接,无品牌模板(html 无 CTA <a href>/表格/标题)。注:submissions 页由 page.tsx 改写为行为等价的 page.ts 脚手架——vitest(node + tsconfig jsx=preserve)无法解析 tsx,属测试环境限制而非实现缺陷;环境约束同样决定全部交互纯逻辑收敛于 account/logic.ts。

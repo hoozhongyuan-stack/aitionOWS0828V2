@@ -2,12 +2,37 @@ import { prisma } from "@/lib/db";
 import { parseFormFields, type FormField } from "@/types/form";
 import { findSensitiveWord } from "@/lib/ugc/filter";
 import { fingerprint } from "@/lib/ugc/anti-spam";
-import { notifyAdmin } from "@/server/notify";
+import { getNotifyConfig } from "@/lib/config";
+import { sendMail } from "@/server/notify";
+import { renderFormSubmissionNotify } from "@/server/notify/template";
+import { routing } from "@/i18n/routing";
 
 /**
  * 表单获客服务(需求 4.5):
  * 定义 CRUD、公开提交(服务端校验 + 防重复)、数据查看/删除/CSV 导出。
  */
+
+/**
+ * 管理员品牌通知(V3.0 REQ-012):在 notifyAdmin 的开关/静默语义之上携带品牌 HTML。
+ * notify/index.ts 的 notifyAdmin 暂不支持 html 参数,此处本地实现等价门禁:
+ * 总开关 enabled + adminEmail + SMTP 配置缺一不发;任何异常静默记录,绝不向调用方抛出。
+ * 调用方 `void` fire-and-forget,不 await,失败不影响用户提交。
+ */
+async function notifyAdminBranded(subject: string, renderHtml: () => Promise<string>): Promise<void> {
+  try {
+    const cfg = await getNotifyConfig();
+    if (!cfg.enabled || !cfg.adminEmail.trim() || !cfg.smtpHost.trim()) return;
+    const to = cfg.adminEmail
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (to.length === 0) return;
+    const html = await renderHtml();
+    await sendMail({ to, subject, lines: [], html }); // lines 空 → text 自动降级为剥离标签纯文本
+  } catch (e) {
+    console.error("[notify] 表单提交通知生成/发送失败:", e);
+  }
+}
 
 // ---------------- 表单定义 ----------------
 
@@ -161,16 +186,21 @@ export async function submitForm(input: {
     },
   });
 
-  // 管理员邮件通知(新增需求):不 await,失败也不影响用户提交
-  void notifyAdmin(`[AitionOWS] 收到新的表单提交:${form.name}`, [
-    `表单:${form.name}`,
-    ...fields.map((f) => {
-      const val = clean[f.id];
-      return `${f.label}:${Array.isArray(val) ? val.join("、") : (val ?? "-")}`;
-    }),
-    `IP:${input.ip ?? "-"}`,
-    `时间:${new Date().toLocaleString("zh-CN")}`,
-  ]);
+  // 管理员邮件通知(REQ-012 品牌模板):不 await,失败也不影响用户提交;
+  // 开关/静默语义与原 notifyAdmin 完全一致
+  void notifyAdminBranded(`[AitionOWS] 收到新的表单提交:${form.name}`, () =>
+    renderFormSubmissionNotify({
+      formName: form.name,
+      fields: fields.map((f) => {
+        const val = clean[f.id];
+        return { label: f.label, value: Array.isArray(val) ? val.join("、") : String(val ?? "-") };
+      }),
+      ip: input.ip ?? undefined,
+      submittedAt: new Date().toLocaleString("zh-CN"),
+      // 后台表单数据页(绝对 URL);管理端语言固定为编译期默认语言
+      adminUrl: `${(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "")}/${routing.defaultLocale}/admin/forms/data/${form.id}`,
+    })
+  );
 }
 
 // ---------------- 数据管理 ----------------

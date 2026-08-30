@@ -6,6 +6,8 @@ import { getPublishedBySlug } from "@/server/content";
 import { buildAlternates } from "@/lib/seo/alternates";
 import { getForm } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
+import { hasFavorited } from "@/server/ugc";
+import { getActiveUserSession } from "@/lib/auth/session";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { safeDateLocale } from "@/lib/utils";
 import { InteractionBar } from "@/components/site/interaction-bar";
@@ -20,6 +22,7 @@ import { Eye, UserRound } from "lucide-react";
  * 内容详情页:/article/[slug](SSR,需求 4.4 / 4.8)
  * - 单页 TDK(需求 4.1):seoTitle/seoKeywords/seoDesc,兜底标题/摘要
  * - 阅读量/点赞/转发展示与互动(开关受后台控制)
+ * - 收藏按钮(V3.0 REQ-006):登录态与收藏态服务端注入;未登录点击 → 登录回跳
  * - 评论区:仅展示已审核评论
  */
 
@@ -49,12 +52,17 @@ export default async function ArticlePage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
 
-  const [content, features, t] = await Promise.all([
+  const [content, features, t, user] = await Promise.all([
     getPublishedBySlug(slug, locale),
     getFeatureFlags(),
     getTranslations("interaction"),
+    // 与页头/写接口同口径:被禁用账号即使持有效 JWT 也按未登录对待
+    getActiveUserSession(),
   ]);
   if (!content) notFound();
+
+  // 收藏态服务端预取(REQ-006):未登录恒 false,首屏不闪烁
+  const favorited = user ? await hasFavorited({ contentId: content.id, userId: user.id }) : false;
 
   const date = new Date(content.publishedAt);
 
@@ -133,16 +141,17 @@ export default async function ArticlePage({ params }: Props) {
         </section>
       )}
 
-      {/* 点赞/转发(总开关控制,需求 4.8) */}
-      {(features.like || features.share) && (
-        <InteractionBar
-          contentId={content.id}
-          likeCount={content.likeCount}
-          shareCount={content.shareCount}
-          showLike={features.like}
-          showShare={features.share}
-        />
-      )}
+      {/* 互动条(收藏恒展示 REQ-006;点赞/转发受总开关控制,需求 4.8) */}
+      <InteractionBar
+        contentId={content.id}
+        likeCount={content.likeCount}
+        shareCount={content.shareCount}
+        showLike={features.like}
+        showShare={features.share}
+        showFavorite
+        initialFavorited={favorited}
+        authed={!!user}
+      />
 
       {/* 评论区(总开关控制) */}
       {features.comment && (
