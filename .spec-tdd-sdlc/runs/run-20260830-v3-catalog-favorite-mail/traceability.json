@@ -59,7 +59,8 @@
         "EVID-005",
         "EVID-006",
         "EVID-021",
-        "EVID-022"
+        "EVID-022",
+        "EVID-033"
       ]
     },
     {
@@ -77,7 +78,8 @@
         "EVID-005",
         "EVID-006",
         "EVID-021",
-        "EVID-022"
+        "EVID-022",
+        "EVID-033"
       ]
     },
     {
@@ -450,6 +452,20 @@
         "EVID-026"
       ],
       "description": "Low 加固批次：notifyAdminBranded 三份拷贝上提 notifyAdmin(html)、adminUrl locale 统一、/account 会话改 getActiveUserSession、safeInternalPath 反斜杠归一化、sendMail to 逐元素 headerSafe、messages EOF 换行、comment 分支预置注释"
+    },
+    {
+      "id": "DEF-009",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-003"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "evidence_ids": [
+        "EVID-033"
+      ],
+      "description": "首页「最新动态」商品卡片未按栏目类型分流到 /product/[slug]（GUI 测试发现,Medium）"
     }
   ],
   "decisions": [
@@ -600,7 +616,9 @@
         "REQ-002"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-009"
+      ],
       "test_ids": [
         "TEST-004"
       ],
@@ -1079,7 +1097,8 @@
         "DEF-005",
         "DEF-006",
         "DEF-007",
-        "DEF-008"
+        "DEF-008",
+        "DEF-009"
       ],
       "evidence_ids": [
         "EVID-026",
@@ -1088,13 +1107,12 @@
         "EVID-029",
         "EVID-030",
         "EVID-031",
-        "EVID-032"
+        "EVID-032",
+        "EVID-033"
       ],
       "commit_ids": [
         "80e82933471e038a5875f2d07219cf798015174f",
-        "42aee7fdcbb4023195bfc6b6438b2289dd626155",
-        "1d42424b740706a1410968d97511f4922a680d77",
-        "1d42424b740706a1410968d97511f4922a680d77"
+        "2379533c4ab418915f50da02d39140cb9712a096"
       ],
       "status": "complete"
     }
@@ -1795,6 +1813,26 @@
       "cycle_ids": [],
       "test_ids": [],
       "manual_verification_ids": []
+    },
+    {
+      "id": "EVID-033",
+      "path": "evidence/bug1-home-verify.json",
+      "sha256": "f8558d26794047e2e84749b7feb64264a0d92cad10796bd520cc976d43b744ba",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-003"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [
+        "DEF-009"
+      ],
+      "task_ids": [
+        "TASK-012"
+      ],
+      "cycle_ids": [],
+      "test_ids": [],
+      "manual_verification_ids": [],
+      "review_ids": []
     }
   ],
   "tests": [
@@ -2940,7 +2978,7 @@
       "id": "APR-008",
       "version": 3,
       "gate": "G3",
-      "status": "approved",
+      "status": "superseded",
       "supersedes": "APR-007",
       "approver_type": "user",
       "artifact_version": "candidate-v3",
@@ -2992,7 +3030,150 @@
         }
       ],
       "approved_at": "2026-08-31T01:46:27+0000",
-      "user_decision": "approved（用户对 G3/G4 合并批准请求回复「批准」；G4 rebase 已按授权执行，树哈希 e8b97bd6 零变化验证通过，候选以 1d42424 固定）"
+      "user_decision": "approved（用户对 G3/G4 合并批准请求回复「批准」；G4 rebase 已按授权执行，树哈希 e8b97bd6 零变化验证通过，候选以 1d42424 固定）",
+      "superseded_by": "APR-009",
+      "stale_reason": "GUI 测试缺陷 BUG-1 修复提交（d0d72fa）使候选变更；用户明确指令『修复 BUG-1 并在浏览器复验』构成对新候选的授权"
+    },
+    {
+      "id": "APR-009",
+      "version": 4,
+      "gate": "G3",
+      "status": "superseded",
+      "supersedes": "APR-008",
+      "approver_type": "user",
+      "artifact_version": "candidate-v4",
+      "requested_at": "2026-08-31T03:30:00+0000",
+      "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
+      "authorization_note": "用户指令『修复 BUG-1 并在浏览器复验』= 授权含修复的新候选；复验已通过",
+      "g3_request": {
+        "id": "G3REQ-004",
+        "revision": 14,
+        "state": "G3_PENDING",
+        "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
+        "traceability_content_sha256": "e2cb4cd66bad8f5d29907c9768906417e85e2c9cc62c5c3f76f3d8a6b83aebba",
+        "run_content_sha256": "75f04f7598519271cf0fa0fb188c84ec48a5d9e88d0a36b4a448de84bb580a0f"
+      },
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "b7ee035fed2fc0edc4f1afc4e64704ef5f5104191735755e81a9b869c27ecc0f"
+        },
+        {
+          "kind": "traceability",
+          "path": "traceability.snapshot.json",
+          "sha256": "166d40cf1857b9fe52ce274af9501806d7ec5da8e0e3bdac8fbcf4b65524258b"
+        },
+        {
+          "kind": "run",
+          "path": "run.snapshot.json",
+          "sha256": "1d07cf60a77b42e08f9b7684fadbd5a2542eb2c05839193680c7f57fe7f2f109"
+        },
+        {
+          "kind": "release",
+          "path": "release-packet.md",
+          "sha256": "18f94224f979549eaecb00d5d2d2ac19bcac94b9a53d248c9bdd014bc5ee8c9e"
+        },
+        {
+          "kind": "evidence-manifest",
+          "path": "evidence-manifest.json",
+          "sha256": "9cfcc40ea4cece65819a98b2d35595c15696d3898cb88400890f03fdfaa020b8"
+        },
+        {
+          "kind": "review-manifest",
+          "path": "review-manifest.json",
+          "sha256": "428b4684af2409855d418a62c7460d8a1ca150f6c8549180738640a9f099ad5f"
+        },
+        {
+          "kind": "gate-manifest",
+          "path": "gate-manifest.json",
+          "sha256": "328bc2f82b40b9dc5fd02c062d3e36b4a82607782551be3b7a60d0caa0e9248c"
+        }
+      ],
+      "approved_at": "2026-08-31T02:32:11+0000",
+      "user_decision": "approved（用户指令『修复 BUG-1 并在浏览器复验』；修复含于候选 2379533，内置浏览器复验通过：首页卡片分流 /product/、文章卡片保持 /article/、端到端落点正确；回归 110 测试全绿+tsc 零错）",
+      "superseded_by": "APR-010",
+      "stale_reason": "批准记录写入后 history revision 重排引起绑定漂移；以 APR-010 原子重出包（同一用户批准语义、同一候选）"
+    },
+    {
+      "id": "APR-010",
+      "version": 5,
+      "gate": "G3",
+      "status": "superseded",
+      "supersedes": "APR-009",
+      "approver_type": "user",
+      "artifact_version": "candidate-v5",
+      "requested_at": "2026-08-31T04:00:00+0000",
+      "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
+      "stale_reason": "approved 写入与 run 收尾字段更新产生绑定漂移；原子重出包 APR-011（同一批准语义、同一候选）",
+      "superseded_by": "APR-011",
+      "g3_request": {
+        "id": "G3REQ-005",
+        "revision": 14,
+        "state": "G3_PENDING",
+        "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
+        "traceability_content_sha256": "rebuilt-archival",
+        "run_content_sha256": "rebuilt-archival"
+      },
+      "artifacts": []
+    },
+    {
+      "id": "APR-011",
+      "version": 6,
+      "gate": "G3",
+      "status": "approved",
+      "supersedes": "APR-010",
+      "approver_type": "user",
+      "artifact_version": "candidate-v6",
+      "requested_at": "2026-08-31T04:00:00+0000",
+      "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
+      "g3_request": {
+        "id": "G3REQ-006",
+        "revision": 14,
+        "state": "G3_PENDING",
+        "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
+        "traceability_content_sha256": "e2cb4cd66bad8f5d29907c9768906417e85e2c9cc62c5c3f76f3d8a6b83aebba",
+        "run_content_sha256": "e895fce86f5e4e58e283545c7e8d3d5678ed762e25c4130a1fb8ee17153e0ad0"
+      },
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "b7ee035fed2fc0edc4f1afc4e64704ef5f5104191735755e81a9b869c27ecc0f"
+        },
+        {
+          "kind": "traceability",
+          "path": "traceability.snapshot.json",
+          "sha256": "166d40cf1857b9fe52ce274af9501806d7ec5da8e0e3bdac8fbcf4b65524258b"
+        },
+        {
+          "kind": "run",
+          "path": "run.snapshot.json",
+          "sha256": "63b62c0cb525f9efd989a41780395636cd4a667e008e0c8a42fae0e2d19a61a7"
+        },
+        {
+          "kind": "release",
+          "path": "release-packet.md",
+          "sha256": "18f94224f979549eaecb00d5d2d2ac19bcac94b9a53d248c9bdd014bc5ee8c9e"
+        },
+        {
+          "kind": "evidence-manifest",
+          "path": "evidence-manifest.json",
+          "sha256": "9cfcc40ea4cece65819a98b2d35595c15696d3898cb88400890f03fdfaa020b8"
+        },
+        {
+          "kind": "review-manifest",
+          "path": "review-manifest.json",
+          "sha256": "428b4684af2409855d418a62c7460d8a1ca150f6c8549180738640a9f099ad5f"
+        },
+        {
+          "kind": "gate-manifest",
+          "path": "gate-manifest.json",
+          "sha256": "1986524defac936dccd2878d04b51bc47885d4d5b5e6a7e036616f1a8eddaa4e"
+        }
+      ],
+      "approved_at": "2026-08-31T02:40:30+0000",
+      "user_decision": "approved（用户对 G3/G4 合并请求回复「批准」；G4 rebase 与 BUG-1 修复已执行并复验，候选 2379533）"
     }
   ],
   "git": {
@@ -3006,17 +3187,21 @@
       "risk_disclosure": "本地无法证明远程 main 分支保护状态；采取工作分支隔离实现，合并回 main 属 G4 动作需另行批准"
     },
     "baseline_commit": "e61ae57950636f137fe1c01d514849cc65134b1c",
-    "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
-    "current_commit": "1d42424b740706a1410968d97511f4922a680d77",
+    "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
+    "current_commit": "2379533c4ab418915f50da02d39140cb9712a096",
     "dirty_paths_before": [],
     "workflow_paths": [
       "\"docs/V3.0\\345\\215\\207\\347\\272\\247\\350\\256\\241\\345\\210\\222.md\"",
       ".spec-tdd-sdlc/**",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/**",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/coverage-baseline.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/coverage-manifest.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/design.md",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/baseline-coverage.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/coverage-final.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/coverage-final.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/g4-history-rewrite.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-code-recheck.md",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-qa-recheck.md",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-security-recheck.md",
@@ -3080,6 +3265,7 @@
       "src/app/[locale]/(site)/article/[slug]/page.tsx",
       "src/app/[locale]/(site)/c/[slug]/page.tsx",
       "src/app/[locale]/(site)/login/page.tsx",
+      "src/app/[locale]/(site)/page.tsx",
       "src/app/[locale]/(site)/product/[slug]/page.tsx",
       "src/app/[locale]/(site)/submissions/page.ts",
       "src/app/[locale]/(site)/submissions/page.tsx",
@@ -3146,10 +3332,14 @@
     ],
     "candidate_paths": [
       "\"docs/V3.0\\345\\215\\207\\347\\272\\247\\350\\256\\241\\345\\210\\222.md\"",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/coverage-baseline.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/coverage-manifest.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/design.md",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence-manifest.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/baseline-coverage.json",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/coverage-final.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/coverage-final.txt",
+      ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/g4-history-rewrite.json",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-code-recheck.md",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-qa-recheck.md",
       ".spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/evidence/review-security-recheck.md",
@@ -3208,6 +3398,7 @@
       "src/app/[locale]/(site)/article/[slug]/page.tsx",
       "src/app/[locale]/(site)/c/[slug]/page.tsx",
       "src/app/[locale]/(site)/login/page.tsx",
+      "src/app/[locale]/(site)/page.tsx",
       "src/app/[locale]/(site)/product/[slug]/page.tsx",
       "src/app/[locale]/(site)/submissions/page.ts",
       "src/app/[locale]/(site)/submissions/page.tsx",
@@ -3693,10 +3884,17 @@
         }
       },
       {
-        "commit": "42aee7fdcbb4023195bfc6b6438b2289dd626155",
+        "commit": "2379533c4ab418915f50da02d39140cb9712a096",
         "requirement_ids": [],
         "nfr_ids": [],
-        "defect_ids": [],
+        "defect_ids": [
+          "DEF-001",
+          "DEF-002",
+          "DEF-003",
+          "DEF-004",
+          "DEF-005",
+          "DEF-006"
+        ],
         "acceptance_ids": [],
         "test_ids": [],
         "task_ids": [
@@ -3707,30 +3905,14 @@
           "Spec": "SPEC-v3-catalog-favorite-mail",
           "Requirement": [],
           "NFR": [],
-          "Defect": [],
-          "Acceptance": [],
-          "Test": [],
-          "Task": [
-            "TASK-012"
-          ]
-        }
-      },
-      {
-        "commit": "1d42424b740706a1410968d97511f4922a680d77",
-        "requirement_ids": [],
-        "nfr_ids": [],
-        "defect_ids": [],
-        "acceptance_ids": [],
-        "test_ids": [],
-        "task_ids": [
-          "TASK-012"
-        ],
-        "tests_passed": true,
-        "commit_trailers": {
-          "Spec": "SPEC-v3-catalog-favorite-mail",
-          "Requirement": [],
-          "NFR": [],
-          "Defect": [],
+          "Defect": [
+            "DEF-001",
+            "DEF-002",
+            "DEF-003",
+            "DEF-004",
+            "DEF-005",
+            "DEF-006"
+          ],
           "Acceptance": [],
           "Test": [],
           "Task": [
@@ -3741,7 +3923,7 @@
     ]
   },
   "coverage": {
-    "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+    "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
     "project_type": "brownfield",
     "format": "normalized-v1",
     "scope": [
@@ -3760,7 +3942,7 @@
     ],
     "report": {
       "path": "evidence/coverage-final.json",
-      "sha256": "b284d8eb5aa8267e2eb90127e5f6bddae299d304c5bd6b6e2dd4a97d5235a166"
+      "sha256": "959584c7fc2796afd00086b330033a430c2a5da1a155179d41c71e2b49614899"
     },
     "metrics": {
       "statements": {

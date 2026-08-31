@@ -159,6 +159,11 @@
       "id": "EVID-032",
       "path": "evidence/coverage-final.txt",
       "sha256": "80d050c4906232493fedd987f0053d75bd0da7145d0a1b9b972d3fb6c334ec65"
+    },
+    {
+      "id": "EVID-033",
+      "path": "evidence/bug1-home-verify.json",
+      "sha256": "f8558d26794047e2e84749b7feb64264a0d92cad10796bd520cc976d43b744ba"
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "id": "EVID-033",
+  "type": "gui-verification",
+  "date": "2026-08-31",
+  "bug": "BUG-1 首页商品卡片未分流",
+  "fix_commit": "d0d72fa2217611fc9ce62737277173e20d65cd16",
+  "verification": "内置浏览器复验：首页卡片 href 已分流为 /zh-CN/product/demo-product-gateway 与 /zh-CN/product/demo-product-terminal；文章卡片保持 /article/welcome-aition；点击卡片端到端落在商品详情页（H1/规格参数/产品询盘齐备）",
+  "regression": "vitest 19 文件 110 测试全绿 + tsc 零错（修复提交前复跑）"
+}

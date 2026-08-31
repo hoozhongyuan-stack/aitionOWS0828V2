@@ -1,24 +1,24 @@
 {
-  "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+  "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
   "files": [
     {
       "path": "traceability.snapshot.json",
-      "sha256": "fb507dd84fd009c006e85283817788a0e72e348400182401c6e476f82dfac379"
+      "sha256": "166d40cf1857b9fe52ce274af9501806d7ec5da8e0e3bdac8fbcf4b65524258b"
     },
     {
       "path": "run.snapshot.json",
-      "sha256": "9abeca43d92d3495f84cc44a4cf82ab3b08304b6dad3c3df620d105bb245bcff"
+      "sha256": "63b62c0cb525f9efd989a41780395636cd4a667e008e0c8a42fae0e2d19a61a7"
     },
     {
       "path": "evidence-manifest.json",
-      "sha256": "61bf15d37ba5f215690340b684edad724f923866bf7982e304217f6add5fb43c"
+      "sha256": "9cfcc40ea4cece65819a98b2d35595c15696d3898cb88400890f03fdfaa020b8"
     },
     {
       "path": "review-manifest.json",
-      "sha256": "04095aa03baf0c77c9a804927b84e78d41388bc63215fec274a132a85d1ce67a"
+      "sha256": "428b4684af2409855d418a62c7460d8a1ca150f6c8549180738640a9f099ad5f"
     }
   ],
   "gate": "G3",
-  "request_id": "G3REQ-003",
+  "request_id": "G3REQ-006",
   "schema_version": "1.1"
 }

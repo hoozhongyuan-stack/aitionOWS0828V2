@@ -1,22 +1,30 @@
 {
-  "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+  "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
   "format": "normalized-v1",
   "metrics": {
     "statements": {
       "covered": 219,
-      "total": 227
-    },
-    "branches": {
-      "covered": 159,
-      "total": 186
-    },
-    "functions": {
-      "covered": 53,
-      "total": 53
+      "total": 227,
+      "percentage": 96.48,
+      "threshold": 90.0
     },
     "lines": {
       "covered": 190,
-      "total": 194
+      "total": 194,
+      "percentage": 97.94,
+      "threshold": 90.0
+    },
+    "functions": {
+      "covered": 53,
+      "total": 53,
+      "percentage": 100.0,
+      "threshold": 90.0
+    },
+    "branches": {
+      "covered": 159,
+      "total": 186,
+      "percentage": 85.48,
+      "threshold": 85.0
     }
   }
 }

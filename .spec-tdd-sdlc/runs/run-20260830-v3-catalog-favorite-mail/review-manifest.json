@@ -1,5 +1,5 @@
 {
-  "candidate_commit": "1d42424b740706a1410968d97511f4922a680d77",
+  "candidate_commit": "2379533c4ab418915f50da02d39140cb9712a096",
   "reviews": [
     {
       "agent_id": "agent_4f7a88e3-code-reviewer",
@@ -7,7 +7,7 @@
       "id": "REV-001",
       "role": "code-review",
       "status": "passed",
-      "subject_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "subject_commit": "2379533c4ab418915f50da02d39140cb9712a096",
       "timestamp": "2026-08-31T00:55:00+0000"
     },
     {
@@ -16,7 +16,7 @@
       "id": "REV-002",
       "role": "security-review",
       "status": "passed",
-      "subject_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "subject_commit": "2379533c4ab418915f50da02d39140cb9712a096",
       "timestamp": "2026-08-31T00:58:00+0000"
     },
     {
@@ -25,7 +25,7 @@
       "id": "REV-003",
       "role": "qa",
       "status": "passed",
-      "subject_commit": "1d42424b740706a1410968d97511f4922a680d77",
+      "subject_commit": "2379533c4ab418915f50da02d39140cb9712a096",
       "timestamp": "2026-08-31T01:05:00+0000"
     }
   ]
