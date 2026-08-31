@@ -32,6 +32,18 @@ npm run prisma:deploy / prisma:generate              # 迁移/客户端
 - 生产 compose:`docker/compose.prod.yml`(app + Caddy,80/443,数据库卷挂载);AUTH_SECRET 缺失或默认值 → 登录接口 503(fail-closed,是特性)
 - 服务器 1.9G 内存,**swap 4G 已配置**(/swapfile),构建/运行依赖它,别删
 
+
+## V3.0 交付记忆(2026-08-31,spec-tdd-sdlc 流程)
+
+- 完整过程记录在 `.spec-tdd-sdlc/runs/run-20260830-v3-catalog-favorite-mail/`(Spec v5/G3 批准链 APR-006~011/32 份证据);候选 2379533
+- 商品=Content(moduleType=product)而非独立表;前台详情路由按 `resolveContentDetailPath` 分流(/product/ vs /article/);**新增列表出口必须透传 moduleType**(BUG-1 教训:首页卡片漏传已修复)
+- 收藏域在 `src/server/ugc/favorite.ts`;删除内容须事务内级联 `favorite.deleteMany`;收藏计数减法带 `gt:0` 护栏
+- 前台用户序列化唯一出口 `toPublicUser`(server/user/profile.ts)——公司/国家/省/市 4 字段**严禁**出现在任何前台响应(TEST-013 锁定)
+- 邮件模板层 `src/server/notify/template.ts`(纯 TS,零依赖);管理员通知用 `notifyAdmin(subject, lines, html?)` 三参形态,勿再复制本地 helper
+- 测试:`npx vitest run`(19 文件 110 测试);覆盖率门禁 scope=vitest.config include 的**新增模块清单**(勿改回目录通配——存量文件会稀释口径);临时 SQLite 测试库由 tests/setup/db.ts 自动迁移
+- `run.json`/`traceability.json` 的 canonical 哈希绑定 `updated_at` 等字段——**G3 批准后不可再写 run.json 非排除字段**(踩过:批准后写 g4_ledger 导致包漂移,G4 记录放 evidence/ 目录)
+- route.ts 只准导出 HTTP method(Next 15.5 类型校验);helper 放 server 层
+
 ## 已知坑(真实踩过)
 
 - Dockerfile 有 `ENTRYPOINT (npm run start)` → `docker compose run app <cmd>` 会变成启动服务器而不是执行命令;临时容器必须 `--entrypoint npx` 或 `docker run`
