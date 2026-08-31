@@ -13,6 +13,7 @@ import { ViewTracker } from "@/components/site/view-tracker";
 import { InteractionBar } from "@/components/site/interaction-bar";
 import { FormRenderer } from "@/components/site/form-renderer";
 import { ProductJsonLd } from "@/components/seo/json-ld";
+import { GalleryViewer } from "@/components/site/gallery-viewer";
 import { Eye, UserRound } from "lucide-react";
 
 /**
@@ -91,30 +92,12 @@ export default async function ProductPage({ params }: Props) {
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* 图集:首图大图 + 其余缩略图(纯静态多图,零 JS 依赖) */}
+        {/* 图集:主图 + 缩略图点击切换(客户端零依赖;SSR 输出全部图,禁 JS 仍可见,NFR-002) */}
         <section aria-label={t("gallery")}>
-          {images[0] && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={images[0]}
-              alt={content.title}
-              className="aspect-[4/3] w-full rounded-xl border bg-muted object-cover"
-            />
-          )}
-          {images.length > 1 && (
-            <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-5">
-              {images.map((u, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={`${u}-${i}`}
-                  src={u}
-                  alt={`${content.title} ${i + 1}`}
-                  loading="lazy"
-                  className="aspect-square w-full rounded-lg border bg-muted object-cover"
-                />
-              ))}
-            </div>
-          )}
+          <GalleryViewer
+            images={images.map((u, i) => ({ url: u, alt: `${content.title} ${i + 1}` }))}
+            alt={content.title}
+          />
         </section>
 
         <section>
