@@ -3,42 +3,65 @@ import { afterEach, describe, expect, it } from "vitest";
 /**
  * buildOpenGraph 单元测试(V3.1 REQ-003/004 / NFR-002):
  * 图片兜底链=imagePath 绝对化→LOGO 绝对化→省略;标题解析;无相对路径输出。
+ * LOGO 两端锁定:植入 logoUrl 断言精确 URL;清空 logoUrl 断言 images 省略。
  */
 describe("buildOpenGraph / resolveMetadataTitle", () => {
   const prevUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-  afterEach(() => {
+  afterEach(async () => {
     if (prevUrl === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
     else process.env.NEXT_PUBLIC_SITE_URL = prevUrl;
-    // 清除 brand 配置缓存,避免用例间串扰
-    try {
-      const cfg = require("@/lib/config");
-      if (typeof cfg.invalidateSettingCache === "function") cfg.invalidateSettingCache("brand");
-    } catch { /* 忽略 */ }
+    const { prisma } = await import("@/lib/db");
+    await prisma.setting.deleteMany({ where: { group: "brand", key: "logoUrl" } });
+    const setting = await import("@/server/setting");
+    setting.invalidateSettingCache("brand");
+    await prisma.$disconnect();
   });
+
+  async function setLogo(logoUrl: string) {
+    const { prisma } = await import("@/lib/db");
+    await prisma.setting.upsert({
+      where: { group_key: { group: "brand", key: "logoUrl" } },
+      update: { value: JSON.stringify(logoUrl) },
+      create: { group: "brand", key: "logoUrl", value: JSON.stringify(logoUrl) },
+    });
+    const setting = await import("@/server/setting");
+    setting.invalidateSettingCache("brand");
+  }
 
   it("imagePath 相对路径 → 绝对 URL", async () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
     const { buildOpenGraph } = await import("@/lib/seo/open-graph");
     const og = await buildOpenGraph({ title: "T", description: "D", imagePath: "/uploads/a.png", locale: "zh-CN" });
-    expect(og.images?.[0]).toBe("https://example.com/uploads/a.png");
+    const images = og.images as string[] | undefined;
+    expect(images?.[0]).toBe("https://example.com/uploads/a.png");
     expect(og.title).toBe("T");
     expect(og.locale).toBe("zh-CN");
   });
 
-  it("无 imagePath → 兜底 LOGO 绝对 URL;LOGO 也为空 → images 省略", async () => {
+  it("无 imagePath 且配置了 LOGO → 精确的 LOGO 绝对 URL(兜底链中段)", async () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
+    await setLogo("/uploads/brand-logo.png");
     const { buildOpenGraph } = await import("@/lib/seo/open-graph");
     const og = await buildOpenGraph({ title: "T", imagePath: null, locale: "en" });
-    // 兜底链末端取决于品牌配置:有 LOGO → 绝对 URL;无 LOGO → undefined
-    expect(og.images === undefined || /^https?:\/\//.test(og.images![0])).toBe(true);
+    const images = og.images as string[] | undefined;
+    expect(images?.[0]).toBe("https://example.com/uploads/brand-logo.png");
+  });
+
+  it("无 imagePath 且 LOGO 为空 → images 省略(兜底链末端)", async () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
+    await setLogo("");
+    const { buildOpenGraph } = await import("@/lib/seo/open-graph");
+    const og = await buildOpenGraph({ title: "T", imagePath: null, locale: "en" });
+    expect(og.images).toBeUndefined();
   });
 
   it("已是绝对 URL 的 imagePath 原样保留", async () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
     const { buildOpenGraph } = await import("@/lib/seo/open-graph");
     const og = await buildOpenGraph({ title: "T", imagePath: "https://cdn.example.com/x.png", locale: "en" });
-    expect(og.images?.[0]).toBe("https://cdn.example.com/x.png");
+    const images = og.images as string[] | undefined;
+    expect(images?.[0]).toBe("https://cdn.example.com/x.png");
   });
 
   it("resolveMetadataTitle:string/absolute/缺省三分支", async () => {

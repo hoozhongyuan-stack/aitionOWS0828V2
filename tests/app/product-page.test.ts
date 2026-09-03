@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { existsSync, rmSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { TEST_DB_URL } from "../setup/db";
 
@@ -79,7 +80,7 @@ beforeAll(async () => {
   let err = "";
   child = spawn("npx", ["next", "dev", "-p", String(PORT)], {
     cwd: PROJECT_ROOT,
-    env: { ...process.env, DATABASE_URL: TEST_DB_URL },
+    env: { ...process.env, DATABASE_URL: TEST_DB_URL, NEXT_TEST_DIST_DIR: ".next-test-product" },
     detached: true, // 建立进程组,afterAll 可整组杀掉(npx→next→子进程)
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -124,6 +125,8 @@ afterAll(() => {
       // 进程已退出
     }
   }
+  // 清理隔离构建目录(与 og-tags 集成测试并发时互不干扰)
+  rmSync(path.join(PROJECT_ROOT, ".next-test-product"), { recursive: true, force: true });
 });
 
 describe("TEST-019:商品详情页初始 HTML(SSR 集成)", () => {

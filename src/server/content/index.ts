@@ -303,6 +303,7 @@ export async function saveContent(
     : await prisma.content.create({ data });
 
   // 翻译行重建前快照各语言旧 specs(deleteMany+recreate 会整行重建;
+  // 注:快照读在事务外,与删除间存在并发窗口;admin 单编辑者场景已评估接受(评审 Low-3)
   // V3.1 REQ-001:translations[].specs 缺省=保留既有,靠快照回填,不丢存量多语言规格)
   const prevSpecs = new Map(
     (

@@ -134,9 +134,10 @@ export async function getDashboardStats(from?: string, to?: string) {
   // 区间序列(REQ-005):仅 path="*",YYYY-MM-DD 字符串可直接按字典序比较
   const total = diffCalendarDays(range.from, range.to) + 1; // 含首尾
   const rangeDates: string[] = [];
-  const startDay = Date.parse(`${range.from}T00:00:00`);
+  // 日历日滚动(而非毫秒推进):避免午夜切换 DST 的时区出现重复/跳日
+  const [y, m, d] = range.from.split("-").map(Number);
   for (let i = 0; i < total; i++) {
-    rangeDates.push(localDate(new Date(startDay + i * 86_400_000)));
+    rangeDates.push(localDate(new Date(y, m - 1, d + i)));
   }
   const rows = await prisma.dailyStat.findMany({
     where: { path: "*", date: { gte: range.from, lte: range.to } },

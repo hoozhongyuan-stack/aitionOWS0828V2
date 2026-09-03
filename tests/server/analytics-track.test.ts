@@ -18,7 +18,10 @@ describe("trackPageView 访问统计", () => {
     await trackPageView("/p/a", "visitor-1");
     await trackPageView("/p/a", "visitor-1");
     await trackPageView("/p/b", "visitor-2");
-    const stats = await getDashboardStats();
+    const stats = (await getDashboardStats()) as {
+      week: { date: string; pv: number; uv: number }[];
+      range?: { from: string; to: string; series: { date: string; pv: number; uv: number }[] };
+    };
     const today = stats.week.at(-1)!;
     // 3 次 PV;UV:visitor-1、visitor-2 共 2 人
     expect(today.pv).toBe(3);
@@ -33,12 +36,14 @@ describe("trackPageView 访问统计", () => {
     const from = new Date(to.getTime() - 3 * 86_400_000);
     const fmt = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const stats = await getDashboardStats(fmt(from), fmt(to));
-    expect(stats.range).toBeTruthy();
-    expect(stats.range!.series.length).toBe(4);
-    for (const point of stats.range!.series) {
+    const ranged = (await getDashboardStats(fmt(from), fmt(to))) as {
+      range?: { from: string; to: string; series: { date: string; pv: number; uv: number }[] };
+    };
+    expect(ranged.range).toBeTruthy();
+    expect(ranged.range!.series.length).toBe(4);
+    for (const point of ranged.range!.series) {
       expect(point.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
-    expect(stats.range!.series.at(-1)!.pv).toBeGreaterThanOrEqual(1);
+    expect(ranged.range!.series.at(-1)!.pv).toBeGreaterThanOrEqual(1);
   });
 });
