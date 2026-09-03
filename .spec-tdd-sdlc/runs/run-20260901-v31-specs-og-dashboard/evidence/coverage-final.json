@@ -1,0 +1,22 @@
+{
+  "candidate_commit": "2983763663fd9e49210b328a24f9f656fd63a36a",
+  "format": "normalized-v1",
+  "metrics": {
+    "statements": {
+      "covered": 329,
+      "total": 341
+    },
+    "branches": {
+      "covered": 254,
+      "total": 284
+    },
+    "functions": {
+      "covered": 81,
+      "total": 81
+    },
+    "lines": {
+      "covered": 283,
+      "total": 289
+    }
+  }
+}

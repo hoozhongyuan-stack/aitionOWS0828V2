@@ -2,7 +2,7 @@
   "schema_version": "1.1",
   "project_type": "brownfield",
   "run_id": "run-20260901-v31-specs-og-dashboard",
-  "state_revision": 7,
+  "state_revision": 8,
   "orchestrator_id": "orchestrator-zcode-main",
   "requirements": [
     {
@@ -1071,7 +1071,7 @@
       "id": "APR-101",
       "version": 1,
       "gate": "G1",
-      "status": "approved",
+      "status": "superseded",
       "supersedes": null,
       "approver_type": "user",
       "artifact_version": "spec-v3",
@@ -1083,13 +1083,15 @@
           "path": "spec.md",
           "sha256": "176409530cb4fe74c17cc13f4b4af9a8f3c277348387f1ee4fead503afff5e77"
         }
-      ]
+      ],
+      "superseded_by": "APR-103",
+      "stale_reason": "spec v4 实现澄清(栏目页 !data=404 不输出 OG,一行措辞);候选推进至 2983763"
     },
     {
       "id": "APR-102",
       "version": 1,
       "gate": "G2",
-      "status": "approved",
+      "status": "superseded",
       "supersedes": null,
       "approver_type": "user",
       "artifact_version": "design-v1+plan-v1",
@@ -1112,7 +1114,53 @@
         }
       ],
       "approved_at": "2026-09-03T10:11:11+0000",
-      "user_decision": "approved（用户对 G2 批准包明确选择「批准（推荐）」）"
+      "user_decision": "approved（用户对 G2 批准包明确选择「批准（推荐）」）",
+      "superseded_by": "APR-104",
+      "stale_reason": "随 spec v4 重绑(design/plan 未变)"
+    },
+    {
+      "id": "APR-103",
+      "version": 2,
+      "gate": "G1",
+      "status": "pending",
+      "supersedes": "APR-101",
+      "approver_type": "user",
+      "artifact_version": "spec-v4",
+      "requested_at": "2026-09-03T13:50:00+0000",
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "24aa050e197a233db41cb5b3f8f1c7ae41992ab7e4c92819b2ab831a5407d6f7"
+        }
+      ]
+    },
+    {
+      "id": "APR-104",
+      "version": 2,
+      "gate": "G2",
+      "status": "pending",
+      "supersedes": "APR-102",
+      "approver_type": "user",
+      "artifact_version": "spec-v4+design-v1+plan-v1",
+      "requested_at": "2026-09-03T13:50:00+0000",
+      "artifacts": [
+        {
+          "kind": "spec",
+          "path": "spec.md",
+          "sha256": "24aa050e197a233db41cb5b3f8f1c7ae41992ab7e4c92819b2ab831a5407d6f7"
+        },
+        {
+          "kind": "design",
+          "path": "design.md",
+          "sha256": "2854ef8c7048d40c5b235820860661a484a1d96b2c8cb243d6963e1eeff3df47"
+        },
+        {
+          "kind": "plan",
+          "path": "plan.md",
+          "sha256": "3794281d6dda3a48898517de66dac2b2366d09a621e175e8945d80bd269c2d05"
+        }
+      ]
     }
   ],
   "git": {
@@ -1251,5 +1299,58 @@
       }
     ]
   },
-  "coverage": null
+  "coverage": {
+    "candidate_commit": null,
+    "project_type": "brownfield",
+    "format": "normalized-v1",
+    "scope": [
+      "src/server/ugc/favorite.ts",
+      "src/server/user/profile.ts",
+      "src/server/content/product.ts",
+      "src/server/content/llms.ts",
+      "src/server/notify/template.ts",
+      "src/app/api/interaction/favorite/route.ts",
+      "src/app/**/account/logic.ts",
+      "src/lib/seo/open-graph.ts",
+      "src/server/analytics/index.ts",
+      "src/app/api/admin/dashboard/route.ts",
+      "src/app/**/dashboard/logic.ts"
+    ],
+    "exclusions": [],
+    "important_uncovered_paths": [
+      "src/server/ugc/favorite.ts 防御性分支(V3.0 已披露,延续)",
+      "src/server/analytics/index.ts trackPageView 路径截断分支(>200 字符路径,边界防御)",
+      "src/server/content/index.ts specs 快照并发窗口(评审 Low-3,注释明示接受)"
+    ],
+    "report": {
+      "path": "evidence/coverage-final.json",
+      "sha256": "4b5c93c56e36ea1d3ea3f980c96d44c0d585da99c687d77533ee837346977414"
+    },
+    "metrics": {
+      "statements": {
+        "covered": 329,
+        "total": 341,
+        "percentage": 96.48,
+        "threshold": 90.0
+      },
+      "lines": {
+        "covered": 283,
+        "total": 289,
+        "percentage": 97.92,
+        "threshold": 90.0
+      },
+      "functions": {
+        "covered": 81,
+        "total": 81,
+        "percentage": 100.0,
+        "threshold": 90.0
+      },
+      "branches": {
+        "covered": 254,
+        "total": 284,
+        "percentage": 89.44,
+        "threshold": 85.0
+      }
+    }
+  }
 }

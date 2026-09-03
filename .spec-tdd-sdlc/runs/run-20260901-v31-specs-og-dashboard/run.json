@@ -10,8 +10,8 @@
     "public contract: 看板 API 参数/contents PUT 扩展/全站 OG"
   ],
   "resume_state": null,
-  "state": "EXECUTING",
-  "state_revision": 7,
+  "state": "G1_PENDING",
+  "state_revision": 8,
   "orchestrator_id": "orchestrator-zcode-main",
   "repository": {
     "root": "../../..",
@@ -65,6 +65,12 @@
       "revision": 7,
       "state": "EXECUTING",
       "timestamp": "2026-09-03T10:06:00+0000"
+    },
+    {
+      "revision": 8,
+      "state": "G1_PENDING",
+      "timestamp": "2026-09-03T11:30:16+0000",
+      "note": "spec v4 实现澄清触发 G1/G2 重批;实现已完成并评审修复,等待合并批准"
     }
   ],
   "approvals": {
@@ -82,5 +88,5 @@
       "approver": "user"
     }
   },
-  "updated_at": "2026-09-03T12:45:00+0000"
+  "updated_at": "2026-09-03T11:30:16+0000"
 }
