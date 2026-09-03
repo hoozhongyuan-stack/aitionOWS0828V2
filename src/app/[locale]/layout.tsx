@@ -14,6 +14,7 @@ import "@/styles/globals.css";
  *  2) next-intl 多语言上下文
  *  3) 运行时主题注入:读取 Setting(theme) → 生成 CSS 变量 <style>,
  *     后台改主题 → 缓存失效 → 下一次请求立即生效(不重启、不重编译)
+ *  4) metadataBase(V3.1 REQ-003):相对路径 OG 图片/URL 据此解析为绝对地址
  */
 
 /** 按扩展名推断 favicon MIME,输出 type 属性帮助浏览器正确解码(尤其 ICO) */
@@ -36,6 +37,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const brand = await getBrandConfig();
   const iconType = brand.faviconUrl ? faviconMime(brand.faviconUrl) : undefined;
   return {
+    // REQ-003:仅取受信环境变量,缺省回退本地地址(dev 同值,见 .env.example)
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
     title: {
       default: brand.siteName,
       template: `%s | ${brand.siteName}`,

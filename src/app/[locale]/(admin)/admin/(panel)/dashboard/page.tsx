@@ -6,13 +6,29 @@ import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet } from "@/components/admin/api-client";
+import {
+  PRESET_DAYS,
+  presetRange,
+  resolveCustomRange,
+  dashboardRangeQuery,
+  resolveTrendSeries,
+  type DateRange,
+  type RangePresetDays,
+  type TrendPoint,
+} from "./logic";
 import { Eye, Users, FileText, MessageSquareWarning, Inbox, ClipboardList } from "lucide-react";
 
-/** 数据看板(需求 5):今日 PV/UV、7 天趋势、业务总量、待办入口 */
+/**
+ * 数据看板(需求 5):今日 PV/UV、业务总量、待办入口、访问趋势。
+ * V3.1(REQ-006):趋势图支持时间段筛选——近 7/30/90 天预设 + 自定义起止
+ * (`<input type="date">` + 应用);选中区间经 /api/admin/dashboard?from=&to= 拉取
+ * 逐日序列(date 展示 YYYY-MM-DD,超宽横向滚动);默认近 7 天。
+ */
 
 interface Stats {
   today: { pv: number; uv: number };
-  week: { date: string; pv: number; uv: number }[];
+  week: TrendPoint[];
+  range?: { from: string; to: string; series: TrendPoint[] };
   totals: {
     contents: number;
     users: number;
@@ -23,19 +39,50 @@ interface Stats {
   };
 }
 
+const presetBtnClass = (active: boolean) =>
+  active
+    ? "rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
+    : "rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
+
+const dateInputClass =
+  "rounded-md border bg-background px-2 py-1.5 text-sm text-foreground";
+
 export default function DashboardPage() {
   const locale = useLocale();
   const [stats, setStats] = useState<Stats | null>(null);
+  // 默认近 7 天(REQ-006);range 变化即重新拉取
+  const [range, setRange] = useState<DateRange>(() => presetRange(7));
+  const [activePreset, setActivePreset] = useState<RangePresetDays | "custom">(7);
+  const [fromInput, setFromInput] = useState("");
+  const [toInput, setToInput] = useState("");
 
   useEffect(() => {
-    apiGet<Stats>("/api/admin/dashboard")
+    apiGet<Stats>(dashboardRangeQuery(range))
       .then(setStats)
       .catch((e) => toast.error(e.message));
-  }, []);
+  }, [range]);
+
+  const applyPreset = (days: RangePresetDays) => {
+    setActivePreset(days);
+    setStats(null); // 切换区间时清空旧图,避免误读旧区间数据
+    setRange(presetRange(days));
+  };
+
+  const applyCustom = () => {
+    const next = resolveCustomRange(fromInput, toInput);
+    if (!next) {
+      toast.error("请选择有效的起止日期(结束不早于开始,跨度不超过 92 天)");
+      return;
+    }
+    setActivePreset("custom");
+    setStats(null);
+    setRange(next);
+  };
 
   if (!stats) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
-  const maxPv = Math.max(1, ...stats.week.map((d) => d.pv));
+  const trend = resolveTrendSeries(stats);
+  const maxPv = Math.max(1, ...trend.map((d) => d.pv));
   const pendingTotal = stats.totals.pendingComments + stats.totals.pendingSubmissions;
 
   const cards = [
@@ -97,21 +144,62 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>近 7 天访问趋势</CardTitle>
+          <CardTitle>访问趋势({range.from} ~ {range.to})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex h-40 items-end gap-2">
-            {stats.week.map((d) => (
-              <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-                <span className="text-xs text-muted-foreground">{d.pv}</span>
-                <div
-                  className="w-full rounded-t bg-primary/80 transition-all"
-                  style={{ height: `${Math.max(4, (d.pv / maxPv) * 110)}px` }}
-                  title={`${d.date}:PV ${d.pv} / UV ${d.uv}`}
-                />
-                <span className="text-[10px] text-muted-foreground">{d.date}</span>
-              </div>
+          {/* 筛选档(REQ-006):预设 + 自定义起止;纯逻辑在 ./logic.ts(TEST-205) */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {PRESET_DAYS.map((days) => (
+              <button
+                key={days}
+                type="button"
+                className={presetBtnClass(activePreset === days)}
+                aria-pressed={activePreset === days}
+                onClick={() => applyPreset(days)}
+              >
+                近 {days} 天
+              </button>
             ))}
+            <input
+              type="date"
+              value={fromInput}
+              onChange={(e) => setFromInput(e.target.value)}
+              className={dateInputClass}
+              aria-label="开始日期"
+            />
+            <span className="text-sm text-muted-foreground">至</span>
+            <input
+              type="date"
+              value={toInput}
+              onChange={(e) => setToInput(e.target.value)}
+              className={dateInputClass}
+              aria-label="结束日期"
+            />
+            <button
+              type="button"
+              className={presetBtnClass(activePreset === "custom")}
+              aria-pressed={activePreset === "custom"}
+              onClick={applyCustom}
+            >
+              应用
+            </button>
+          </div>
+
+          {/* 区间可达 90+ 天:横向滚动,列宽固定,date 完整展示 YYYY-MM-DD */}
+          <div className="overflow-x-auto">
+            <div className="flex h-40 min-w-max items-end gap-2">
+              {trend.map((d) => (
+                <div key={d.date} className="flex w-9 flex-none flex-col items-center gap-1">
+                  <span className="text-xs text-muted-foreground">{d.pv}</span>
+                  <div
+                    className="w-full rounded-t bg-primary/80 transition-all"
+                    style={{ height: `${Math.max(4, (d.pv / maxPv) * 110)}px` }}
+                    title={`${d.date}:PV ${d.pv} / UV ${d.uv}`}
+                  />
+                  <span className="text-[10px] text-muted-foreground">{d.date}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>

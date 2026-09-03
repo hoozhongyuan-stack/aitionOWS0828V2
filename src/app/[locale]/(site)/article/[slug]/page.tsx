@@ -4,6 +4,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getPublishedBySlug } from "@/server/content";
 import { buildAlternates } from "@/lib/seo/alternates";
+import { buildOpenGraph } from "@/lib/seo/open-graph";
 import { getForm } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
 import { hasFavorited } from "@/server/ugc";
@@ -34,15 +35,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const content = await getPublishedBySlug(slug, locale);
   if (!content) return {};
+  const title = content.seoTitle || content.title;
+  const description = content.seoDesc || content.summary || undefined;
   return {
-    title: content.seoTitle || content.title,
+    title,
     alternates: await buildAlternates(`/article/${slug}`, locale),
-    description: content.seoDesc || content.summary || undefined,
+    description,
     keywords: content.seoKeywords || undefined,
+    // V3.1 REQ-004:OG 语义不变,统一走 buildOpenGraph 绝对化;无封面兜底 LOGO
     openGraph: {
-      title: content.seoTitle || content.title,
-      description: content.seoDesc || content.summary || undefined,
-      images: content.coverUrl ? [content.coverUrl] : undefined,
+      ...(await buildOpenGraph({ title, description, imagePath: content.coverUrl, locale })),
       type: "article",
     },
   };

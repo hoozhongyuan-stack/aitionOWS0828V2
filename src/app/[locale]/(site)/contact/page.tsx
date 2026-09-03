@@ -3,10 +3,11 @@ import type { Metadata } from "next";
 import { getBrandConfig } from "@/lib/config";
 import { getFormByRelatedKey } from "@/server/form";
 import { getSeoMetaFor } from "@/server/seo";
+import { buildOpenGraph, resolveMetadataTitle } from "@/lib/seo/open-graph";
 import { FormRenderer } from "@/components/site/form-renderer";
 import { Phone, Mail, MapPin } from "lucide-react";
 
-/** 联系页:品牌联系方式 + 关联标识为 contact 的获客表单(需求 4.5) */
+/** 联系页:品牌联系方式 + 关联标识为 contact 的获客表单(需求 4.5);OG 见 generateMetadata(REQ-003) */
 
 export async function generateMetadata({
   params,
@@ -14,7 +15,18 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return getSeoMetaFor("contact", locale);
+  const meta = await getSeoMetaFor("contact", locale);
+  const brand = await getBrandConfig();
+  return {
+    ...meta,
+    // 分享 OG(V3.1 REQ-003):TDK 与 SeoMeta(contact) 同源;无内容封面,图兜底 LOGO
+    openGraph: await buildOpenGraph({
+      title: resolveMetadataTitle(meta.title, brand.siteName),
+      description: meta.description,
+      imagePath: null,
+      locale,
+    }),
+  };
 }
 
 export default async function ContactPage({

@@ -4,6 +4,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { listPublishedByCategory, listCategories } from "@/server/content";
 import { buildAlternates } from "@/lib/seo/alternates";
+import { buildOpenGraph } from "@/lib/seo/open-graph";
 import { getFormByRelatedKey } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
 import { ContentCard } from "@/components/site/content-card";
@@ -30,11 +31,20 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const data = await listPublishedByCategory(slug, locale, 1, 1);
+  // 栏目不存在(404 分支)不输出 OG:页面随即 notFound,保持现状
   if (!data) return {};
   return {
     title: data.category.name,
     alternates: await buildAlternates(`/c/${slug}`, locale),
     description: data.category.description ?? undefined,
+    // 分享 OG(V3.1 REQ-003):栏目翻译名+描述;图=本栏目树 PUBLISHED 首条封面
+    // (publishAt desc,id desc,列表已按此排序)→ 无封面兜底 LOGO
+    openGraph: await buildOpenGraph({
+      title: data.category.name,
+      description: data.category.description,
+      imagePath: data.items[0]?.coverUrl ?? null,
+      locale,
+    }),
   };
 }
 

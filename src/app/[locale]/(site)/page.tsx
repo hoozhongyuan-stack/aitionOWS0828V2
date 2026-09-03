@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { listLatestPublished } from "@/server/content";
 import { getActiveBanners } from "@/server/banner";
 import { getSeoMetaFor } from "@/server/seo";
+import { getBrandConfig } from "@/lib/config";
+import { buildOpenGraph, resolveMetadataTitle } from "@/lib/seo/open-graph";
 import { ContentCard } from "@/components/site/content-card";
 import { HeroCarousel } from "@/components/site/hero-carousel";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,8 @@ import { ArrowRight } from "lucide-react";
  * - Hero 背景:配置了轮播图(新增需求①,后台「轮播图」)时展示通屏轮播,否则回退到默认渐变背景
  * - 最新已发布内容(需求 4.4)
  * - 首页 TDK 来自 SeoMeta(pageKey=home,需求 4.1)
+ * - 分享 OG(V3.1 REQ-003):title/description 与 SeoMeta(home) 同源,
+ *   图=首条启用 Banner,无 Banner 兜底 LOGO(buildOpenGraph 内部处理)
  */
 
 export async function generateMetadata({
@@ -24,7 +28,20 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return getSeoMetaFor("home", locale);
+  const [meta, banners, brand] = await Promise.all([
+    getSeoMetaFor("home", locale),
+    getActiveBanners(),
+    getBrandConfig(),
+  ]);
+  return {
+    ...meta,
+    openGraph: await buildOpenGraph({
+      title: resolveMetadataTitle(meta.title, brand.siteName),
+      description: meta.description,
+      imagePath: banners[0]?.imageUrl,
+      locale,
+    }),
+  };
 }
 
 export default async function HomePage({

@@ -6,6 +6,7 @@ import { getProductDetail } from "@/server/content";
 import { hasFavorited } from "@/server/ugc";
 import { getActiveUserSession } from "@/lib/auth/session";
 import { buildAlternates } from "@/lib/seo/alternates";
+import { buildOpenGraph } from "@/lib/seo/open-graph";
 import { getBrandConfig, getFeatureFlags } from "@/lib/config";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { safeDateLocale } from "@/lib/utils";
@@ -34,16 +35,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const content = await getProductDetail(slug, locale);
   if (!content) return {};
+  const title = content.seoTitle || content.title;
+  const description = content.seoDesc || content.summary || undefined;
+  // og:image=图集首图(无图集回退封面)——V3.1 REQ-004 回归锁语义,统一绝对化+LOGO 兜底
   const ogImage = content.gallery[0]?.url ?? content.coverUrl;
   return {
-    title: content.seoTitle || content.title,
+    title,
     alternates: await buildAlternates(`/product/${slug}`, locale),
-    description: content.seoDesc || content.summary || undefined,
+    description,
     keywords: content.seoKeywords || undefined,
     openGraph: {
-      title: content.seoTitle || content.title,
-      description: content.seoDesc || content.summary || undefined,
-      images: ogImage ? [ogImage] : undefined,
+      ...(await buildOpenGraph({ title, description, imagePath: ogImage, locale })),
       type: "website",
     },
   };

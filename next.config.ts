@@ -5,6 +5,10 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // 构建产物目录:默认 .next;集成测试并发 spawn 多个 next dev 时经环境变量
+  // 隔离各自的构建目录,避免共用 .next 的读写竞争导致渲染 500
+  // (仅测试进程注入 NEXT_TEST_DIST_DIR,生产/常规开发不设置,行为不变)。
+  distDir: process.env.NEXT_TEST_DIST_DIR || ".next",
   // 部署策略:不用 standalone —— 容器启动需运行 prisma migrate/seed(依赖完整
   // node_modules),standalone 的裁剪收益无法兑现,反而与 `next start` 冲突。
   // 镜像取向:可靠性优先,保留完整依赖,用 `next start` 启动(见 docker/)。
