@@ -43,6 +43,10 @@ export default defineConfig({
         "src/server/notify/template.ts",
         "src/app/api/interaction/favorite/route.ts",
         "src/app/**/account/logic.ts",
+        "src/lib/seo/open-graph.ts",
+        "src/server/analytics/index.ts",
+        "src/app/api/admin/dashboard/route.ts",
+        "src/app/**/dashboard/logic.ts",
       ],
       exclude: ["**/*.d.ts"],
       thresholds: {

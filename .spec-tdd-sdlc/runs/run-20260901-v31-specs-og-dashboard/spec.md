@@ -1,6 +1,6 @@
 ---
 spec_id: "SPEC-v31-specs-og-dashboard"
-spec_version: 3
+spec_version: 4
 status: draft
 risk_class: "high-risk"
 g2_required: "yes"
@@ -48,7 +48,7 @@ g2_required: "yes"
 | --- | --- | --- | --- |
 | REQ-001 | active | 系统必须支持按语言维护商品规格表：`ContentTranslation` 持有 specs（JSON 键值数组），详情页按兜底链渲染当前语言规格。写入语义矩阵：`translations[].specs` 为显式值（数组=该语言值，可为空数组；null=该语言无规格），编辑器必须全量往返各语言 Tab；顶层 `specs` 仅写入 Content.specs（兜底列），**不得**隐式改写任何翻译行。翻译行 specs 缺省（undefined）=保留该语言既有值（服务层在 deleteMany+recreate 前快照回填，或改逐行 upsert）。GET 编辑数据按语言返回 specs（供全量往返）。编辑器默认语言（zh-CN）Tab 保存时同步写入顶层 specs（保持兜底列与默认语言一致）。 | 需求①核心；全量往返保护 EN 数据运营成果 |
 | REQ-002 | active | 迁移必须一次完成：新增 ContentTranslation.specs 可空列，并将每个翻译行回填为对应 Content.specs 的副本（无 specs 则 NULL）；不改不删既有列；可重复 deploy；回滚 SQL 随迁移交付。 | NFR 延续（存量无损） |
-| REQ-003 | active | 根布局必须设置 metadataBase=NEXT_PUBLIC_SITE_URL；首页/栏目页/联系页必须输出 openGraph。取值来源：首页=SeoMeta(home) 的 title/description；联系页=SeoMeta(contact)；栏目页=栏目翻译名+描述（`!data` 时输出站点名+站点描述兜底）。图片兜底链：内容封面（栏目页=本栏目含子树的 PUBLISHED 内容按 publishAt desc,id desc 首条 coverUrl）→ 品牌 LOGO 绝对 URL → 均为空时省略 og:image。 | 需求②核心 |
+| REQ-003 | active | 根布局必须设置 metadataBase=NEXT_PUBLIC_SITE_URL；首页/栏目页/联系页必须输出 openGraph。取值来源：首页=SeoMeta(home) 的 title/description；联系页=SeoMeta(contact)；栏目页=栏目翻译名+描述（`!data` 为不存在栏目路径，页面 404、不输出 OG——2026-09-03 实现澄清）。图片兜底链：内容封面（栏目页=本栏目含子树的 PUBLISHED 内容按 publishAt desc,id desc 首条 coverUrl）→ 品牌 LOGO 绝对 URL → 均为空时省略 og:image。 | 需求②核心 |
 | REQ-004 | active | 文章/商品详情既有 OG 语义必须保持（title/description 取值不变；商品 og:image=图集首图），并统一为绝对 URL；详情页无封面/图集时 og:image 兜底为品牌 LOGO（绝对 URL）。 | 兼容保护+统一兜底 |
 | REQ-005 | active | 看板 API 必须支持 from/to 查询参数返回区间逐日 PV/UV。口径：取数仅 `path="*"` 全站汇总行（与 week/today 一致）；series[].date 输出 YYYY-MM-DD；跨度=to−from 日历日差 ≤92（序列含首尾）；from/to 必须成对出现否则 400；to 可晚于今天（未来日期计 0）；非法格式/from>to/单边参数均 400；无参数时返回值与现有结构完全兼容（week=近 7 天）。 | 需求③核心 |
 | REQ-006 | active | 看板 UI 必须提供近 7/30/90 天预设与自定义起止日期选择，图表按所选区间渲染。 | 需求③交互 |
@@ -130,3 +130,4 @@ G2 decision: required（High-risk 类：迁移 + 公共契约）。
 | 1 | Initial draft（依据用户确认的 V3.1 规划起草） | not_applicable |
 | 2 | 按独立评审处置 1C/1H/5M/2L：定义 specs 写入语义矩阵（全量往返，顶层 specs 不触碰翻译行）；看板取数口径（path=*、YYYY-MM-DD、跨度=日历日差≤92、成对参数、未来日补 0）；AC-002/005/006 重写；Scope 与 REQ 编号对齐、Context 证据措辞、栏目页封面口径、LOGO 空值兜底链、详情页无图兜底归属 | 无（v1 从未获批） |
 | 3 | 复核遗留收口：Not included 补工具页 noindex/不加 OG 穷尽式边界；写入矩阵补「缺省=保留既有」；编辑器默认语言 Tab 同步顶层 specs；两处措辞残留对齐（OG 兜底链末端省略、残余风险表述） | 无（v1/v2 从未获批） |
+| 4 | 实现澄清：栏目页 `!data`（不存在栏目）→ 404 不输出 OG（实现与规范等效性的措辞对齐，TASK-107 评审记录处置） | G1/G2 绑定 v3（APR-103/104 supersede 重绑） |

@@ -47,8 +47,13 @@
       "acceptance_ids": [
         "AC-004"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-103"
+      ],
+      "evidence_ids": [
+        "EVID-107",
+        "EVID-108"
+      ]
     },
     {
       "id": "REQ-004",
@@ -57,8 +62,13 @@
       "acceptance_ids": [
         "AC-005"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-103"
+      ],
+      "evidence_ids": [
+        "EVID-107",
+        "EVID-108"
+      ]
     },
     {
       "id": "REQ-005",
@@ -67,8 +77,13 @@
       "acceptance_ids": [
         "AC-006"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-104"
+      ],
+      "evidence_ids": [
+        "EVID-109",
+        "EVID-110"
+      ]
     },
     {
       "id": "REQ-006",
@@ -77,8 +92,13 @@
       "acceptance_ids": [
         "AC-007"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-105"
+      ],
+      "evidence_ids": [
+        "EVID-111",
+        "EVID-112"
+      ]
     }
   ],
   "non_functional_requirements": [
@@ -103,8 +123,13 @@
         "AC-004",
         "AC-005"
       ],
-      "task_ids": [],
-      "evidence_ids": []
+      "task_ids": [
+        "TASK-103"
+      ],
+      "evidence_ids": [
+        "EVID-107",
+        "EVID-108"
+      ]
     },
     {
       "id": "NFR-003",
@@ -315,6 +340,63 @@
         "a69efb7f12f4230e425dc36501e0ab121a727372"
       ],
       "status": "complete"
+    },
+    {
+      "id": "TASK-103",
+      "role": "implementation",
+      "agent_id": "agent_4e9f5b0b-implementerB-v31",
+      "requirement_ids": [
+        "REQ-003",
+        "REQ-004"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-107",
+        "EVID-108"
+      ],
+      "commit_ids": [
+        "885972cc588edf04165f212fe2af5cab9ab54c85"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": "TASK-104",
+      "role": "implementation",
+      "agent_id": "agent_4e9f5b0b-implementerB-v31",
+      "requirement_ids": [
+        "REQ-005"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-109",
+        "EVID-110"
+      ],
+      "commit_ids": [
+        "885972cc588edf04165f212fe2af5cab9ab54c85"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": "TASK-105",
+      "role": "implementation",
+      "agent_id": "agent_4e9f5b0b-implementerB-v31",
+      "requirement_ids": [
+        "REQ-006"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "evidence_ids": [
+        "EVID-111",
+        "EVID-112"
+      ],
+      "commit_ids": [
+        "885972cc588edf04165f212fe2af5cab9ab54c85"
+      ],
+      "status": "complete"
     }
   ],
   "evidence": [
@@ -451,6 +533,142 @@
       ],
       "manual_verification_ids": [],
       "review_ids": []
+    },
+    {
+      "id": "EVID-107",
+      "path": "evidence/tdd-cycles/TASK-103-red.md",
+      "sha256": "8363e7cf3e92b898ce2576dce03cf80386d25f6c527c9ac9721d118f7b5c5aac",
+      "requirement_ids": [
+        "REQ-003",
+        "REQ-004"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-103"
+      ],
+      "cycle_ids": [
+        "TDD-103"
+      ],
+      "test_ids": [
+        "TEST-202",
+        "TEST-203"
+      ],
+      "manual_verification_ids": [],
+      "review_ids": []
+    },
+    {
+      "id": "EVID-108",
+      "path": "evidence/tdd-cycles/TASK-103-green.md",
+      "sha256": "12fce1ca5870817d89fa0072905fba59f303d3f71677aa68ef36ea7aff4d4014",
+      "requirement_ids": [
+        "REQ-003",
+        "REQ-004"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-103"
+      ],
+      "cycle_ids": [
+        "TDD-103"
+      ],
+      "test_ids": [
+        "TEST-202",
+        "TEST-203"
+      ],
+      "manual_verification_ids": [],
+      "review_ids": []
+    },
+    {
+      "id": "EVID-109",
+      "path": "evidence/tdd-cycles/TASK-104-red.md",
+      "sha256": "1febd3979a6c13b66e1962ccc910c3ca8a4c42eed69a5b4dc5fae811d41d4c47",
+      "requirement_ids": [
+        "REQ-005"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-104"
+      ],
+      "cycle_ids": [
+        "TDD-104"
+      ],
+      "test_ids": [
+        "TEST-204"
+      ],
+      "manual_verification_ids": [],
+      "review_ids": []
+    },
+    {
+      "id": "EVID-110",
+      "path": "evidence/tdd-cycles/TASK-104-green.md",
+      "sha256": "121da0588105c8b4da4684bf8897a0f1eb482ffb0dd1f4e4f87483a8540b71d2",
+      "requirement_ids": [
+        "REQ-005"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-104"
+      ],
+      "cycle_ids": [
+        "TDD-104"
+      ],
+      "test_ids": [
+        "TEST-204"
+      ],
+      "manual_verification_ids": [],
+      "review_ids": []
+    },
+    {
+      "id": "EVID-111",
+      "path": "evidence/tdd-cycles/TASK-105-red.md",
+      "sha256": "5cf1e60f1410b90961425ab13b6c0adc3039dda2faee2df76001933b7f7189e3",
+      "requirement_ids": [
+        "REQ-006"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-105"
+      ],
+      "cycle_ids": [
+        "TDD-105"
+      ],
+      "test_ids": [
+        "TEST-205"
+      ],
+      "manual_verification_ids": [],
+      "review_ids": []
+    },
+    {
+      "id": "EVID-112",
+      "path": "evidence/tdd-cycles/TASK-105-green.md",
+      "sha256": "a7354cec4a1de609b64f937e7e786d5f07a79fb684f88151e3434de38c0e46f3",
+      "requirement_ids": [
+        "REQ-006"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "task_ids": [
+        "TASK-105"
+      ],
+      "cycle_ids": [
+        "TDD-103",
+        "TDD-104",
+        "TDD-105"
+      ],
+      "test_ids": [
+        "TEST-205"
+      ],
+      "manual_verification_ids": [],
+      "review_ids": []
     }
   ],
   "tests": [
@@ -516,9 +734,14 @@
       "acceptance_ids": [
         "AC-004"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-103"
+      ],
+      "evidence_ids": [
+        "EVID-107",
+        "EVID-108"
+      ],
+      "status": "passed"
     },
     {
       "id": "TEST-203",
@@ -528,9 +751,14 @@
       "acceptance_ids": [
         "AC-005"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-103"
+      ],
+      "evidence_ids": [
+        "EVID-107",
+        "EVID-108"
+      ],
+      "status": "passed"
     },
     {
       "id": "TEST-204",
@@ -540,9 +768,14 @@
       "acceptance_ids": [
         "AC-006"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-104"
+      ],
+      "evidence_ids": [
+        "EVID-109",
+        "EVID-110"
+      ],
+      "status": "passed"
     },
     {
       "id": "TEST-205",
@@ -552,9 +785,14 @@
       "acceptance_ids": [
         "AC-007"
       ],
-      "cycle_ids": [],
-      "evidence_ids": [],
-      "status": "planned"
+      "cycle_ids": [
+        "TDD-105"
+      ],
+      "evidence_ids": [
+        "EVID-111",
+        "EVID-112"
+      ],
+      "status": "passed"
     },
     {
       "id": "TEST-206",
@@ -698,6 +936,133 @@
         "evidence_id": "EVID-106",
         "sha256": "79d982404e83ad482bf14a29f01c0d2849fa583610a674f3671d2cb7939757c1"
       }
+    },
+    {
+      "id": "TDD-103",
+      "applicability": "required",
+      "requirement_ids": [
+        "REQ-003",
+        "REQ-004"
+      ],
+      "nfr_ids": [
+        "NFR-002"
+      ],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-202",
+        "TEST-203"
+      ],
+      "manual_verification_ids": [],
+      "red": {
+        "status": "failed",
+        "failure_kind": "missing_behavior",
+        "command": "npx vitest run tests/app/og-tags.test.ts",
+        "observed": "7 failed:og 缺失/metadataBase 缺失时 host 错/无封面无兜底",
+        "timestamp": "2026-09-03T13:00:00+0000",
+        "exit_code": 1,
+        "evidence_id": "EVID-107",
+        "sha256": "8363e7cf3e92b898ce2576dce03cf80386d25f6c527c9ac9721d118f7b5c5aac"
+      },
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run tests/app/og-tags.test.ts",
+        "observed": "8/8 通过",
+        "timestamp": "2026-09-03T13:30:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-108",
+        "sha256": "12fce1ca5870817d89fa0072905fba59f303d3f71677aa68ef36ea7aff4d4014"
+      },
+      "refactor": {
+        "status": "passed",
+        "command": "npx vitest run && npx tsc --noEmit && npx next build",
+        "observed": "25 文件 149 测试全绿+tsc 零错+build 41 静态页",
+        "timestamp": "2026-09-03T13:40:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-112",
+        "sha256": "a7354cec4a1de609b64f937e7e786d5f07a79fb684f88151e3434de38c0e46f3"
+      }
+    },
+    {
+      "id": "TDD-104",
+      "applicability": "required",
+      "requirement_ids": [
+        "REQ-005"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-204"
+      ],
+      "manual_verification_ids": [],
+      "red": {
+        "status": "failed",
+        "failure_kind": "missing_behavior",
+        "command": "npx vitest run tests/server/dashboard-range.test.ts",
+        "observed": "6 failed:无 range/不抛 400/route 恒 200",
+        "timestamp": "2026-09-03T13:00:00+0000",
+        "exit_code": 1,
+        "evidence_id": "EVID-109",
+        "sha256": "1febd3979a6c13b66e1962ccc910c3ca8a4c42eed69a5b4dc5fae811d41d4c47"
+      },
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run tests/server/dashboard-range.test.ts",
+        "observed": "8/8 通过",
+        "timestamp": "2026-09-03T13:30:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-110",
+        "sha256": "121da0588105c8b4da4684bf8897a0f1eb482ffb0dd1f4e4f87483a8540b71d2"
+      },
+      "refactor": {
+        "status": "passed",
+        "command": "npx vitest run && npx tsc --noEmit && npx next build",
+        "observed": "25 文件 149 测试全绿+tsc 零错+build 41 静态页",
+        "timestamp": "2026-09-03T13:40:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-112",
+        "sha256": "a7354cec4a1de609b64f937e7e786d5f07a79fb684f88151e3434de38c0e46f3"
+      }
+    },
+    {
+      "id": "TDD-105",
+      "applicability": "required",
+      "requirement_ids": [
+        "REQ-006"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [],
+      "test_ids": [
+        "TEST-205"
+      ],
+      "manual_verification_ids": [],
+      "red": {
+        "status": "failed",
+        "failure_kind": "missing_behavior",
+        "command": "npx vitest run tests/admin/dashboard-range-ui.test.ts",
+        "observed": "logic 模块缺失",
+        "timestamp": "2026-09-03T13:00:00+0000",
+        "exit_code": 1,
+        "evidence_id": "EVID-111",
+        "sha256": "5cf1e60f1410b90961425ab13b6c0adc3039dda2faee2df76001933b7f7189e3"
+      },
+      "green": {
+        "status": "passed",
+        "command": "npx vitest run tests/admin/dashboard-range-ui.test.ts",
+        "observed": "7/7 通过",
+        "timestamp": "2026-09-03T13:30:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-112",
+        "sha256": "a7354cec4a1de609b64f937e7e786d5f07a79fb684f88151e3434de38c0e46f3"
+      },
+      "refactor": {
+        "status": "passed",
+        "command": "npx vitest run && npx tsc --noEmit && npx next build",
+        "observed": "25 文件 149 测试全绿+tsc 零错+build 41 静态页",
+        "timestamp": "2026-09-03T13:40:00+0000",
+        "exit_code": 0,
+        "evidence_id": "EVID-112",
+        "sha256": "a7354cec4a1de609b64f937e7e786d5f07a79fb684f88151e3434de38c0e46f3"
+      }
     }
   ],
   "blockers": [],
@@ -820,6 +1185,67 @@
             "TASK-101",
             "TASK-102",
             "TASK-106"
+          ]
+        }
+      },
+      {
+        "commit": "885972cc588edf04165f212fe2af5cab9ab54c85",
+        "requirement_ids": [
+          "REQ-003",
+          "REQ-004",
+          "REQ-005",
+          "REQ-006"
+        ],
+        "nfr_ids": [
+          "NFR-002"
+        ],
+        "defect_ids": [],
+        "acceptance_ids": [
+          "AC-004",
+          "AC-005",
+          "AC-006",
+          "AC-007"
+        ],
+        "test_ids": [
+          "TEST-202",
+          "TEST-203",
+          "TEST-204",
+          "TEST-205"
+        ],
+        "task_ids": [
+          "TASK-103",
+          "TASK-104",
+          "TASK-105"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v31-specs-og-dashboard",
+          "Requirement": [
+            "REQ-003",
+            "REQ-004",
+            "REQ-005",
+            "REQ-006"
+          ],
+          "NFR": [
+            "NFR-002"
+          ],
+          "Defect": [],
+          "Acceptance": [
+            "AC-004",
+            "AC-005",
+            "AC-006",
+            "AC-007"
+          ],
+          "Test": [
+            "TEST-202",
+            "TEST-203",
+            "TEST-204",
+            "TEST-205"
+          ],
+          "Task": [
+            "TASK-103",
+            "TASK-104",
+            "TASK-105"
           ]
         }
       }
