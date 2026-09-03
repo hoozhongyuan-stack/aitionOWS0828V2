@@ -183,6 +183,11 @@ model ContentTranslation {
   seoTitle    String?
   seoKeywords String?
   seoDesc     String?
+  // 规格参数(V3.1 REQ-001):JSON 数组([{k,v}...],格式与 Content.specs 一致),
+  // 按语言独立维护;详情页兜底链=当前语言 translation.specs → Content.specs → 空表。
+  // 迁移 20260903000000_v31_translation_specs 已把存量行回填为对应 Content.specs 的副本
+  // (主表无 specs 则 NULL);编辑器按语言 Tab 全量往返,顶层 Content.specs 仍作兜底列。
+  specs       String?
 
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
 

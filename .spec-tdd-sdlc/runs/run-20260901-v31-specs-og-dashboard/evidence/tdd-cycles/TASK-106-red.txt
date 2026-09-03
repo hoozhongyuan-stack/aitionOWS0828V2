@@ -1,0 +1,17 @@
+TASK-106 RED — 后台编辑器 Tab 化(载荷形状层,随 TEST-102 RED 一并先行)
+UTC: 2026-09-03T10:23:27Z(与 TASK-102-red 同一 run,先于全部 GREEN 实现)
+命令: npx vitest run tests/server/translation-specs.test.ts
+退出码: 1(Tests 9 failed | 3 passed)
+
+RED 断言(编辑器保存载荷形状,期望 en Tab 改动持久化):
+     × PUT 携带 translations[].specs(数组/null 混合)保存成功,库内值一致 4ms
+     × TASK-106 编辑器全量往返载荷形状:每语言 Tab specs 独立提交,顶层=默认语言 Tab 2ms
+
+--
+
+ FAIL  tests/server/translation-specs.test.ts > TEST-102 API:PUT 接受 translations[].specs 并持久化 > TASK-106 编辑器全量往返载荷形状:每语言 Tab specs 独立提交,顶层=默认语言 Tab
+
+行为缺失说明(页面与服务在 RED 时点):
+- 编辑页规格参数编辑器位于商品通用区(单份,跨语言共享),载荷不含 translations[].specs
+- 服务层/zod 不接受 translations[].specs → 载荷形状测试断言 en 行 specs 为 null 失败
+- 顶层 specs 写入语义未定义「默认语言 Tab 同步」

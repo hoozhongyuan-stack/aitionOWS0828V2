@@ -1,0 +1,13 @@
+TASK-102 RED — TEST-101/102 服务与 API 测试先行(含 TASK-106 载荷形状用例)
+UTC: 2026-09-03T10:23:27Z
+命令: npx vitest run tests/server/translation-specs.test.ts
+退出码: 1
+--- 结果: Tests  9 failed | 3 passed (12) ---
+RED 失败点(均为行为缺失,非测试错误):
+1. en 行英文 specs 未被读取(详情仍返回主表中文 specs)——读取链未实现
+2. 翻译行非法 JSON 未容错(回退了主表,契约要求容错为空)
+3. getContentForEdit 未返回解析后的每语言 specs 数组(现为 raw string/null)
+4. saveContent 忽略 translations[].specs(全量往返/快照回填/三态均未实现)
+5. 服务层超 50 行不拒绝
+6. zod 剥离 translations[].specs,API PUT 不持久化
+通过的 3 例为兜底锁(现实现读主表即满足):en NULL 回退/en 行不存在回退/全空

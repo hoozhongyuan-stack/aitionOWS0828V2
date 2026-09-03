@@ -1,0 +1,9 @@
+TASK-101 RED — TEST-201 迁移演练测试先行
+UTC: 2026-09-03T10:17:38Z
+命令: npx vitest run tests/db/migration-v31.test.ts
+退出码: 1
+--- 输出摘要 ---
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/db/migration-v31.test.ts > TEST-201: V3.1 迁移演练(specs 回填/存量无损/幂等) > 应用 V3.1 迁移后:旧行保留、翻译行 specs=主表副本(无则 NULL)、重复 deploy 幂等
+The column `main.ContentTranslation.specs` does not exist in the current database.
+      Tests  1 failed (1)

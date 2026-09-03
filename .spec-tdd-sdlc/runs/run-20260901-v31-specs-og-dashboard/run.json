@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.1",
+  "run_id": "run-20260901-v31-specs-og-dashboard",
+  "objective": "V3.1:规格表英文化(ContentTranslation.specs+回填迁移)+分享卡片 OG(metadataBase+首页/栏目/联系页)+看板时间段趋势(from/to)。范围已经用户确认。",
+  "spec_class": "High-risk",
+  "action_risk": "L2",
+  "g2_required": true,
+  "risk_triggers": [
+    "schema/data migration: ContentTranslation.specs 列+回填",
+    "public contract: 看板 API 参数/contents PUT 扩展/全站 OG"
+  ],
+  "resume_state": null,
+  "state": "EXECUTING",
+  "state_revision": 7,
+  "orchestrator_id": "orchestrator-zcode-main",
+  "repository": {
+    "root": "../../..",
+    "base_commit": "a4b06ce745be5a86c511a84e7d40c43c6ef6f002",
+    "initial_branch": "main",
+    "working_branch": null,
+    "initial_dirty_paths": [],
+    "head": "a4b06ce745be5a86c511a84e7d40c43c6ef6f002",
+    "candidate_commit": null,
+    "pending_remote_actions": []
+  },
+  "active_tasks": [],
+  "completed_tasks": [],
+  "retry_counts": {},
+  "blockers": [],
+  "reviews": [],
+  "pending_g4_actions": [],
+  "state_history": [
+    {
+      "revision": 1,
+      "state": "DISCOVERY",
+      "timestamp": "2026-09-03T09:44:09+0000"
+    },
+    {
+      "revision": 2,
+      "state": "SPEC_DRAFT",
+      "timestamp": "2026-09-03T09:44:10+0000"
+    },
+    {
+      "revision": 3,
+      "state": "G1_PENDING",
+      "timestamp": "2026-09-03T09:59:28+0000"
+    },
+    {
+      "revision": 4,
+      "state": "DESIGNING",
+      "timestamp": "2026-09-03T09:59:29+0000"
+    },
+    {
+      "revision": 5,
+      "state": "G2_PENDING",
+      "timestamp": "2026-09-03T10:04:00+0000"
+    },
+    {
+      "revision": 6,
+      "state": "TEST_DESIGN",
+      "timestamp": "2026-09-03T10:05:00+0000",
+      "note": "测试设计已在批准 Spec 中完成(TEST-101~206),无新增设计"
+    },
+    {
+      "revision": 7,
+      "state": "EXECUTING",
+      "timestamp": "2026-09-03T10:06:00+0000"
+    }
+  ],
+  "approvals": {
+    "G1": {
+      "approval_id": "APR-101",
+      "status": "approved",
+      "approved_at": "2026-09-03T10:07:04+0000",
+      "spec_sha256": "176409530cb4fe74c17cc13f4b4af9a8f3c277348387f1ee4fead503afff5e77",
+      "approver": "user"
+    },
+    "G2": {
+      "approval_id": "APR-102",
+      "status": "approved",
+      "approved_at": "2026-09-03T10:11:11+0000",
+      "approver": "user"
+    }
+  },
+  "updated_at": "2026-09-03T12:45:00+0000"
+}

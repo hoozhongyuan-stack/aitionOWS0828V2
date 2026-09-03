@@ -1,0 +1,15 @@
+TASK-101 GREEN — 手写迁移 + 回滚 SQL + 收敛校验 + TEST-201 转绿
+UTC: 2026-09-03T10:18:55Z
+
+[1] 收敛校验: npx prisma migrate diff --from-migrations prisma/migrations --shadow-database-url file:/tmp/v31-shadow-*.db --to-schema-datamodel prisma/schema.prisma
+退出码: 0;输出: No difference detected.
+
+[2] 测试: npx vitest run tests/db/migration-v31.test.ts
+退出码: 0
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+
+交付物:
+- prisma/migrations/20260903000000_v31_translation_specs/migration.sql(手写纯增量:ADD COLUMN + UPDATE 回填,无 DROP/RENAME)
+- prisma/rollback-v31.sql(DROP COLUMN 逆操作)
+- prisma/schema.prisma(ContentTranslation.specs String?,含兜底链注释)

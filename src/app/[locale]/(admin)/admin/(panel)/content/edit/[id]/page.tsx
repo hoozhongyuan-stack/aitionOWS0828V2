@@ -23,10 +23,12 @@ import { apiGet, apiPut } from "@/components/admin/api-client";
 import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 /**
- * 内容编辑器(需求 4.4 / V3.0 REQ-001):
+ * 内容编辑器(需求 4.4 / V3.0 REQ-001 / V3.1 REQ-001):
  * - 基础:标识/栏目/封面/状态(草稿/发布/下架/定时)
  * - 多语言 Tab:标题/摘要/富文本正文 + 单页 TDK(需求 4.1)
- * - 商品栏目(moduleType=product):图集多图上传 + 规格参数键值行 + 收藏数只读展示
+ * - 商品栏目(moduleType=product):图集多图上传(通用,存主表)+
+ *   规格参数键值行(V3.1 起移入语言 Tab,每语言独立编辑、全量往返提交 translations[].specs;
+ *   默认语言 Tab 保存时同步写顶层 specs 兜底列)+ 收藏数只读展示
  *   (收藏数与阅读/赞/转对称:仅只读展示,不提供编辑入口)
  */
 
@@ -38,6 +40,7 @@ interface Translation {
   seoTitle: string;
   seoKeywords: string;
   seoDesc: string;
+  specs: SpecRow[];
 }
 interface Category {
   id: number;
@@ -57,7 +60,16 @@ const STATUS_OPTIONS = [
 ];
 
 function emptyTranslation(locale: string): Translation {
-  return { locale, title: "", summary: "", body: "", seoTitle: "", seoKeywords: "", seoDesc: "" };
+  return {
+    locale,
+    title: "",
+    summary: "",
+    body: "",
+    seoTitle: "",
+    seoKeywords: "",
+    seoDesc: "",
+    specs: [],
+  };
 }
 
 /** 解析图集 JSON 串(容错:非法/缺失返回空数组,不抛错) */
@@ -111,9 +123,11 @@ export default function ContentEditPage() {
   const [coverUrl, setCoverUrl] = useState("");
   const [publishAt, setPublishAt] = useState("");
   const [trans, setTrans] = useState<Record<string, Translation>>({});
-  // —— 商品扩展字段(仅 product 栏目展示与提交;gallery/specs 存主表,跨语言通用)——
+  // —— 商品扩展字段(仅 product 栏目展示与提交)——
+  // gallery 存主表跨语言通用;specs(V3.1)按语言存 ContentTranslation.specs,
+  // 每语言 Tab 独立编辑、全量往返提交,默认语言 Tab 保存时同步写顶层 specs 兜底列
   const [gallery, setGallery] = useState<string[]>([]);
-  const [specs, setSpecs] = useState<SpecRow[]>([]);
+  const [defaultLocale, setDefaultLocale] = useState("zh-CN"); // 默认语言 Tab(顶层兜底列同步源)
   const [favoriteCount, setFavoriteCount] = useState(0); // 只读展示,与阅读/赞/转对称
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -122,12 +136,14 @@ export default function ContentEditPage() {
     (async () => {
       try {
         const [locData, catData, formData] = await Promise.all([
-          apiGet<{ locales: { code: string }[] }>("/api/admin/locales"),
+          apiGet<{ locales: { code: string; isDefault?: boolean }[] }>("/api/admin/locales"),
           apiGet<Category[]>("/api/admin/categories"),
           apiGet<{ id: number; name: string; enabled: boolean }[]>("/api/admin/forms"),
         ]);
         const codes = locData.locales.map((l) => l.code);
         setLocales(codes);
+        const def = locData.locales.find((l) => l.isDefault)?.code ?? codes[0] ?? "zh-CN";
+        setDefaultLocale(def);
         setCats(catData);
         setForms(formData);
 
@@ -143,7 +159,7 @@ export default function ContentEditPage() {
             gallery: string | null;
             specs: string | null;
             favoriteCount: number;
-            translations: Partial<Translation>[];
+            translations: (Partial<Translation> & { specs?: SpecRow[] | null })[];
           }>(`/api/admin/contents?id=${id}`);
           setSlug(c.slug);
           setCategoryId(c.categoryId);
@@ -153,11 +169,15 @@ export default function ContentEditPage() {
           setCoverUrl(c.coverUrl ?? "");
           setPublishAt(c.publishAt ? toLocalInput(new Date(c.publishAt)) : "");
           setGallery(parseGalleryJson(c.gallery)); // 保存后重开即回显(AC-001)
-          setSpecs(parseSpecsJson(c.specs));
           setFavoriteCount(c.favoriteCount ?? 0);
+          // 顶层 specs 兜底列(GET 返回 JSON 串):默认语言 Tab 回显的兜底来源
+          const mainRows = parseSpecsJson(c.specs);
           const map: Record<string, Translation> = {};
           for (const code of codes) {
             const t = c.translations.find((x) => x.locale === code);
+            // 各语言 specs 回显(V3.1):服务层已解析为数组;NULL/缺失 → 空编辑器。
+            // 默认语言 Tab 空时回显顶层兜底列(保持「默认语言 Tab=顶层 specs」一致语义)
+            const rows = Array.isArray(t?.specs) ? (t!.specs as SpecRow[]) : [];
             map[code] = {
               ...emptyTranslation(code),
               ...(t
@@ -170,6 +190,7 @@ export default function ContentEditPage() {
                     seoDesc: t.seoDesc ?? "",
                   }
                 : {}),
+              specs: rows.length > 0 || code !== def ? rows : mainRows,
             };
           }
           setTrans(map);
@@ -198,6 +219,10 @@ export default function ContentEditPage() {
     const st = overrideStatus ?? status;
     setSaving(true);
     try {
+      // 规格参数行规整(去首尾空格、丢弃键值不全的空行);默认语言 Tab 为顶层兜底列同步源
+      const cleanSpecs = (rows: SpecRow[]) =>
+        rows.map((r) => ({ k: r.k.trim(), v: r.v.trim() })).filter((r) => r.k && r.v);
+      const defaultRows = cleanSpecs(trans[defaultLocale]?.specs ?? []);
       await apiPut("/api/admin/contents", {
         id: isNew ? undefined : Number(id),
         slug,
@@ -207,13 +232,12 @@ export default function ContentEditPage() {
         authorName: authorName.trim(),
         coverUrl: coverUrl || null,
         publishAt: st === "SCHEDULED" && publishAt ? new Date(publishAt).toISOString() : null,
-        // 商品字段:仅商品栏目提交(切回 article 栏目时不传,服务层保留既有值)
+        // 商品字段:仅商品栏目提交(切回 article 栏目时不传,服务层保留既有值)。
+        // specs=默认语言 Tab 同步顶层兜底列;translations[].specs=各语言 Tab 全量往返(V3.1 REQ-001)
         ...(isProduct
           ? {
               gallery: gallery.map((u) => u.trim()).filter(Boolean),
-              specs: specs
-                .map((r) => ({ k: r.k.trim(), v: r.v.trim() }))
-                .filter((r) => r.k && r.v),
+              specs: defaultRows,
             }
           : {}),
         translations: Object.values(trans).map((t) => ({
@@ -224,6 +248,7 @@ export default function ContentEditPage() {
           seoTitle: t.seoTitle || null,
           seoKeywords: t.seoKeywords || null,
           seoDesc: t.seoDesc || null,
+          ...(isProduct ? { specs: cleanSpecs(t.specs ?? []) } : {}),
         })),
       });
       toast.success("已保存");
@@ -252,8 +277,14 @@ export default function ContentEditPage() {
     [next[idx], next[target]] = [next[target], next[idx]];
     setGallery(next);
   };
-  const updateSpecAt = (idx: number, patch: Partial<SpecRow>) =>
-    setSpecs(specs.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  const updateSpecAt = (loc: string, idx: number, patch: Partial<SpecRow>) =>
+    setT(loc, {
+      specs: (trans[loc]?.specs ?? []).map((r, i) => (i === idx ? { ...r, ...patch } : r)),
+    });
+  const removeSpecAt = (loc: string, idx: number) =>
+    setT(loc, { specs: (trans[loc]?.specs ?? []).filter((_, i) => i !== idx) });
+  const addSpec = (loc: string) =>
+    setT(loc, { specs: [...(trans[loc]?.specs ?? []), { k: "", v: "" }] });
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -367,7 +398,7 @@ export default function ContentEditPage() {
         </CardContent>
       </Card>
 
-      {/* 商品信息(仅 product 栏目):图集/规格参数/收藏数(REQ-001) */}
+      {/* 商品信息(仅 product 栏目):图集/收藏数(REQ-001);规格参数已移入语言 Tab(V3.1) */}
       {isProduct && (
         <Card>
           <CardHeader>
@@ -376,7 +407,7 @@ export default function ContentEditPage() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>
-                商品图集(有序,最多 20 张;详情页按此顺序展示,封面图仅在图集为空时兜底)
+                商品图集(有序,最多 20 张;跨语言通用,详情页按此顺序展示,封面图仅在图集为空时兜底)
               </Label>
               {gallery.length === 0 && (
                 <p className="text-xs text-muted-foreground">暂无图集,点击下方按钮添加图片</p>
@@ -435,46 +466,6 @@ export default function ContentEditPage() {
               </Button>
             </div>
 
-            <div className="space-y-2">
-              <Label>规格参数(有序键值对,最多 50 行;键与值均必填)</Label>
-              <div className="space-y-2">
-                {specs.map((row, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      placeholder="参数名(如:型号)"
-                      value={row.k}
-                      onChange={(e) => updateSpecAt(idx, { k: e.target.value })}
-                      className="w-44"
-                    />
-                    <Input
-                      placeholder="参数值(如:AX-100)"
-                      value={row.v}
-                      onChange={(e) => updateSpecAt(idx, { v: e.target.value })}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="删除参数"
-                      onClick={() => setSpecs(specs.filter((_, i) => i !== idx))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={specs.length >= 50}
-                onClick={() => setSpecs([...specs, { k: "", v: "" }])}
-              >
-                <Plus className="h-4 w-4" /> 添加参数
-              </Button>
-            </div>
-
             <div className="space-y-1">
               <Label>收藏数(只读,随用户收藏行为自动增减)</Label>
               <Input value={String(favoriteCount)} readOnly disabled className="w-24" />
@@ -525,6 +516,56 @@ export default function ContentEditPage() {
                 </div>
               </CardContent>
             </Card>
+            {/* 规格参数(V3.1 REQ-001):移入语言 Tab,每语言独立维护;
+                默认语言 Tab 保存时同步写顶层 specs 兜底列 */}
+            {isProduct && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    规格参数({l}){l === defaultLocale ? " · 同步顶层兜底列" : ""}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Label>有序键值对,最多 50 行;键与值均必填;详情页按当前语言兜底链展示</Label>
+                  <div className="space-y-2">
+                    {(trans[l]?.specs ?? []).map((row, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          placeholder="参数名(如:型号)"
+                          value={row.k}
+                          onChange={(e) => updateSpecAt(l, idx, { k: e.target.value })}
+                          className="w-44"
+                        />
+                        <Input
+                          placeholder="参数值(如:AX-100)"
+                          value={row.v}
+                          onChange={(e) => updateSpecAt(l, idx, { v: e.target.value })}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="删除参数"
+                          onClick={() => removeSpecAt(l, idx)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={(trans[l]?.specs ?? []).length >= 50}
+                    onClick={() => addSpec(l)}
+                  >
+                    <Plus className="h-4 w-4" /> 添加参数
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader>
                 <CardTitle>单页 SEO(TDK,{l})</CardTitle>

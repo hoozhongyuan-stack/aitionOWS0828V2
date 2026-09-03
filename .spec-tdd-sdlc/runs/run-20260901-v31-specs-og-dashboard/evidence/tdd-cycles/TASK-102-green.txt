@@ -1,0 +1,14 @@
+TASK-102 GREEN — 读取兜底链 + getContentForEdit 回显 + saveContent 写入语义矩阵 + zod 三态
+UTC: 2026-09-03T10:26:39Z
+
+[1] npx vitest run tests/server/translation-specs.test.ts
+退出码: 0;结果: Tests 12 passed (12)
+
+[2] 回归: npx vitest run tests/server/ tests/db/
+退出码: 0;结果:       Tests  90 passed (90)
+
+实现点:
+- src/server/content/product.ts getProductDetail:specs=parseSpecs(t.specs ?? content.specs)(兜底链)
+- src/server/content/index.ts getContentForEdit:translations[].specs=parseSpecs 解析后数组(NULL/非法容错 [])
+- src/server/content/index.ts saveContent:事务内 deleteMany 前快照各语言旧 specs,重建行按三态写入(数组=序列化/null=NULL/undefined=快照回填);顶层 specs 语义不变
+- src/app/api/admin/contents/route.ts:translations[].specs zod z.array({k,v}).max(50).nullable().optional()

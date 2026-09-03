@@ -76,7 +76,7 @@ export function resolveContentDetailPath(
 /**
  * 商品详情数据组装(仅已发布可见,语义与文章详情一致):
  * - gallery 解析为 {url} 数组;缺失/非法容错为 [],封面图兜底插到首位
- * - specs 解析为 {k,v} 数组;缺失/非法容错为 []
+ * - specs 按兜底链解析为 {k,v} 数组(当前语言 translation.specs → Content.specs);缺失/非法容错为 []
  * - inquiryForm:formId 关联且表单 enabled===true 才返回表单数据,否则 null
  *   (与文章详情「渲染关联表单不校验 enabled」为有意差异,见 REQ-002)
  * - 单页 TDK 沿用 ContentTranslation(seoTitle/seoKeywords/seoDesc)
@@ -141,7 +141,9 @@ export async function getProductDetail(slug: string, locale: string) {
     seoDesc: t.seoDesc,
     availableLocales: content.translations.map((x) => x.locale),
     gallery,
-    specs: parseSpecs(content.specs),
+    // specs 兜底链(V3.1 REQ-001):当前语言 translation.specs → Content.specs(主表兜底列)→ 空表;
+    // 两者都可能为 JSON 串,非法/缺失沿 parseSpecs 容错为 []
+    specs: parseSpecs(t.specs ?? content.specs),
     inquiryForm,
   };
 }

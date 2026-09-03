@@ -1,0 +1,17 @@
+TASK-106 GREEN — 规格参数编辑器移入语言 Tab + 默认语言 Tab 同步顶层
+UTC: 2026-09-03T10:34:59Z
+
+[1] 载荷形状测试: npx vitest run tests/server/translation-specs.test.ts
+退出码: 0;结果: Tests 12 passed (12)(含「TASK-106 编辑器全量往返载荷形状」)
+
+[2] tsc --noEmit(本任务实现完成时点 18:29):退出码 0(全项目)
+    注:最终复跑时 implementer-B 新增 tests/admin/dashboard-range-ui.test.ts 存在 1 个
+    TS 错误(其范围,进行中),与本任务文件无关;本任务全部文件类型干净。
+
+页面实现(src/app/[locale]/(admin)/admin/(panel)/content/edit/[id]/page.tsx):
+- Translation 状态增加 specs: SpecRow[];商品信息卡仅保留图集/收藏数
+- 每个(isProduct 时)语言 Tab 渲染独立「规格参数({locale})」卡,行编辑/增删
+- 加载:各语言 Tab 回显服务层解析后的 specs 数组(NULL→空);默认语言 Tab 空时回显顶层兜底列
+- 保存:顶层 specs=默认语言 Tab 行(同步兜底列);translations[].specs=各 Tab 全量往返;
+  非商品栏目两者均不传(服务层快照回填保留既有)
+- 默认语言取 /api/admin/locales 的 isDefault(兜底首个/zh-CN)

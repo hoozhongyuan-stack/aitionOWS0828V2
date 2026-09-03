@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { CONTENT_STATUS, CONTENT_SOURCE, TARGET_TYPE, type ContentStatus } from "@/types/domain";
 import { invalidateNavCache } from "./nav";
-import type { ProductSpec } from "./product";
+import { parseSpecs, type ProductSpec } from "./product";
 
 /**
  * CMS 内容服务(需求 4.4):栏目 / 导航 / 内容 全量读写。
@@ -218,6 +218,13 @@ export interface ContentInput {
     seoTitle?: string | null;
     seoKeywords?: string | null;
     seoDesc?: string | null;
+    /**
+     * 该语言规格参数(V3.1 REQ-001 写入语义矩阵):
+     * 数组=该语言值(可为空数组,序列化后存 NULL)/ null=该语言无规格(写 NULL)/
+     * undefined(缺省)=保留该语言既有值(deleteMany+recreate 前快照回填)。
+     * 顶层 specs 仅写 Content.specs 兜底列,不触碰翻译行。
+     */
+    specs?: ProductSpec[] | null;
   }[];
 }
 
@@ -239,6 +246,18 @@ function serializeSpecs(rows: ProductSpec[] | null | undefined): string | null |
     .map((r) => ({ k: String(r?.k ?? "").trim(), v: String(r?.v ?? "").trim() }))
     .filter((r) => r.k !== "" && r.v !== "");
   return clean.length > 0 ? JSON.stringify(clean) : null;
+}
+
+/**
+ * 翻译行 specs 三态归一(V3.1 REQ-001 写入语义矩阵):
+ * undefined=快照回填保留既有;数组=serializeSpecs 序列化写入(空数组存 NULL);null=清空(NULL)。
+ */
+function resolveTranslationSpecs(
+  value: ProductSpec[] | null | undefined,
+  snapshot: string | null
+): string | null {
+  if (value === undefined) return snapshot;
+  return serializeSpecs(value) ?? null;
 }
 
 /** 新建/更新内容(后台) */
@@ -283,29 +302,53 @@ export async function saveContent(
     ? await prisma.content.update({ where: { id: input.id }, data })
     : await prisma.content.create({ data });
 
-  await prisma.contentTranslation.deleteMany({ where: { contentId: content.id } });
-  for (const t of withTitle) {
-    await prisma.contentTranslation.create({
-      data: {
-        contentId: content.id,
-        locale: t.locale,
-        title: t.title,
-        summary: t.summary ?? null,
-        body: t.body,
-        seoTitle: t.seoTitle ?? null,
-        seoKeywords: t.seoKeywords ?? null,
-        seoDesc: t.seoDesc ?? null,
-      },
-    });
-  }
+  // 翻译行重建前快照各语言旧 specs(deleteMany+recreate 会整行重建;
+  // V3.1 REQ-001:translations[].specs 缺省=保留既有,靠快照回填,不丢存量多语言规格)
+  const prevSpecs = new Map(
+    (
+      await prisma.contentTranslation.findMany({
+        where: { contentId: content.id },
+        select: { locale: true, specs: true },
+      })
+    ).map((r) => [r.locale, r.specs])
+  );
+
+  await prisma.$transaction([
+    prisma.contentTranslation.deleteMany({ where: { contentId: content.id } }),
+    ...withTitle.map((t) =>
+      prisma.contentTranslation.create({
+        data: {
+          contentId: content.id,
+          locale: t.locale,
+          title: t.title,
+          summary: t.summary ?? null,
+          body: t.body,
+          seoTitle: t.seoTitle ?? null,
+          seoKeywords: t.seoKeywords ?? null,
+          seoDesc: t.seoDesc ?? null,
+          specs: resolveTranslationSpecs(t.specs, prevSpecs.get(t.locale) ?? null),
+        },
+      })
+    ),
+  ]);
   return content;
 }
 
 export async function getContentForEdit(id: number) {
-  return prisma.content.findUnique({
+  const content = await prisma.content.findUnique({
     where: { id },
     include: { translations: true },
   });
+  if (!content) return null;
+  // V3.1 REQ-001:每语言 translation 返回解析后的 specs 数组(供编辑器全量往返;
+  // NULL/非法 JSON 沿 parseSpecs 容错为 [],编辑器回显空编辑器)
+  return {
+    ...content,
+    translations: content.translations.map((t) => ({
+      ...t,
+      specs: parseSpecs(t.specs),
+    })),
+  };
 }
 
 /** llms.txt 数据源:可见栏目名(指定语言,缺省回退第一条翻译) */

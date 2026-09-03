@@ -57,6 +57,13 @@ const putSchema = z.object({
       seoTitle: z.string().nullable().optional(),
       seoKeywords: z.string().nullable().optional(),
       seoDesc: z.string().nullable().optional(),
+      // 每语言规格参数(V3.1 REQ-001 写入语义矩阵):数组=该语言值(可空数组)/
+      // null=该语言无规格 / 缺省(undefined)=服务层快照回填保留既有
+      specs: z
+        .array(z.object({ k: z.string(), v: z.string() }))
+        .max(50, "规格参数最多 50 行")
+        .nullable()
+        .optional(),
     })
   ),
 });

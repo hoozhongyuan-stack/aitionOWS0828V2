@@ -1,0 +1,17 @@
+全量验证与隔离说明(implementer-A 范围)
+UTC: 2026-09-03T10:34:59Z
+
+A 范围测试(全绿):
+- npx vitest run tests/db/migration-v31.test.ts tests/server/translation-specs.test.ts tests/server/admin-content.test.ts tests/server/product-detail.test.ts
+  退出码 0;Tests 25 passed (25)
+- 全量 npx vitest run:25 文件 149 测试,A 范围文件全部 ✓;唯一失败文件为 tests/app/og-tags.test.ts(7 例,B 范围)
+
+隔离证据(og-tags 并行失败为环境竞争,非行为缺陷):
+- npx vitest run tests/app/og-tags.test.ts → 退出码 0(8/8 通过)
+- npx vitest run tests/app/product-page.test.ts → 退出码 0(2/2 通过)
+- 根因:og-tags.test.ts(B 新增)与 product-page.test.ts(既有)均 spawn 'next dev' 随机端口、
+  共用同一临时 SQLite 测试库;并行执行时页面返回 500(expected 500 to be 200),
+  失败文件在两轮全量跑之间漂移(第一轮 og-tags 挂/product-page 过,第二轮相反)——竞争特征
+- A 未触碰:src/lib/seo、src/server/analytics、dashboard、(site) 页面、messages/*.json、vitest.config
+
+tsc --noEmit:A 范围 0 错误;全项目现余 1 错误位于 tests/admin/dashboard-range-ui.test.ts(B 进行中文件)
