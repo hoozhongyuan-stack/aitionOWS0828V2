@@ -1,0 +1,21 @@
+{
+  "id": "POST-REL-001",
+  "type": "post-release-maintenance",
+  "date": "2026-08-31",
+  "context": "生产上线后用户验收反馈两项:①英文版内容缺失 ②商品图集不支持多图切换",
+  "fixes": [
+    {
+      "item": "图集切换(DEF-010)",
+      "commit": "28bada3",
+      "change": "新增 GalleryViewer 客户端组件(缩略图点击切换主图,零依赖);TEST-020 红→绿(3 用例);vitest.config 纳入 .tsx 测试;全量 113 测试通过",
+      "verification": "生产浏览器实测:点击「查看第 2 张」主图 src 由 581d35a5 → 72e27789(unitree);7 个商品切换按钮全部渲染;截图 gui-test-screenshots/v3-prod-gallery-switch-unitree.png"
+    },
+    {
+      "item": "英文版内容",
+      "change": "经后台 API 补齐:4 个栏目 EN 翻译、导航 labelI18n(Product Demos)、7 个商品 EN 标题/摘要/正文/Demo Notice/SEO;每个商品补第 2 张图集(官方图或品牌参数卡)",
+      "verification": "生产实测:/en/c/demo-products 200(四类目英文名);/en/product/* 200 含 Demo Notice;EN 导航第二位 Product Demos;截图 v3-prod-en-product-detail.png"
+    }
+  ],
+  "api_note": "后台内容编辑 GET 返回 specs 为 JSON 字符串,PUT 需解析为数组回传(运维脚本注意事项)",
+  "note": "本文件为 G3 包(immutable,绑定 2379533)之外的发布后维护记录;traceability.json 冻结未改动"
+}
