@@ -47,3 +47,8 @@ tsconfig.tsbuildinfo
 
 # 本地运维备忘(含服务器信息,严禁入库)
 /LOCAL.md
+
+# 测试隔离构建目录(og-tags/product-page 集成测试专用)
+.next-test-og-tags
+.next-test-product
+.next-test-qa
