@@ -33,6 +33,14 @@ npm run prisma:deploy / prisma:generate              # 迁移/客户端
 - 服务器 1.9G 内存,**swap 4G 已配置**(/swapfile),构建/运行依赖它,别删
 
 
+## V3.1.1 交付记忆(2026-09-04,双主题包)
+
+- `ThemeConfig.preset`(classic/aurora)存 Setting(theme);前台 `<html data-theme>` 挂载;**classic 路径零改动**(升级站点外观零变化已验证)
+- 极光主题全部样式集中在 `src/styles/globals.css` 的 `[data-theme="aurora"]` 段;颜色仍走后台调色板变量,渐变端点为预置(--aurora-from/to),不做渐变编辑器
+- 动效组件 `src/components/site/aurora-motion.tsx`(Parallax/Reveal):内部自检 data-theme 与 prefers-reduced-motion,非极光/减弱动效用户零行为差异;**不引入动画库**
+- 富文本视频插入:Video 节点扩展 `src/components/admin/video-extension.ts`(schema 无 video 时 insertContent 静默丢弃——DEF-012)
+- 主题覆盖建议走后台「主题外观→主题风格」选择卡;两套主题各自记忆推荐调色板
+
 ## V3.0 交付记忆(2026-08-31,spec-tdd-sdlc 流程)
 - SSH/服务器凭据记忆统一看 `LOCAL.md`(gitignore,不入库);2026-09-04 起用 `ssh aition-prod` 别名(密钥 `~/.ssh/aition_tencent`,旧 aitionv2.pem 已丢失)
 - **生产部署(2026-08-31)**:aition.art 已更新至 3.0.0(候选 2379533);部署前备份在服务器 `/opt/aition-ows/backups/pre-v3-20260831104530/`(data+uploads+package.json);V3 迁移与 2.2.0 迁移已在生产依序应用(Favorite 表已建);生产无商品演示数据属预期

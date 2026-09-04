@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.1.1 (2026-09-04)
+
+V3.1.1:双主题包(经典/极光)——独立项(纯前台外观层,无迁移/无 API 变化)
+
+功能:
+- 主题包架构:ThemeConfig.preset(classic/aurora)+前台 data-theme 挂载;后台「主题外观」新增主题风格选择器(预览卡点选,切换自动填入该主题推荐配色,仍可微调)
+- 主题②「极光 Aurora」:深空渐变底、霓虹青紫渐变(按钮/标题渐变字/描边流光)、毛玻璃卡片、页头页脚深色融合、表单深色融合(作用域 CSS 集中于 [data-theme=aurora],组件零侵入;classic 路径零改动)
+- 明显炫动效层:Hero 极光光晕漂移、首屏入场编排(级联淡入)、滚动视差(Parallax, rAF)、滚动显现(Reveal, IntersectionObserver)、卡片 hover 上浮流光、按钮发光;prefers-reduced-motion 自动降级
+- 生产缺陷修复(DEF-012):富文本上传视频成功但编辑器无反应——Tiptap schema 无 video 节点;新增 Video 节点扩展(上传/插入全链路打通)
+- 基线缺陷修复:移除无法装配的根级 not-found.tsx(乱路径 500 → 内置/定制 404)
+
+质量:
+- 新增测试:Video 节点插入(happy-dom)、GalleryViewer、specs 多语言等;27 文件 156 测试全绿
+- 主题包为纯外观层:classic 升级零变化验证通过;aurora 浏览器端到端验证(切换/回退/动效)
+
+
 ## 3.1.0 (2026-09-03)
 
 V3.1:规格表英文化 + 分享卡片 OG + 看板时间段趋势(spec-tdd-sdlc 流程交付)
