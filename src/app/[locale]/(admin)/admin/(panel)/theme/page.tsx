@@ -18,6 +18,7 @@ import { apiGet, apiPut } from "@/components/admin/api-client";
  */
 
 interface ThemeValues {
+  preset: string;
   primary: string;
   secondary: string;
   background: string;
@@ -32,6 +33,36 @@ interface ThemeValues {
   navFontSize: string;
   navBold: boolean;
 }
+
+/** V3.1.1 主题风格包:两套推荐调色板(切换预设即填入下方字段,仍可微调) */
+const THEME_PRESETS: Record<string, { label: string; desc: string; values: Omit<ThemeValues, "fontSans" | "fontHeading" | "fontSize" | "lineHeight" | "logoHeight" | "navFontSize" | "navBold"> }> = {
+  classic: {
+    label: "经典",
+    desc: "明快清爽的浅色官网风格(默认)",
+    values: {
+      preset: "classic",
+      primary: "#0f172a",
+      secondary: "#f1f5f9",
+      background: "#ffffff",
+      foreground: "#020817",
+      mutedTextColor: "#64748b",
+      radius: "0.5rem",
+    },
+  },
+  aurora: {
+    label: "极光",
+    desc: "深色底·霓虹渐变·毛玻璃·光效·动效,高大上炫酷风",
+    values: {
+      preset: "aurora",
+      primary: "#22d3ee",
+      secondary: "#1e293b",
+      background: "#0b1020",
+      foreground: "#e6eaf2",
+      mutedTextColor: "#8b93a7",
+      radius: "1rem",
+    },
+  },
+};
 
 const FONT_PRESETS = [
   { label: "系统默认(推荐)", value: "system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" },
@@ -69,6 +100,7 @@ export default function ThemePage() {
     apiGet<ThemeValues>("/api/admin/settings/theme")
       .then((v) =>
         setValues({
+          preset: v.preset ?? "classic",
           primary: v.primary ?? "#0f172a",
           secondary: v.secondary ?? "#f1f5f9",
           background: v.background ?? "#ffffff",
@@ -111,6 +143,41 @@ export default function ThemePage() {
         <h1 className="text-2xl font-semibold">主题外观</h1>
         <p className="text-sm text-muted-foreground">调色板与字体全局生效,保存后无需重启。</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>主题风格(V3.1.1)</CardTitle>
+          <CardDescription>
+            选择整套前台视觉风格;切换会自动填入该主题的推荐配色(下方颜色字段仍可微调)。保存后前台立即生效。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          {Object.entries(THEME_PRESETS).map(([key, p]) => {
+            const active = values.preset === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setValues({ ...values, ...p.values })}
+                className={`rounded-xl border-2 p-4 text-left transition-colors ${
+                  active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">{p.label}</span>
+                  {active && <span className="text-xs font-medium text-primary">当前</span>}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
+                <div className="mt-3 flex gap-2">
+                  <span className="h-6 w-6 rounded-full border" style={{ background: p.values.primary }} />
+                  <span className="h-6 w-6 rounded-full border" style={{ background: p.values.secondary }} />
+                  <span className="h-6 w-6 rounded-full border" style={{ background: p.values.background }} />
+                </div>
+              </button>
+            );
+          })}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
