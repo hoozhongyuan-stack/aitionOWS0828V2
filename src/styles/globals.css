@@ -153,3 +153,175 @@
     @apply border px-2 py-1 text-left;
   }
 }
+
+/* ============================================================
+   V3.1.1 主题②「极光 Aurora」(data-theme="aurora")
+   深色底 · 霓虹渐变 · 毛玻璃 · 光效 · 动效
+   颜色变量仍由后台调色板注入(buildThemeCss :root);本段只负责
+   极光风格的结构性覆盖与效果,组件代码零侵入。
+   prefers-reduced-motion 用户自动降级为静态终态。
+   ============================================================ */
+
+[data-theme="aurora"] {
+  color-scheme: dark;
+  /* 渐变端点(第一版预置,不做渐变编辑器) */
+  --aurora-from: #22d3ee;
+  --aurora-to: #a78bfa;
+  --aurora-glass: rgba(255, 255, 255, 0.06);
+  --aurora-border: rgba(167, 139, 250, 0.35);
+}
+
+/* —— 基底:深空渐变 + 极光光晕(固定层) —— */
+[data-theme="aurora"] body {
+  background:
+    radial-gradient(60rem 40rem at 15% -10%, rgba(34, 211, 238, 0.14), transparent 60%),
+    radial-gradient(50rem 36rem at 110% 15%, rgba(167, 139, 250, 0.16), transparent 60%),
+    linear-gradient(175deg, #0b1020 0%, #131a2e 100%);
+  background-attachment: fixed;
+  color: #e6eaf2;
+  min-height: 100vh;
+}
+
+/* —— 卡片:毛玻璃 + 渐变描边 + hover 上浮流光 —— */
+[data-theme="aurora"] .bg-card,
+[data-theme="aurora"] [data-slot="card"] {
+  background: var(--aurora-glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--aurora-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+[data-theme="aurora"] .bg-card:hover,
+[data-theme="aurora"] [data-slot="card"]:hover {
+  transform: translateY(-6px);
+  border-color: rgba(34, 211, 238, 0.65);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(34, 211, 238, 0.18);
+}
+
+/* —— 按钮:主按钮渐变填充 + hover 发光 —— */
+[data-theme="aurora"] button[class*="bg-primary"],
+[data-theme="aurora"] a[class*="bg-primary"] {
+  background-image: linear-gradient(120deg, var(--aurora-from), var(--aurora-to));
+  border: none;
+  transition: filter 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+[data-theme="aurora"] button[class*="bg-primary"]:hover:not(:disabled),
+[data-theme="aurora"] a[class*="bg-primary"]:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 0 22px rgba(96, 165, 250, 0.55);
+  transform: translateY(-1px);
+}
+
+/* —— 标题渐变文字(H1/卡片标题在极光下渐变着色) —— */
+[data-theme="aurora"] h1,
+[data-theme="aurora"] h2 {
+  background: linear-gradient(100deg, #e6eaf2 30%, var(--aurora-from) 70%, var(--aurora-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* —— Hero 区:极光光晕漂移 + 入场编排 —— */
+[data-theme="aurora"] .aurora-hero {
+  position: relative;
+  overflow: hidden;
+}
+[data-theme="aurora"] .aurora-hero::before,
+[data-theme="aurora"] .aurora-hero::after {
+  content: "";
+  position: absolute;
+  width: 55vw;
+  height: 55vw;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  pointer-events: none;
+  will-change: transform;
+}
+[data-theme="aurora"] .aurora-hero::before {
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.4), transparent 65%);
+  top: -25%;
+  left: -15%;
+  animation: aurora-drift-a 22s ease-in-out infinite alternate;
+}
+[data-theme="aurora"] .aurora-hero::after {
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.38), transparent 65%);
+  bottom: -30%;
+  right: -15%;
+  animation: aurora-drift-b 26s ease-in-out infinite alternate;
+}
+[data-theme="aurora"] .aurora-hero .aurora-parallax {
+  position: relative;
+  z-index: 1;
+}
+@keyframes aurora-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(8vw, 6vh, 0) scale(1.15); }
+}
+@keyframes aurora-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.1); }
+  to { transform: translate3d(-7vw, -5vh, 0) scale(0.95); }
+}
+
+/* —— 入场编排:首屏元素逐行淡入上移(级联延迟) —— */
+[data-theme="aurora"] .aurora-rise {
+  animation: aurora-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+[data-theme="aurora"] .aurora-rise:nth-child(2),
+[data-theme="aurora"] .aurora-rise.aurora-delay-1 { animation-delay: 0.12s; }
+[data-theme="aurora"] .aurora-rise:nth-child(3),
+[data-theme="aurora"] .aurora-rise.aurora-delay-2 { animation-delay: 0.24s; }
+[data-theme="aurora"] .aurora-rise.aurora-delay-3 { animation-delay: 0.36s; }
+@keyframes aurora-rise {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* —— 滚动显现(Reveal 组件驱动;非极光主题无此类的使用点) —— */
+.aurora-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.aurora-reveal.aurora-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* —— 页头/页脚:融入深色底 —— */
+[data-theme="aurora"] header {
+  background: rgba(11, 16, 32, 0.72);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(167, 139, 250, 0.2);
+}
+[data-theme="aurora"] footer {
+  border-top: 1px solid rgba(167, 139, 250, 0.2);
+  background: rgba(11, 16, 32, 0.6);
+}
+
+/* —— 表单控件:深色融合 —— */
+[data-theme="aurora"] input,
+[data-theme="aurora"] textarea,
+[data-theme="aurora"] select {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e6eaf2;
+}
+[data-theme="aurora"] input::placeholder,
+[data-theme="aurora"] textarea::placeholder {
+  color: #6b7280;
+}
+
+/* —— 降级:偏好减弱动效的用户直接呈现终态 —— */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="aurora"] .aurora-hero::before,
+  [data-theme="aurora"] .aurora-hero::after,
+  [data-theme="aurora"] .aurora-rise,
+  .aurora-reveal {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

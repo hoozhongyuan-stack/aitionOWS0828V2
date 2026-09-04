@@ -7,6 +7,7 @@ import { getSeoMetaFor } from "@/server/seo";
 import { getBrandConfig } from "@/lib/config";
 import { buildOpenGraph, resolveMetadataTitle } from "@/lib/seo/open-graph";
 import { ContentCard } from "@/components/site/content-card";
+import { Parallax, Reveal } from "@/components/site/aurora-motion";
 import { HeroCarousel } from "@/components/site/hero-carousel";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -64,10 +65,11 @@ export default async function HomePage({
   return (
     <main>
       {/* Hero:配置了轮播图则通屏轮播背景 + 浅色文字,否则回退默认渐变背景 */}
-      <section className={hasBanners ? "relative overflow-hidden border-b" : "border-b bg-gradient-to-b from-secondary/60 to-background"}>
+      <section className={`aurora-hero ${hasBanners ? "relative overflow-hidden border-b" : "border-b bg-gradient-to-b from-secondary/60 to-background"}`}>
         {hasBanners && (
           <HeroCarousel banners={banners.map((b) => ({ imageUrl: b.imageUrl, linkUrl: b.linkUrl }))} />
         )}
+        <Parallax speed={0.25}>
         <div
           className={
             hasBanners
@@ -78,26 +80,28 @@ export default async function HomePage({
           <h1
             className={
               hasBanners
-                ? "max-w-3xl font-heading text-4xl font-bold tracking-tight drop-shadow-md sm:text-5xl"
-                : "max-w-3xl font-heading text-4xl font-bold tracking-tight sm:text-5xl"
+                ? "aurora-rise max-w-3xl font-heading text-4xl font-bold tracking-tight drop-shadow-md sm:text-5xl"
+                : "aurora-rise max-w-3xl font-heading text-4xl font-bold tracking-tight sm:text-5xl"
             }
           >
             {t("heroTitle")}
           </h1>
-          <p className={hasBanners ? "max-w-xl text-lg text-white/90 drop-shadow-md" : "max-w-xl text-lg text-muted-foreground"}>
+          <p className={(hasBanners ? "max-w-xl text-lg text-white/90 drop-shadow-md" : "max-w-xl text-lg text-muted-foreground") + " aurora-rise"}>
             {t("heroSubtitle")}
           </p>
-          <Button asChild size="lg" variant={hasBanners ? "secondary" : "default"} className={hasBanners ? "pointer-events-auto" : undefined}>
+          <Button asChild size="lg" variant={hasBanners ? "secondary" : "default"} className={(hasBanners ? "pointer-events-auto" : "") + " aurora-rise aurora-delay-2"}>
             <Link href={`/${locale}/contact`}>
               {t("heroCta")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
+        </Parallax>
       </section>
 
       {/* 最新内容 */}
       <section className="container py-16">
+        <Reveal>
         <div className="mb-8 flex items-center justify-between">
           <h2 className="font-heading text-2xl font-bold">{t("latestNews")}</h2>
         </div>
@@ -112,6 +116,7 @@ export default async function HomePage({
             ))}
           </div>
         )}
+        </Reveal>
       </section>
     </main>
   );

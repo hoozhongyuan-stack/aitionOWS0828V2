@@ -73,7 +73,7 @@ export default async function LocaleLayout({
   const [messages, theme] = await Promise.all([getMessages(), getThemeConfig()]);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning data-theme={theme.preset === "aurora" ? "aurora" : undefined}>
       <head>
         {/* 运行时主题变量:覆盖 globals.css 默认值 */}
         <style id="theme-vars" dangerouslySetInnerHTML={{ __html: buildThemeCss(theme) }} />
