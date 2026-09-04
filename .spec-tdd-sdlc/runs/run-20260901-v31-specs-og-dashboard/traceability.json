@@ -16,13 +16,17 @@
       ],
       "task_ids": [
         "TASK-102",
-        "TASK-106"
+        "TASK-106",
+        "TASK-107",
+        "TASK-108"
       ],
       "evidence_ids": [
         "EVID-103",
         "EVID-104",
         "EVID-105",
-        "EVID-106"
+        "EVID-106",
+        "EVID-113",
+        "EVID-114"
       ]
     },
     {
@@ -78,7 +82,8 @@
         "AC-006"
       ],
       "task_ids": [
-        "TASK-104"
+        "TASK-104",
+        "TASK-107"
       ],
       "evidence_ids": [
         "EVID-109",
@@ -124,7 +129,8 @@
         "AC-005"
       ],
       "task_ids": [
-        "TASK-103"
+        "TASK-103",
+        "TASK-107"
       ],
       "evidence_ids": [
         "EVID-107",
@@ -135,11 +141,43 @@
       "id": "NFR-003",
       "level": "MUST",
       "acceptance_ids": [],
-      "task_ids": [],
+      "task_ids": [
+        "TASK-107"
+      ],
       "evidence_ids": []
     }
   ],
-  "defects": [],
+  "defects": [
+    {
+      "id": "DEF-011",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-001",
+        "AC-006"
+      ],
+      "task_ids": [
+        "TASK-107"
+      ],
+      "evidence_ids": [
+        "EVID-113"
+      ],
+      "description": "评审修复提交引入的测试类型错误致 tsc 门禁红(code-review/QA 双 High);已类型收窄修复,门禁复跑全绿"
+    },
+    {
+      "id": "DEF-012",
+      "status": "resolved",
+      "acceptance_ids": [
+        "AC-002"
+      ],
+      "task_ids": [
+        "TASK-108"
+      ],
+      "evidence_ids": [
+        "EVID-114"
+      ],
+      "description": "生产缺陷:富文本上传视频成功但编辑器无反应——Tiptap schema 无 video 节点,insertContent 被静默丢弃;新增 Video 节点扩展修复(DEF-012 另含用户反馈的根级 not-found 500 缺陷修复 376cd08)"
+    }
+  ],
   "decisions": [
     {
       "id": "ADR-001",
@@ -179,7 +217,9 @@
         "REQ-001"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-011"
+      ],
       "test_ids": [
         "TEST-101"
       ],
@@ -192,7 +232,9 @@
         "REQ-001"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-012"
+      ],
       "test_ids": [
         "TEST-102"
       ],
@@ -250,7 +292,9 @@
         "REQ-005"
       ],
       "nfr_ids": [],
-      "defect_ids": [],
+      "defect_ids": [
+        "DEF-011"
+      ],
       "test_ids": [
         "TEST-204"
       ],
@@ -301,7 +345,8 @@
         "EVID-102"
       ],
       "commit_ids": [
-        "a69efb7f12f4230e425dc36501e0ab121a727372"
+        "0fa67cfb183af40be45079f42c28ed121dfb9602",
+        "0fa67cfb183af40be45079f42c28ed121dfb9602"
       ],
       "status": "complete"
     },
@@ -319,7 +364,8 @@
         "EVID-104"
       ],
       "commit_ids": [
-        "a69efb7f12f4230e425dc36501e0ab121a727372"
+        "0fa67cfb183af40be45079f42c28ed121dfb9602",
+        "0fa67cfb183af40be45079f42c28ed121dfb9602"
       ],
       "status": "complete"
     },
@@ -337,7 +383,8 @@
         "EVID-106"
       ],
       "commit_ids": [
-        "a69efb7f12f4230e425dc36501e0ab121a727372"
+        "0fa67cfb183af40be45079f42c28ed121dfb9602",
+        "0fa67cfb183af40be45079f42c28ed121dfb9602"
       ],
       "status": "complete"
     },
@@ -358,7 +405,8 @@
         "EVID-108"
       ],
       "commit_ids": [
-        "885972cc588edf04165f212fe2af5cab9ab54c85"
+        "67eefa38406e2aba6dba15251d63753635e9a13f",
+        "67eefa38406e2aba6dba15251d63753635e9a13f"
       ],
       "status": "complete"
     },
@@ -376,7 +424,8 @@
         "EVID-110"
       ],
       "commit_ids": [
-        "885972cc588edf04165f212fe2af5cab9ab54c85"
+        "67eefa38406e2aba6dba15251d63753635e9a13f",
+        "67eefa38406e2aba6dba15251d63753635e9a13f"
       ],
       "status": "complete"
     },
@@ -394,9 +443,54 @@
         "EVID-112"
       ],
       "commit_ids": [
-        "885972cc588edf04165f212fe2af5cab9ab54c85"
+        "67eefa38406e2aba6dba15251d63753635e9a13f",
+        "67eefa38406e2aba6dba15251d63753635e9a13f"
       ],
       "status": "complete"
+    },
+    {
+      "id": "TASK-107",
+      "role": "implementation",
+      "agent_id": "orchestrator-zcode-main",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-005"
+      ],
+      "nfr_ids": [
+        "NFR-002",
+        "NFR-003"
+      ],
+      "defect_ids": [
+        "DEF-011"
+      ],
+      "evidence_ids": [
+        "EVID-113"
+      ],
+      "commit_ids": [
+        "ebc7ca0deaf2fd6803c36552d152fc413cf4f901",
+        "2983763663fd9e49210b328a24f9f656fd63a36a",
+        "db15873f06bec3cae39c76ff5d158a0488786f0d"
+      ],
+      "status": "complete",
+      "note": "评审处置+覆盖率补齐+发布元数据;提交 5a143f7/5a01fbd 经历史整理后并入 2983763"
+    },
+    {
+      "id": "TASK-108",
+      "role": "implementation",
+      "agent_id": "orchestrator-zcode-main",
+      "requirement_ids": [
+        "REQ-001"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [
+        "DEF-012"
+      ],
+      "evidence_ids": [
+        "EVID-114"
+      ],
+      "commit_ids": [],
+      "status": "complete",
+      "note": "根级 not-found 基线缺陷修复(376cd08)"
     }
   ],
   "evidence": [
@@ -667,6 +761,44 @@
       "test_ids": [
         "TEST-205"
       ],
+      "manual_verification_ids": [],
+      "review_ids": []
+    },
+    {
+      "id": "EVID-113",
+      "path": "evidence/tdd-cycles/TASK-107-verdict.md",
+      "sha256": "d585040c5aabb2358dd5155692e616f0ea39724418d8b32a8bac8909f6291c56",
+      "requirement_ids": [
+        "REQ-001"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [
+        "DEF-011"
+      ],
+      "task_ids": [
+        "TASK-107"
+      ],
+      "cycle_ids": [],
+      "test_ids": [],
+      "manual_verification_ids": [],
+      "review_ids": []
+    },
+    {
+      "id": "EVID-114",
+      "path": "evidence/tdd-cycles/TASK-108-notfound-fix.md",
+      "sha256": "05acfb02d92e8f200f5aa38ecf705a31fe482f80476044831e2e1d1880ab9437",
+      "requirement_ids": [
+        "REQ-001"
+      ],
+      "nfr_ids": [],
+      "defect_ids": [
+        "DEF-012"
+      ],
+      "task_ids": [
+        "TASK-108"
+      ],
+      "cycle_ids": [],
+      "test_ids": [],
       "manual_verification_ids": [],
       "review_ids": []
     }
@@ -1174,17 +1306,137 @@
       "risk_disclosure": null
     },
     "baseline_commit": "a4b06ce745be5a86c511a84e7d40c43c6ef6f002",
-    "candidate_commit": null,
-    "current_commit": "a4b06ce745be5a86c511a84e7d40c43c6ef6f002",
+    "candidate_commit": "f2b286e3d847149273c512a586532582d471d024",
+    "current_commit": "f2b286e3d847149273c512a586532582d471d024",
     "dirty_paths_before": [],
-    "workflow_paths": [],
-    "candidate_paths": [],
+    "workflow_paths": [
+      ".gitignore",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/design.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/coverage-final.json",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/FULL-RUN-isolation.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-101-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-101-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-102-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-102-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-103-green.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-103-red.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-104-green.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-104-red.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-105-green.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-105-red.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-106-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-106-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-107-verdict.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/run-notes.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/plan.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/run.json",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/spec.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/traceability.json",
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "next.config.ts",
+      "package-lock.json",
+      "package.json",
+      "prisma/migrations/20260903000000_v31_translation_specs/migration.sql",
+      "prisma/rollback-v31.sql",
+      "prisma/schema.prisma",
+      "src/app/[locale]/(admin)/admin/(panel)/content/edit/[id]/page.tsx",
+      "src/app/[locale]/(admin)/admin/(panel)/dashboard/logic.ts",
+      "src/app/[locale]/(admin)/admin/(panel)/dashboard/page.tsx",
+      "src/app/[locale]/(site)/article/[slug]/page.tsx",
+      "src/app/[locale]/(site)/c/[slug]/page.tsx",
+      "src/app/[locale]/(site)/contact/page.tsx",
+      "src/app/[locale]/(site)/page.tsx",
+      "src/app/[locale]/(site)/product/[slug]/page.tsx",
+      "src/app/[locale]/layout.tsx",
+      "src/app/api/admin/contents/route.ts",
+      "src/app/api/admin/dashboard/route.ts",
+      "src/app/not-found.tsx",
+      "src/components/admin/video-extension.ts",
+      "src/lib/seo/open-graph.ts",
+      "src/server/analytics/index.ts",
+      "src/server/content/index.ts",
+      "src/server/content/product.ts",
+      "tests/.coverage/coverage-summary.json",
+      "tests/admin/dashboard-range-ui.test.ts",
+      "tests/app/og-tags.test.ts",
+      "tests/app/product-page.test.ts",
+      "tests/components/video-insert.test.tsx",
+      "tests/db/migration-v31.test.ts",
+      "tests/seo/open-graph.test.ts",
+      "tests/server/analytics-track.test.ts",
+      "tests/server/dashboard-range.test.ts",
+      "tests/server/translation-specs.test.ts",
+      "tsconfig.json",
+      "vitest.config.ts"
+    ],
+    "candidate_paths": [
+      ".gitignore",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/design.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/coverage-final.json",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/FULL-RUN-isolation.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-101-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-101-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-102-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-102-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-103-green.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-103-red.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-104-green.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-104-red.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-105-green.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-105-red.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-106-green.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-106-red.txt",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/TASK-107-verdict.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/evidence/tdd-cycles/run-notes.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/plan.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/run.json",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/spec.md",
+      ".spec-tdd-sdlc/runs/run-20260901-v31-specs-og-dashboard/traceability.json",
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "next.config.ts",
+      "package-lock.json",
+      "package.json",
+      "prisma/migrations/20260903000000_v31_translation_specs/migration.sql",
+      "prisma/rollback-v31.sql",
+      "prisma/schema.prisma",
+      "src/app/[locale]/(admin)/admin/(panel)/content/edit/[id]/page.tsx",
+      "src/app/[locale]/(admin)/admin/(panel)/dashboard/logic.ts",
+      "src/app/[locale]/(admin)/admin/(panel)/dashboard/page.tsx",
+      "src/app/[locale]/(site)/article/[slug]/page.tsx",
+      "src/app/[locale]/(site)/c/[slug]/page.tsx",
+      "src/app/[locale]/(site)/contact/page.tsx",
+      "src/app/[locale]/(site)/page.tsx",
+      "src/app/[locale]/(site)/product/[slug]/page.tsx",
+      "src/app/[locale]/layout.tsx",
+      "src/app/api/admin/contents/route.ts",
+      "src/app/api/admin/dashboard/route.ts",
+      "src/app/not-found.tsx",
+      "src/components/admin/video-extension.ts",
+      "src/lib/seo/open-graph.ts",
+      "src/server/analytics/index.ts",
+      "src/server/content/index.ts",
+      "src/server/content/product.ts",
+      "tests/.coverage/coverage-summary.json",
+      "tests/admin/dashboard-range-ui.test.ts",
+      "tests/app/og-tags.test.ts",
+      "tests/app/product-page.test.ts",
+      "tests/components/video-insert.test.tsx",
+      "tests/db/migration-v31.test.ts",
+      "tests/seo/open-graph.test.ts",
+      "tests/server/analytics-track.test.ts",
+      "tests/server/dashboard-range.test.ts",
+      "tests/server/translation-specs.test.ts",
+      "tsconfig.json",
+      "vitest.config.ts"
+    ],
     "unauthorized_actions": [],
     "required_ci": [],
     "ci_results": [],
     "workflow_commits": [
       {
-        "commit": "a69efb7f12f4230e425dc36501e0ab121a727372",
+        "commit": "0fa67cfb183af40be45079f42c28ed121dfb9602",
         "requirement_ids": [
           "REQ-001",
           "REQ-002"
@@ -1225,9 +1477,9 @@
             "AC-003"
           ],
           "Test": [
+            "TEST-201",
             "TEST-101",
-            "TEST-102",
-            "TEST-201"
+            "TEST-102"
           ],
           "Task": [
             "TASK-101",
@@ -1237,7 +1489,7 @@
         }
       },
       {
-        "commit": "885972cc588edf04165f212fe2af5cab9ab54c85",
+        "commit": "67eefa38406e2aba6dba15251d63753635e9a13f",
         "requirement_ids": [
           "REQ-003",
           "REQ-004",
@@ -1294,6 +1546,101 @@
             "TASK-103",
             "TASK-104",
             "TASK-105"
+          ]
+        }
+      },
+      {
+        "commit": "ebc7ca0deaf2fd6803c36552d152fc413cf4f901",
+        "requirement_ids": [
+          "REQ-003",
+          "REQ-005"
+        ],
+        "nfr_ids": [
+          "NFR-002",
+          "NFR-003"
+        ],
+        "defect_ids": [],
+        "acceptance_ids": [],
+        "test_ids": [
+          "TEST-202",
+          "TEST-204"
+        ],
+        "task_ids": [
+          "TASK-107"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v31-specs-og-dashboard",
+          "Requirement": [
+            "REQ-003",
+            "REQ-005"
+          ],
+          "NFR": [
+            "NFR-002",
+            "NFR-003"
+          ],
+          "Defect": [],
+          "Acceptance": [],
+          "Test": [
+            "TEST-202",
+            "TEST-204"
+          ],
+          "Task": [
+            "TASK-107"
+          ]
+        }
+      },
+      {
+        "commit": "2983763663fd9e49210b328a24f9f656fd63a36a",
+        "requirement_ids": [],
+        "nfr_ids": [],
+        "defect_ids": [
+          "DEF-011"
+        ],
+        "acceptance_ids": [],
+        "test_ids": [],
+        "task_ids": [
+          "TASK-107"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v31-specs-og-dashboard",
+          "Requirement": [],
+          "NFR": [],
+          "Defect": [
+            "DEF-011"
+          ],
+          "Acceptance": [],
+          "Test": [],
+          "Task": [
+            "TASK-107"
+          ]
+        }
+      },
+      {
+        "commit": "db15873f06bec3cae39c76ff5d158a0488786f0d",
+        "requirement_ids": [],
+        "nfr_ids": [],
+        "defect_ids": [
+          "DEF-012"
+        ],
+        "acceptance_ids": [],
+        "test_ids": [],
+        "task_ids": [
+          "TASK-107"
+        ],
+        "tests_passed": true,
+        "commit_trailers": {
+          "Spec": "SPEC-v31-specs-og-dashboard",
+          "Requirement": [],
+          "NFR": [],
+          "Defect": [
+            "DEF-012"
+          ],
+          "Acceptance": [],
+          "Test": [],
+          "Task": [
+            "TASK-107"
           ]
         }
       }
