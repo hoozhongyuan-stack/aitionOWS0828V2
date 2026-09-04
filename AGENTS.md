@@ -34,6 +34,7 @@ npm run prisma:deploy / prisma:generate              # 迁移/客户端
 
 
 ## V3.0 交付记忆(2026-08-31,spec-tdd-sdlc 流程)
+- SSH/服务器凭据记忆统一看 `LOCAL.md`(gitignore,不入库);2026-09-04 起用 `ssh aition-prod` 别名(密钥 `~/.ssh/aition_tencent`,旧 aitionv2.pem 已丢失)
 - **生产部署(2026-08-31)**:aition.art 已更新至 3.0.0(候选 2379533);部署前备份在服务器 `/opt/aition-ows/backups/pre-v3-20260831104530/`(data+uploads+package.json);V3 迁移与 2.2.0 迁移已在生产依序应用(Favorite 表已建);生产无商品演示数据属预期
 - 生产「商品演示」栏目:一级+3 二级(3C 数码/运动服饰/工业设备)+7 个演示商品(iPhone 17 Pro/MacBook Pro M4/Mac Studio/鸿星尔克×2/宇树 G1/DENSO IKH20),导航第二位;全部标注演示·非销售;图片 4 张官方图+3 张品牌占位图
 
