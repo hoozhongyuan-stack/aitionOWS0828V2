@@ -10,6 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiGet, apiDelete } from "@/components/admin/api-client";
+import { routing } from "@/i18n/routing";
+
+/** 后台列表显示:优先站点默认语言,缺失回退首条翻译 */
+const DEFAULT_LOCALE = routing.defaultLocale;
+function adminTitle(translations: { locale: string; title: string }[], slug: string) {
+  return translations.find(t => t.locale === DEFAULT_LOCALE)?.title ?? translations[0]?.title ?? slug;
+}
+function adminCatName(translations: { locale: string; name: string }[] | undefined, slug: string) {
+  return translations?.find(t => t.locale === DEFAULT_LOCALE)?.name ?? translations?.[0]?.name ?? slug;
+}
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 /**
@@ -85,7 +95,7 @@ export default function ContentAdminPage() {
   }, []);
 
   async function remove(row: ContentRow) {
-    if (!window.confirm(`确认删除「${row.translations[0]?.title ?? row.slug}」?此操作不可恢复`)) return;
+    if (!window.confirm(`确认删除「${adminTitle(row.translations, row.slug)}」?此操作不可恢复`)) return;
     try {
       await apiDelete(`/api/admin/contents?id=${row.id}`);
       toast.success("已删除");
@@ -194,10 +204,10 @@ export default function ContentAdminPage() {
             return (
               <TableRow key={row.id}>
                 <TableCell className="max-w-64">
-                  <div className="truncate font-medium">{row.translations[0]?.title ?? row.slug}</div>
+                  <div className="truncate font-medium">{adminTitle(row.translations, row.slug)}</div>
                   <div className="truncate font-mono text-xs text-muted-foreground">{row.slug}</div>
                 </TableCell>
-                <TableCell>{row.category.translations[0]?.name ?? row.category.slug}</TableCell>
+                <TableCell>{adminCatName(row.category.translations, row.category.slug)}</TableCell>
                 <TableCell className="text-sm">{row.authorName ?? "-"}</TableCell>
                 <TableCell>
                   <Badge variant={st.variant}>{st.text}</Badge>

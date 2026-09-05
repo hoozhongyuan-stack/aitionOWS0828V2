@@ -18,6 +18,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiGet, apiPut, apiDelete } from "@/components/admin/api-client";
+import { routing } from "@/i18n/routing";
+
+/** 后台列表显示名:优先站点默认语言(zh-CN),缺失回退首条翻译(修复后台显示英文) */
+const DEFAULT_LOCALE = routing.defaultLocale;
+function adminDisplayName(translations: { locale: string; name: string }[], slug: string) {
+  return translations.find(t => t.locale === DEFAULT_LOCALE)?.name ?? translations[0]?.name ?? slug;
+}
 import { Plus, Pencil, Trash2, EyeOff, CornerDownRight } from "lucide-react";
 
 /**
@@ -133,7 +140,7 @@ export default function CategoriesAdminPage() {
   }
 
   async function remove(cat: Category) {
-    if (!window.confirm(`确认删除栏目「${cat.translations[0]?.name ?? cat.slug}」?`)) return;
+    if (!window.confirm(`确认删除栏目「${adminDisplayName(cat.translations, cat.slug)}」?`)) return;
     try {
       await apiDelete(`/api/admin/categories?id=${cat.id}`);
       toast.success("已删除");
@@ -190,7 +197,7 @@ export default function CategoriesAdminPage() {
               <TableCell>
                 <span className="flex items-center gap-1">
                   {depth > 0 && <CornerDownRight className="h-3 w-3 text-muted-foreground" />}
-                  {cat.translations[0]?.name ?? cat.slug}
+                  {adminDisplayName(cat.translations, cat.slug)}
                   {cat.allowSubmit && <Badge variant="secondary">可投稿</Badge>}
                 </span>
               </TableCell>
