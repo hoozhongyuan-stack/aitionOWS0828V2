@@ -341,6 +341,33 @@ model SensitiveWord {
   createdAt DateTime @default(now())
 }
 
+// ------------------- GEO 监测(V3.2) -------------------
+
+/// AI 爬虫统计:引擎×日期×路径 计数(upsert 累加;白名单见 server/geo)
+model AICrawlStat {
+  id    Int    @id @default(autoincrement())
+  bot   String
+  date  String // YYYY-MM-DD(服务器时区)
+  path  String
+  count Int    @default(1)
+
+  @@unique([bot, date, path])
+  @@index([date, bot])
+}
+
+/// AI 渠道引荐统计:来源×落地页×日期 计数(referer 白名单命中)
+model AIReferralStat {
+  id       Int    @id @default(autoincrement())
+  source   String // AI 渠道域名(如 chatgpt.com / doubao.com)
+  landing  String // 落地页路径
+  date     String
+  count    Int    @default(1)
+  visitors Int    @default(1)
+
+  @@unique([source, landing, date])
+  @@index([date, source])
+}
+
 // ------------------------- 文件 / 媒体 -------------------------
 
 /// 本地文件资产:统一登记,便于文件管理与 alt 语义

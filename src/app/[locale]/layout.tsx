@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getThemeConfig, getBrandConfig } from "@/lib/config";
+import { matchBot, matchReferral, recordCrawl, recordReferral } from "@/server/geo";
 import { buildThemeCss } from "@/lib/theme";
 import "@/styles/globals.css";
 
@@ -71,6 +73,22 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   const [messages, theme] = await Promise.all([getMessages(), getThemeConfig()]);
+
+  // GEO 监测(V3.2):服务端识别 AI 爬虫与 AI 渠道引荐,异步记录不阻塞渲染。
+  // 爬虫不执行 JS,客户端埋点抓不到它们——此处是唯一可靠记录点。
+  // 排除后台/静态资源路径;非 AI 流量零开销(仅一次字符串匹配)。
+  const h = await headers();
+  const reqPath = `/${locale}${h.get("x-geo-path") ?? ""}`;
+  const isSitePath = !/\/admin|\/_next|\/uploads|\/api/.test(reqPath);
+  if (isSitePath) {
+    const bot = matchBot(h.get("user-agent"));
+    const referral = matchReferral(h.get("referer"));
+    if (bot) {
+      void recordCrawl(bot, reqPath);
+    } else if (referral) {
+      void recordReferral(referral, reqPath, true);
+    }
+  }
 
   return (
     <html lang={locale} suppressHydrationWarning data-theme={theme.preset === "aurora" ? "aurora" : undefined}>

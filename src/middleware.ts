@@ -1,6 +1,6 @@
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getRuntimeFlags } from "@/server/setting";
 import { getDefaultLocale } from "@/server/i18n";
 
@@ -96,7 +96,11 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  return intlMiddleware(request);
+  // GEO 监测(V3.2):把真实路径写入请求头转发,供 [locale]/layout 的服务端识别读取
+  // (next-intl 改写后的内部路由不含原始 pathname,布局层无法从 headers 拿到)
+  const headersWithGeo = new Headers(request.headers);
+  headersWithGeo.set("x-geo-path", pathname);
+  return intlMiddleware(new NextRequest(request, { headers: headersWithGeo }));
 }
 
 export const config = {
