@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
   Images,
   Palette,
+  PanelsTopLeft,
   BadgeInfo,
   Search,
   Languages,
@@ -66,6 +67,7 @@ const NAV_GROUPS: { title: string; items: { href: string; label: string; icon: R
     title: "站点配置",
     items: [
       { href: "/admin/theme", label: "主题外观", icon: Palette },
+      { href: "/admin/layout", label: "页面布局", icon: PanelsTopLeft },
       { href: "/admin/brand", label: "品牌信息", icon: BadgeInfo },
       { href: "/admin/seo", label: "SEO / GEO", icon: Search },
       { href: "/admin/i18n", label: "语言", icon: Languages },
