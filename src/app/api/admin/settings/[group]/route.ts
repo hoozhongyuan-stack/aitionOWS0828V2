@@ -11,6 +11,7 @@ import { getSettingGroup, saveSettingGroup } from "@/server/setting";
 
 const ALLOWED_GROUPS = new Set([
   "theme",
+  "layout",
   "brand",
   "features",
   "upload",
@@ -63,10 +64,32 @@ const themeSchema = z
   .partial()
   .passthrough(); // passthrough:保留未知键入库;CSS 注入面只消费上面已校验的字段
 
+const layoutSchema = z
+  .object({
+    preset: z.enum(["grid", "hero-list", "split", "list", "magazine"]),
+    sections: z
+      .object({
+        banners: z.boolean().optional(),
+        latest: z.boolean().optional(),
+        header: z.boolean().optional(),
+      })
+      .optional(),
+  })
+  .partial()
+  .passthrough();
+
 function validateGroup(
   group: string,
   values: Record<string, unknown>
 ): ReturnType<typeof jsonErr> | null {
+  if (group === "layout") {
+    const r = layoutSchema.safeParse(values);
+    if (!r.success) {
+      const first = r.error.issues[0];
+      return jsonErr(`布局配置格式不正确:${first?.path?.join(".") ?? ""} ${first?.message ?? ""}`.trim());
+    }
+    return null;
+  }
   if (group !== "theme") return null;
   const r = themeSchema.safeParse(values);
   if (!r.success) {
