@@ -47,6 +47,8 @@ export default defineConfig({
         "src/server/analytics/index.ts",
         "src/app/api/admin/dashboard/route.ts",
         "src/app/**/dashboard/logic.ts",
+        "src/server/geo/index.ts",
+        "src/server/layout/index.ts",
       ],
       exclude: ["**/*.d.ts"],
       thresholds: {
