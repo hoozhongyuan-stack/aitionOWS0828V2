@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import {
   LayoutDashboard,
+  Radar,
   FileText,
   FolderTree,
   Navigation,
@@ -35,7 +36,10 @@ import { apiPost } from "@/components/admin/api-client";
 const NAV_GROUPS: { title: string; items: { href: string; label: string; icon: React.ElementType }[] }[] = [
   {
     title: "概览",
-    items: [{ href: "/admin/dashboard", label: "数据看板", icon: LayoutDashboard }],
+    items: [
+      { href: "/admin/dashboard", label: "数据看板", icon: LayoutDashboard },
+      { href: "/admin/geo-monitor", label: "GEO 监测", icon: Radar },
+    ],
   },
   {
     title: "内容管理",
