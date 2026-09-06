@@ -33,6 +33,13 @@ npm run prisma:deploy / prisma:generate              # 迁移/客户端
 - 服务器 1.9G 内存,**swap 4G 已配置**(/swapfile),构建/运行依赖它,别删
 
 
+## V3.2 交付记忆(2026-09-06,布局预设+GEO 监测一期)
+
+- 布局预设存 Setting(group=layout,key=home/category);缺省=现状布局,升级零变化;服务层 src/server/layout/index.ts
+- GEO 监测:**AI 爬虫不执行 JS,客户端埋点抓不到**——记录点在 [locale]/layout(读 UA 匹配白名单异步写库);聚合+明细双写;后台「GEO 监测」页+明细 Tab+CSV 导出;180 天保留(cron 每月清理,脚本 scripts/geo-purge.sh)
+- 编辑器规格参数已移入语言 Tab(V3.1 specs i18n);后台列表显示名统一按站点默认语言(zh-CN)取值(adminDisplayName/adminTitle helper)
+- 微信扫码登录配置完成(开放平台业务域名校验文件 public/fejKunK1BB.txt;回调域 aition.art);H5(公众号)登录字段已预留未启用
+
 ## V3.1.1 交付记忆(2026-09-04,双主题包)
 
 - `ThemeConfig.preset`(classic/aurora)存 Setting(theme);前台 `<html data-theme>` 挂载;**classic 路径零改动**(升级站点外观零变化已验证)
