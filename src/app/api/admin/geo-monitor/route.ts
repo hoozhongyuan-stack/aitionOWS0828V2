@@ -1,6 +1,6 @@
 import { jsonErr, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth/session";
-import { getGeoMonitorStats } from "@/server/geo";
+import { getGeoMonitorStats, listCrawlEvents, listReferralEvents } from "@/server/geo";
 
 /**
  * GEO 监测数据:GET /api/admin/geo-monitor?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -15,6 +15,24 @@ export async function GET(req: Request) {
   if ("error" in guard) return guard.error;
 
   const sp = new URL(req.url).searchParams;
+
+  // 明细查询(V3.2.1):type=events 时返回爬虫/引荐事件明细分页
+  if (sp.get("type") === "events") {
+    const f = {
+      bot: sp.get("bot") ?? undefined,
+      source: sp.get("source") ?? undefined,
+      pathLike: sp.get("pathLike") ?? undefined,
+      from: sp.get("from") ?? undefined,
+      to: sp.get("to") ?? undefined,
+      page: Number(sp.get("page")) || 1,
+      pageSize: Math.min(500, Number(sp.get("pageSize")) || 100),
+    };
+    const type = sp.get("eventType") === "referral" ? "referral" : "crawl";
+    const result =
+      type === "referral" ? await listReferralEvents(f) : await listCrawlEvents(f);
+    return jsonOk(result);
+  }
+
   const from = sp.get("from");
   const to = sp.get("to");
 
