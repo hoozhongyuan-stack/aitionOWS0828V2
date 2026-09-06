@@ -3,6 +3,8 @@ import Link from "next/link";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { listPublishedByCategory, listCategories } from "@/server/content";
+import { getCategoryLayout } from "@/server/layout";
+import { Reveal } from "@/components/site/aurora-motion";
 import { buildAlternates } from "@/lib/seo/alternates";
 import { buildOpenGraph } from "@/lib/seo/open-graph";
 import { getFormByRelatedKey } from "@/server/form";
@@ -67,8 +69,15 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   setRequestLocale(locale);
 
   const page = Math.max(1, Number(pageRaw) || 1);
-  const data = await listPublishedByCategory(slug, locale, page);
+  const [data, categoryLayout] = await Promise.all([
+    listPublishedByCategory(slug, locale, page),
+    getCategoryLayout(),
+  ]);
   if (!data) notFound();
+  // V3.2 布局预设:magazine=首条大图特写 + 其余双列;list=现状网格
+  const isMagazine = categoryLayout.preset === "magazine" && data.items.length > 0;
+  const featuredItem = isMagazine ? data.items[0] : null;
+  const restItems = isMagazine ? data.items.slice(1) : data.items;
 
   const t = await getTranslations("common");
   const tInter = await getTranslations("interaction");
@@ -167,6 +176,35 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <div className="rounded-lg border border-dashed p-16 text-center text-muted-foreground">
           {t("empty")}
         </div>
+      ) : isMagazine ? (
+        <>
+          {/* 首条大图特写 */}
+          {featuredItem && (
+            <Reveal>
+              <ContentCard
+                locale={locale}
+                item={featuredItem}
+                viewsLabel={tInter("views")}
+                moduleType={isProduct ? "product" : undefined}
+                featured
+              />
+            </Reveal>
+          )}
+          {/* 其余双列 */}
+          {restItems.length > 0 && (
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              {restItems.map((item) => (
+                <ContentCard
+                  key={item.id}
+                  locale={locale}
+                  item={item}
+                  viewsLabel={tInter("views")}
+                  moduleType={isProduct ? "product" : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((item) => (

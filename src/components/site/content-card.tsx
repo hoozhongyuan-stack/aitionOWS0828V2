@@ -13,6 +13,7 @@ export function ContentCard({
   item,
   viewsLabel,
   moduleType,
+  featured,
 }: {
   locale: string;
   item: {
@@ -27,6 +28,8 @@ export function ContentCard({
   viewsLabel: string;
   /** 所属栏目模块类型(product → 商品详情路由);缺省按 article 处理 */
   moduleType?: string;
+  /** 杂志布局首条特写:更大的封面比例与标题 */
+  featured?: boolean;
 }) {
   const date = new Date(item.publishedAt);
   return (
@@ -40,13 +43,13 @@ export function ContentCard({
           src={item.coverUrl}
           alt={item.title}
           loading="lazy"
-          className="aspect-[16/9] w-full object-cover transition-transform group-hover:scale-[1.02]"
+          className={(featured ? "aspect-[2/1] " : "aspect-[16/9] ") + "w-full object-cover transition-transform group-hover:scale-[1.02]"}
         />
       ) : (
         <div className="aspect-[16/9] w-full bg-muted" aria-hidden />
       )}
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-2 font-heading font-semibold group-hover:text-primary">{item.title}</h3>
+        <h3 className={(featured ? "text-base sm:text-lg " : "") + "line-clamp-2 font-heading font-semibold group-hover:text-primary"}>{item.title}</h3>
         {item.summary && <p className="line-clamp-2 text-sm text-muted-foreground">{item.summary}</p>}
         <div className="mt-auto flex items-center gap-3 pt-2 text-xs text-muted-foreground">
           <time dateTime={date.toISOString()}>{date.toLocaleDateString(safeDateLocale(locale))}</time>

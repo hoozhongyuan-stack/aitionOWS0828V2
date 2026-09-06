@@ -78,7 +78,8 @@ export default async function LocaleLayout({
   // 爬虫不执行 JS,客户端埋点抓不到它们——此处是唯一可靠记录点。
   // 排除后台/静态资源路径;非 AI 流量零开销(仅一次字符串匹配)。
   const h = await headers();
-  const reqPath = `/${locale}${h.get("x-geo-path") ?? ""}`;
+  // x-geo-path 由 middleware 注入,已含完整 pathname(含 locale 前缀)——不再重复拼接(DEF-013)
+  const reqPath = h.get("x-geo-path") ?? `/${locale}`;
   const isSitePath = !/\/admin|\/_next|\/uploads|\/api/.test(reqPath);
   if (isSitePath) {
     const bot = matchBot(h.get("user-agent"));
