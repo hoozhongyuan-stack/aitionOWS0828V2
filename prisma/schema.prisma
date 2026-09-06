@@ -355,6 +355,29 @@ model AICrawlStat {
   @@index([date, bot])
 }
 
+/// AI 爬虫事件明细:秒级时间戳,保留 180 天(清理见 server/geo)
+model AICrawlEvent {
+  id   Int      @id @default(autoincrement())
+  bot  String
+  path String
+  ua   String?
+  ts   DateTime @default(now())
+
+  @@index([bot, ts])
+  @@index([ts])
+}
+
+/// AI 渠道引荐事件明细:渠道×落地页×秒级时间
+model AIReferralEvent {
+  id      Int      @id @default(autoincrement())
+  source  String
+  landing String
+  ts      DateTime @default(now())
+
+  @@index([source, ts])
+  @@index([ts])
+}
+
 /// AI 渠道引荐统计:来源×落地页×日期 计数(referer 白名单命中)
 model AIReferralStat {
   id       Int    @id @default(autoincrement())

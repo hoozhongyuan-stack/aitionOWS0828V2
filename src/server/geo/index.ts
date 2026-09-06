@@ -68,14 +68,18 @@ function today(): string {
 }
 
 /** 记录一次 AI 爬虫抓取(按 引擎+日期+路径 upsert 累加);失败静默不阻断渲染 */
-export async function recordCrawl(bot: string, path: string): Promise<void> {
+export async function recordCrawl(bot: string, path: string, ua?: string): Promise<void> {
   const p = path.slice(0, 200) || "/";
   try {
-    await prisma.aICrawlStat.upsert({
-      where: { bot_date_path: { bot, date: today(), path: p } },
-      update: { count: { increment: 1 } },
-      create: { bot, date: today(), path: p, count: 1 },
-    });
+    // 聚合(趋势/Top 高效) + 明细(下钻搜索) 双写;明细保留 180 天(清理见 listRetentionNote)
+    await prisma.$transaction([
+      prisma.aICrawlStat.upsert({
+        where: { bot_date_path: { bot, date: today(), path: p } },
+        update: { count: { increment: 1 } },
+        create: { bot, date: today(), path: p, count: 1 },
+      }),
+      prisma.aICrawlEvent.create({ data: { bot, path: p, ua: ua?.slice(0, 300) } }),
+    ]);
   } catch (e) {
     console.error("[geo] 爬虫记录失败:", e);
   }
@@ -85,14 +89,18 @@ export async function recordCrawl(bot: string, path: string): Promise<void> {
 export async function recordReferral(source: string, landing: string, isNewVisitor: boolean): Promise<void> {
   const p = landing.slice(0, 200) || "/";
   try {
-    await prisma.aIReferralStat.upsert({
-      where: { source_landing_date: { source, landing: p, date: today() } },
-      update: {
-        count: { increment: 1 },
-        ...(isNewVisitor ? { visitors: { increment: 1 } } : {}),
-      },
-      create: { source, landing: p, date: today(), count: 1, visitors: 1 },
-    });
+    // 聚合 + 明细 双写(引荐点击事件秒级留痕)
+    await prisma.$transaction([
+      prisma.aIReferralStat.upsert({
+        where: { source_landing_date: { source, landing: p, date: today() } },
+        update: {
+          count: { increment: 1 },
+          ...(isNewVisitor ? { visitors: { increment: 1 } } : {}),
+        },
+        create: { source, landing: p, date: today(), count: 1, visitors: 1 },
+      }),
+      prisma.aIReferralEvent.create({ data: { source, landing: p } }),
+    ]);
   } catch (e) {
     console.error("[geo] 引荐记录失败:", e);
   }
@@ -148,3 +156,78 @@ export async function getGeoMonitorStats(from: string, to: string) {
     })),
   };
 }
+
+
+/** 明细查询入参(全部可选;时间范围默认当天) */
+export interface GeoEventFilter {
+  bot?: string;
+  source?: string;
+  pathLike?: string;
+  from?: string; // YYYY-MM-DD
+  to?: string; // YYYY-MM-DD(含当日)
+  page?: number;
+  pageSize?: number;
+}
+
+/** 爬虫事件明细分页列表 */
+export async function listCrawlEvents(f: GeoEventFilter) {
+  const where = {
+    ...(f.bot ? { bot: f.bot } : {}),
+    ...(f.pathLike ? { path: { contains: f.pathLike } } : {}),
+    ts: dateRange(f.from, f.to),
+  };
+  const page = Math.max(1, f.page ?? 1);
+  const pageSize = Math.min(100, f.pageSize ?? 50);
+  const [total, items] = await Promise.all([
+    prisma.aICrawlEvent.count({ where }),
+    prisma.aICrawlEvent.findMany({
+      where,
+      orderBy: { ts: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+  return { total, page, pageSize, items };
+}
+
+/** 引荐事件明细分页列表 */
+export async function listReferralEvents(f: GeoEventFilter) {
+  const where = {
+    ...(f.source ? { source: f.source } : {}),
+    ...(f.pathLike ? { landing: { contains: f.pathLike } } : {}),
+    ts: dateRange(f.from, f.to),
+  };
+  const page = Math.max(1, f.page ?? 1);
+  const pageSize = Math.min(100, f.pageSize ?? 50);
+  const [total, items] = await Promise.all([
+    prisma.aIReferralEvent.count({ where }),
+    prisma.aIReferralEvent.findMany({
+      where,
+      orderBy: { ts: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+  return { total, page, pageSize, items };
+}
+
+function dateRange(from?: string, to?: string) {
+  // ts 为 DATETIME;边界含当日(字符串比较对 YYYY-MM-DD 前缀成立)
+  const gte = from ? new Date(`${from}T00:00:00`) : undefined;
+  const lt = to ? new Date(`${to}T23:59:59.999`) : undefined;
+  if (!gte && !lt) return undefined;
+  return { ...(gte ? { gte } : {}), ...(lt ? { lt } : {}) };
+}
+
+/** 明细保留清理:删除 before(YYYY-MM-DD) 之前的明细行(运维/定时任务调用) */
+export async function purgeEventsBefore(before: string): Promise<{ crawl: number; referral: number }> {
+  const lt = new Date(`${before}T00:00:00`);
+  const [crawl, referral] = await Promise.all([
+    prisma.aICrawlEvent.deleteMany({ where: { ts: { lt } } }),
+    prisma.aIReferralEvent.deleteMany({ where: { ts: { lt } } }),
+  ]);
+  return { crawl: crawl.count, referral: referral.count };
+}
+
+/** 保留策略:180 天(与方案确认一致) */
+export const EVENT_RETENTION_DAYS = 180;
