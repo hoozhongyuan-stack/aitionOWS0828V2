@@ -33,6 +33,17 @@ npm run prisma:deploy / prisma:generate              # 迁移/客户端
 - 服务器 1.9G 内存,**swap 4G 已配置**(/swapfile),构建/运行依赖它,别删
 
 
+## V4.0 交付记忆(2026-09-07,海外独立站起步:交易 MVP)
+
+- **交易域架构**:商品交易字段在 Content(priceCents 整数分/currency/spu,null=仅询盘混合模式);Order/OrderItem **快照模式**(下单时服务端按现价重算,title/price/spu/coverUrl 全快照;contentId/userId 无外键,内容/用户删除订单信息保留)——**改价不改历史订单**
+- 订单 5 态:PENDING→CONFIRMED→SHIPPED→COMPLETED,非终态可 CANCELLED;转换表在 server/order TRANSITIONS;每次流转异步发买家双语邮件(逐段中英对照),渲染/发送失败静默(NFR-004)
+- 购物车纯客户端(localStorage,key=aition_cart_v1,cart-store.ts+useSyncExternalStore)——**结算服务端重算,前端数据不作计价依据**;游客下单 email 限频每小时 5 单
+- 商店设置 Setting(group="shop" 平铺键:currency/paymentInfo/shippingFeeCents/freeShippingOverCents);运费 calcShipping 满额免邮优先
+- 协议类型枚举:新增类型必须同步**agreementTypeSchema**(types/domain)——API 已改用 nativeEnum,但**协议前台展示页 TYPE_MAP(agreement/[type]/page)与后台下拉仍需手动加**(踩过:V4.0.2 COOKIES 加了前端漏了 API)
+- 后台列表分页:统一 TablePagination 组件(10/50/100);四页(订单/内容/用户/审核两 Tab)已接入;新列表页直接复用
+- 本地演示数据:demo 商品价格 $1299/$499+SPU;测试订单 id1-7;演示用户 v401demo@test.com(id=3)——生产库无这些数据
+- 支付先决(用户侧):Stripe 大陆主体不可开户,需港/美/新主体;PayPal 大陆企业可注册——线下付款流即为此过渡
+
 ## V3.3 交付记忆(2026-09-07,首页楼层+全局 404+国内引擎白名单)
 
 - **根布局重构(C1)**:html/head/主题注入自 [locale]/layout **上移至 src/app/layout.tsx**(新建;动态 lang 从 middleware x-geo-path 首段提取);[locale]/layout 剥壳为 NextIntlClientProvider 直通——**后续开发:全站 html 壳在根 layout,[locale]/layout 禁止再输出 html**;根级 not-found.tsx 承接全部 404(带点路径/段内未匹配),内联样式+后台错误页配置
