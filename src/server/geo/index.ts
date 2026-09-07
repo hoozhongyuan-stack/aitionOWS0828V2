@@ -27,6 +27,15 @@ export const AI_BOTS: ReadonlyArray<{ match: string; name: string }> = [
   { match: "applebot-extended", name: "Applebot-Extended (Apple 智能)" },
   { match: "bytespider", name: "Bytespider (字节·豆包)" },
   { match: "deepseekbot", name: "DeepSeekBot" },
+  // 国内引擎增补(V3.3 C3,UA 已核实自 ai-robots-txt 清单):
+  // 腾讯混元/元宝与百度无公开声明的 AI 爬虫 UA(EdgeOne 官方清单亦未收录),故不入表;
+  // Baiduspider 属传统搜索爬虫,计入会污染 GEO 口径。
+  { match: "kimibot", name: "KimiBot (月之暗面 Kimi)" },
+  { match: "kimi-searchbot", name: "Kimi-SearchBot (Kimi 检索)" },
+  { match: "kimi-user", name: "Kimi-User (Kimi 用户触发)" },
+  { match: "chatglm-spider", name: "ChatGLM-Spider (智谱清言)" },
+  { match: "tongyibot", name: "TongyiBot (阿里通义)" },
+  { match: "pangubot", name: "PanguBot (华为盘古)" },
 ];
 
 /** AI 引荐渠道:referer host 关键字 → 渠道显示名 */

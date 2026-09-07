@@ -1,11 +1,11 @@
 import { jsonErr, jsonOk } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth/session";
-import { getGeoMonitorStats, listCrawlEvents, listReferralEvents } from "@/server/geo";
+import { AI_BOTS, getGeoMonitorStats, listCrawlEvents, listReferralEvents } from "@/server/geo";
 
 /**
  * GEO 监测数据:GET /api/admin/geo-monitor?from=YYYY-MM-DD&to=YYYY-MM-DD
  * 可选 from/to(ISO 日期,成对,from<=to,跨度<=92);缺省近 7 天。
- * 返回 { from, to, trend(按引擎逐日), topPages(被爬 Top10), referrals(引荐 Top10) }
+ * 返回 { from, to, trend(按引擎逐日), topPages(被爬 Top10), referrals(引荐 Top10), knownBots(白名单引擎名,C2 下拉用) }
  */
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_SPAN_DAYS = 92;
@@ -53,5 +53,6 @@ export async function GET(req: Request) {
     return jsonErr("from/to 必须成对出现", 400);
   }
 
-  return jsonOk(await getGeoMonitorStats(range.from, range.to));
+  const stats = await getGeoMonitorStats(range.from, range.to);
+  return jsonOk({ ...stats, knownBots: AI_BOTS.map((b) => b.name) });
 }

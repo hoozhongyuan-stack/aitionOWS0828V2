@@ -21,6 +21,7 @@ interface GeoStats {
   trend: TrendPoint[];
   topPages: { path: string; bot: string; count: number }[];
   referrals: { source: string; landing: string; date?: string; count: number; visitors: number }[];
+  knownBots?: string[]; // 引擎白名单名(C2):明细筛选下拉选项,读 server/geo AI_BOTS 常量自动生成
 }
 
 const RANGES = [
@@ -68,7 +69,7 @@ export default function GeoMonitorPage() {
     }
   }
 
-  async function loadEvents(type: "crawl" | "referral", page = 1) {
+  async function loadEvents(type: "crawl" | "referral", page = 1, filter = evFilter) {
     const qs = new URLSearchParams({
       type: "events",
       eventType: type,
@@ -77,8 +78,8 @@ export default function GeoMonitorPage() {
       page: String(page),
       pageSize: "50",
     });
-    if (type === "crawl" && evFilter.bot) qs.set("bot", evFilter.bot);
-    if (evFilter.pathLike) qs.set("pathLike", evFilter.pathLike);
+    if (type === "crawl" && filter.bot) qs.set("bot", filter.bot);
+    if (filter.pathLike) qs.set("pathLike", filter.pathLike);
     try {
       const d = await apiGet<{
         total: number;
@@ -287,6 +288,24 @@ export default function GeoMonitorPage() {
                 >
                   引荐明细
                 </Button>
+                {eventType === "crawl" && (
+                  <select
+                    className="rounded-md border bg-background px-2 py-1 text-sm"
+                    value={evFilter.bot}
+                    onChange={(e) => {
+                      const f = { ...evFilter, bot: e.target.value };
+                      setEvFilter(f);
+                      loadEvents("crawl", 1, f);
+                    }}
+                  >
+                    <option value="">全部引擎</option>
+                    {(stats.knownBots ?? []).map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <input
                   placeholder={eventType === "referral" ? "落地页关键字…" : "路径关键字…"}
                   className="ml-auto w-48 rounded-md border bg-background px-2 py-1 text-sm"
