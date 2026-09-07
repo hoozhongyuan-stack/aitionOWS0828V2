@@ -33,6 +33,16 @@ npm run prisma:deploy / prisma:generate              # 迁移/客户端
 - 服务器 1.9G 内存,**swap 4G 已配置**(/swapfile),构建/运行依赖它,别删
 
 
+## V4.1/V4.2/V4.3 交付记忆(2026-09-08,子账号审计/交易深化/第三主题)
+
+- **权限体系(V4.1)**:AdminUser.role=OWNER/STAFF+permissions(JSON 权限组);守卫 requireOwner/requirePerm 在 lib/auth/session(**查库校验,禁用立即生效**——getAdminSession 只验 token 不查库,页面壳级鉴权用它,数据鉴权必须用守卫);权限组定义+canSeeMenu 在 server/admin/permissions.ts;**新增敏感 API 必须选对守卫**(OWNER:settings 全组/users/agreements/locales/seo-meta/ui-translations/backup/dashboard;组:contents 等六类=content、orders/products=commerce、ugc=moderation、geo-monitor=geo)
+- 操作日志:logAdmin(server/admin)写 AdminLog,失败静默;写操作在 route 守卫后 void 埋点;admin-logs 页 OWNER 专属
+- **售后(V4.2)**:OrderRefund 一单一次(unique orderId);审核通过=事务内双写(refund.APPROVED+order.REFUNDED/refundedAt)——**勿拆开写**(踩过:先写 refund 再 transitionOrder 非事务,转换失败导致状态不一致);金额≤实付服务端校验
+- 商品管理=入口剥离(数据仍 Content(product 栏目)),listProductsAdmin;未来 SKU/库存再做物理剥表
+- 媒体:MediaFolder 二级(parentId 仅 null 或一级 id,应用层禁第三级);非空禁删;素材选择器 MediaPicker 组件(media-picker.tsx)已接 UploadField 与富文本;上传 FormData.folderId 归档
+- **第三主题 harvest(V4.3)**:globals.css [data-theme="harvest"] 段+主题页选择卡(推荐色板)+themeSchema 枚举+根 layout data-theme 挂载+aurora-motion 启用条件——**新增主题五处同步**;harvest 标题衬线+麦穗 h2::before(sway);classic/aurora 零改动
+- 测试:tests/setup/db.ts 统一种子 AdminUser id=1 OWNER(守卫查库依赖);mock session 的测试文件需在 vi.mock 里补 requireOwner/requirePerm
+
 ## V4.0 交付记忆(2026-09-07,海外独立站起步:交易 MVP)
 
 - **交易域架构**:商品交易字段在 Content(priceCents 整数分/currency/spu,null=仅询盘混合模式);Order/OrderItem **快照模式**(下单时服务端按现价重算,title/price/spu/coverUrl 全快照;contentId/userId 无外键,内容/用户删除订单信息保留)——**改价不改历史订单**
