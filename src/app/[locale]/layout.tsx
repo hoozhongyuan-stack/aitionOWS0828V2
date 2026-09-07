@@ -4,18 +4,16 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
-import { getThemeConfig, getBrandConfig } from "@/lib/config";
+import { getBrandConfig } from "@/lib/config";
 import { matchBot, matchReferral, recordCrawl, recordReferral } from "@/server/geo";
-import { buildThemeCss } from "@/lib/theme";
-import "@/styles/globals.css";
 
 /**
- * 根布局(所有前台/后台页面共用)。
- * 职责:
- *  1) SSR 输出 <html>
- *  2) next-intl 多语言上下文
- *  3) 运行时主题注入:读取 Setting(theme) → 生成 CSS 变量 <style>,
- *     后台改主题 → 缓存失效 → 下一次请求立即生效(不重启、不重编译)
+ * 语言布局(所有前台/后台页面的多语言上下文层)。
+ * V3.3 C1:html/head/body 壳上移至根布局(src/app/layout.tsx,含 lang/data-theme/主题
+ * 变量注入)——本层不再输出 html,负责:
+ *  1) next-intl 多语言上下文(NextIntlClientProvider)
+ *  2) locale 合法性校验(非法 → 根级品牌 404)
+ *  3) GEO 监测记录点(V3.2)
  *  4) metadataBase(V3.1 REQ-003):相对路径 OG 图片/URL 据此解析为绝对地址
  */
 
@@ -72,7 +70,7 @@ export default async function LocaleLayout({
   // 启用该请求的静态渲染语言
   setRequestLocale(locale);
 
-  const [messages, theme] = await Promise.all([getMessages(), getThemeConfig()]);
+  const messages = await getMessages();
 
   // GEO 监测(V3.2):服务端识别 AI 爬虫与 AI 渠道引荐,异步记录不阻塞渲染。
   // 爬虫不执行 JS,客户端埋点抓不到它们——此处是唯一可靠记录点。
@@ -91,15 +89,5 @@ export default async function LocaleLayout({
     }
   }
 
-  return (
-    <html lang={locale} suppressHydrationWarning data-theme={theme.preset === "aurora" ? "aurora" : undefined}>
-      <head>
-        {/* 运行时主题变量:覆盖 globals.css 默认值 */}
-        <style id="theme-vars" dangerouslySetInnerHTML={{ __html: buildThemeCss(theme) }} />
-      </head>
-      <body>
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
-      </body>
-    </html>
-  );
+  return <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>;
 }
