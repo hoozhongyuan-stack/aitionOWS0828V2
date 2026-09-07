@@ -128,13 +128,22 @@ export default async function AccountPage({ params, searchParams }: Props) {
                     <div className="mt-4 space-y-3 border-t pt-3 text-sm">
                       <div>
                         <p className="mb-1 font-medium">{t("orderItems")}</p>
-                        <ul className="space-y-1 text-muted-foreground">
+                        <ul className="space-y-2 text-muted-foreground">
                           {o.items.map((i) => (
-                            <li key={i.id} className="flex justify-between gap-2">
-                              <span>
-                                {i.titleSnapshot} × {i.qty}
+                            <li key={i.id} className="flex items-center gap-3">
+                              {i.coverUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={i.coverUrl} alt={i.titleSnapshot} className="h-10 w-14 shrink-0 rounded object-cover" />
+                              ) : (
+                                <div className="h-10 w-14 shrink-0 rounded bg-muted" aria-hidden />
+                              )}
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-foreground">{i.titleSnapshot}</span>
+                                {i.spu && <span className="block text-xs">SPU: {i.spu}</span>}
                               </span>
-                              <span>{formatMoney(i.priceCentsSnapshot * i.qty, i.currency, locale)}</span>
+                              <span className="shrink-0 text-foreground">
+                                {formatMoney(i.priceCentsSnapshot * i.qty, i.currency, locale)}
+                              </span>
                             </li>
                           ))}
                         </ul>

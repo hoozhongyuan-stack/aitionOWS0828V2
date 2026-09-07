@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ interface UserRow {
   province: string | null;
   city: string | null;
   _count: { comments: number };
+  orderCount: number; // 名下订单数(V4.0.2)
 }
 interface ListData {
   total: number;
@@ -67,6 +69,7 @@ interface ProfileForm {
 const EMPTY_PROFILE: ProfileForm = { companyName: "", country: "", province: "", city: "" };
 
 export default function UsersAdminPage() {
+  const router = useRouter();
   const [data, setData] = useState<ListData | null>(null);
   const [keyword, setKeyword] = useState("");
   const [company, setCompany] = useState("");
@@ -192,6 +195,7 @@ export default function UsersAdminPage() {
             <TableHead>登录方式</TableHead>
             <TableHead>公司名称</TableHead>
             <TableHead>评论数</TableHead>
+            <TableHead>订单数</TableHead>
             <TableHead>注册时间</TableHead>
             <TableHead>状态</TableHead>
             <TableHead className="text-right">操作</TableHead>
@@ -200,7 +204,7 @@ export default function UsersAdminPage() {
         <TableBody>
           {data?.items.length === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                 暂无注册用户
               </TableCell>
             </TableRow>
@@ -221,6 +225,20 @@ export default function UsersAdminPage() {
                 {u.companyName || <span className="text-muted-foreground">-</span>}
               </TableCell>
               <TableCell>{u._count.comments}</TableCell>
+              <TableCell>
+                {u.orderCount > 0 ? (
+                  <button
+                    type="button"
+                    className="underline-offset-2 hover:text-primary hover:underline"
+                    title="查看该用户订单"
+                    onClick={() => router.push(`/zh-CN/admin/orders?q=${encodeURIComponent(u.email || "")}`)}
+                  >
+                    {u.orderCount}
+                  </button>
+                ) : (
+                  <span className="text-muted-foreground">0</span>
+                )}
+              </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {new Date(u.createdAt).toLocaleDateString("zh-CN")}
               </TableCell>

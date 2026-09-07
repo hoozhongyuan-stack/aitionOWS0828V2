@@ -211,6 +211,7 @@ export interface ContentInput {
   gallery?: string[] | null; // 商品图集(有序图片路径,仅 product 栏目使用);未传=不改动
   specs?: ProductSpec[] | null; // 商品规格参数(有序键值对);未传=不改动
   price?: { priceCents: number | null; currency: string | null } | null; // 交易字段(V4.0);未传=不改动;null 值=清除价格(转仅询盘)
+  spu?: string | null; // 商品货号(V4.0.2);未传=不改动;null=清除
   translations: {
     locale: string;
     title: string;
@@ -296,6 +297,8 @@ export async function saveContent(
     // 商品图集/规格参数(V3.0):传了才写(未传保留既有值),空数组存 null
     ...(galleryJson !== undefined ? { gallery: galleryJson } : {}),
     ...(specsJson !== undefined ? { specs: specsJson } : {}),
+    // SPU(V4.0.2):传了才写
+    ...(input.spu !== undefined ? { spu: input.spu?.trim().slice(0, 60) || null } : {}),
     // 交易字段(V4.0):传了才写;currency 缺省跟随站点默认(null)
     ...(input.price
       ? {

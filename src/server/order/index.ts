@@ -83,7 +83,7 @@ export interface OrderView {
   shippedAt: Date | null;
   completedAt: Date | null;
   cancelledAt: Date | null;
-  items: { id: number; contentId: number; titleSnapshot: string; priceCentsSnapshot: number; currency: string; qty: number }[];
+  items: { id: number; contentId: number; titleSnapshot: string; priceCentsSnapshot: number; currency: string; qty: number; spu: string | null; coverUrl: string | null }[];
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -149,6 +149,8 @@ export async function createOrder(input: CreateOrderInput): Promise<{ no: string
       priceCentsSnapshot: c.priceCents!,
       currency: displayCurrency,
       qty: l.qty,
+      spu: c.spu || null, // SPU 快照(V4.0.2)
+      coverUrl: c.coverUrl || null, // 封面快照(V4.0.2,明细缩略图)
     };
   });
   const itemsTotalCents = priced.reduce((n, l) => n + l.priceCentsSnapshot * l.qty, 0);

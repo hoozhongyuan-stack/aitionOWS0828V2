@@ -39,7 +39,27 @@ interface OrderDetail {
   shippedAt: string | null;
   completedAt: string | null;
   cancelledAt: string | null;
-  items: { id: number; contentId: number; titleSnapshot: string; priceCentsSnapshot: number; currency: string; qty: number }[];
+  items: { id: number; contentId: number; titleSnapshot: string; priceCentsSnapshot: number; currency: string; qty: number; spu: string | null; coverUrl: string | null }[];
+}
+
+/** 一键复制(剪贴板;非安全上下文降级) */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 const STATUS_TABS: Record<string, string> = {

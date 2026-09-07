@@ -131,6 +131,7 @@ export default function ContentEditPage() {
   // 价格/币种(V4.0):价格留空=仅询盘(提交 null 清除);仅商品栏目展示
   const [priceInput, setPriceInput] = useState("");
   const [currencyInput, setCurrencyInput] = useState("USD");
+  const [spuInput, setSpuInput] = useState(""); // 商品货号(V4.0.2)
   const [defaultLocale, setDefaultLocale] = useState("zh-CN"); // 默认语言 Tab(顶层兜底列同步源)
   const [favoriteCount, setFavoriteCount] = useState(0); // 只读展示,与阅读/赞/转对称
   const [loading, setLoading] = useState(true);
@@ -164,6 +165,7 @@ export default function ContentEditPage() {
             specs: string | null;
             priceCents: number | null;
             currency: string | null;
+            spu: string | null;
             favoriteCount: number;
             translations: (Partial<Translation> & { specs?: SpecRow[] | null })[];
           }>(`/api/admin/contents?id=${id}`);
@@ -178,6 +180,7 @@ export default function ContentEditPage() {
           setFavoriteCount(c.favoriteCount ?? 0);
           setPriceInput(c.priceCents != null ? String(c.priceCents / 100) : "");
           setCurrencyInput(c.currency || "USD");
+          setSpuInput(c.spu ?? "");
           // 顶层 specs 兜底列(GET 返回 JSON 串):默认语言 Tab 回显的兜底来源
           const mainRows = parseSpecsJson(c.specs);
           const map: Record<string, Translation> = {};
@@ -251,6 +254,7 @@ export default function ContentEditPage() {
                 priceCents: priceInput.trim() === "" ? null : Math.round(Number(priceInput) * 100),
                 currency: currencyInput,
               },
+              spu: spuInput.trim() || null,
             }
           : {}),
         translations: Object.values(trans).map((t) => ({
@@ -418,7 +422,7 @@ export default function ContentEditPage() {
             <CardTitle>商品信息</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
+            <div className="grid gap-3 sm:grid-cols-4 sm:items-end">
               <div className="space-y-2">
                 <Label>价格(留空 = 仅询盘)</Label>
                 <Input
@@ -444,6 +448,14 @@ export default function ContentEditPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>SPU 货号</Label>
+                <Input
+                  placeholder="如 SPU-2026-001"
+                  value={spuInput}
+                  onChange={(e) => setSpuInput(e.target.value)}
+                />
               </div>
               <p className="text-xs text-muted-foreground sm:pb-2">
                 填写价格后前台显示「加入购物车」;留空则仅展示询盘表单

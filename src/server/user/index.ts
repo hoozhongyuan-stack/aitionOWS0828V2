@@ -101,7 +101,20 @@ export async function listUsersAdmin(opts: { page?: number; keyword?: string; q?
       },
     }),
   ]);
-  return { total, page, pageSize, items };
+  // 订单数(V4.0.2):Order.userId 无外键关系(快照模式),按当前页用户 groupBy 统计附加
+  const ids = items.map((u) => u.id);
+  const orderCounts = await prisma.order.groupBy({
+    by: ["userId"],
+    where: { userId: { in: ids } },
+    _count: { _all: true },
+  });
+  const countMap = new Map(orderCounts.map((g) => [g.userId, g._count._all]));
+  return {
+    total,
+    page,
+    pageSize,
+    items: items.map((u) => ({ ...u, orderCount: countMap.get(u.id) ?? 0 })),
+  };
 }
 
 /** 后台:启用/禁用用户 */

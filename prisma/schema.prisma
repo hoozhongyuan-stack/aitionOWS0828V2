@@ -158,6 +158,7 @@ model Content {
   // —— 交易字段(V4.0):priceCents 整数"分"存;null=不展示价格,仅询盘(混合模式)——
   priceCents   Int? // 价格(最小货币单位);商品类型栏目使用
   currency     String? // ISO 4217(USD/EUR…);null=用站点默认币种(Setting group=shop)
+  spu          String? // 商品货号(V4.0.2,自由文本选填);下单时快照进 OrderItem
   // —— 互动统计计数(后台可手动改/清零)——
   viewCount    Int       @default(0)
   likeCount    Int       @default(0)
@@ -238,13 +239,15 @@ model Order {
 
 /// 订单条目(V4.0):下单快照(title/price);contentId 无外键,内容删除后快照保留
 model OrderItem {
-  id                 Int    @id @default(autoincrement())
+  id                 Int     @id @default(autoincrement())
   orderId            Int
   contentId          Int
   titleSnapshot      String
   priceCentsSnapshot Int
   currency           String
   qty                Int
+  spu                String? // SPU 快照(V4.0.2)
+  coverUrl           String? // 封面快照(V4.0.2,订单明细缩略图)
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 

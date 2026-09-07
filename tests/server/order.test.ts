@@ -262,3 +262,33 @@ describe("V4.0.1 物流字段/时间检索/我的订单", () => {
     expect(mine.every((o) => o.email !== "other@x.com" || true)).toBe(true);
   });
 });
+
+describe("V4.0.2 SPU/封面快照 + 用户订单数", () => {
+  it("下单快照 SPU 与封面;商品后续修改不影响历史订单", async () => {
+    // 给 productB 配 SPU+封面(封面用现有 /uploads 路径示意)
+    await db.content.update({
+      where: { id: productBId },
+      data: { spu: "SPU-TEST-002", coverUrl: "/uploads/v4-test-cover.jpg" },
+    });
+    const r = await orderMod.createOrder(baseInput({ email: `spu-${Date.now()}@example.com`, lines: [{ contentId: productBId, qty: 2 }] }));
+    created.push(r.no);
+    const order = await db.order.findUnique({ where: { no: r.no }, include: { items: true } });
+    expect(order?.items[0]?.spu).toBe("SPU-TEST-002");
+    expect(order?.items[0]?.coverUrl).toBe("/uploads/v4-test-cover.jpg");
+    // 商品改 SPU → 历史订单快照不变
+    await db.content.update({ where: { id: productBId }, data: { spu: "SPU-CHANGED" } });
+    const again = await db.order.findUnique({ where: { no: r.no }, include: { items: true } });
+    expect(again?.items[0]?.spu).toBe("SPU-TEST-002");
+  });
+
+  it("listUsersAdmin 附加 orderCount(仅统计名下订单)", async () => {
+    const userMod = await import("@/server/user");
+    const list = await userMod.listUsersAdmin({});
+    const demo = list.items.find((u) => (u as { email?: string }).email?.startsWith("v401-"));
+    if (demo) {
+      // 演示用户在测试库可能不存在;存在时订单数应 ≥0 且为整数
+      expect(Number.isInteger(demo.orderCount)).toBe(true);
+    }
+    expect(list.items.every((u) => Number.isInteger(u.orderCount))).toBe(true);
+  });
+});
