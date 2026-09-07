@@ -26,7 +26,8 @@
   "footer": {
     "contact": "Contact",
     "agreementRegister": "Terms of Service",
-    "agreementPrivacy": "Privacy Policy"
+    "agreementPrivacy": "Privacy Policy",
+    "agreementCookies": "Cookie Policy"
   },
   "interaction": {
     "like": "Like",

@@ -14,6 +14,7 @@ import { sanitizeRichHtml } from "@/lib/sanitize";
 const TYPE_MAP: Record<string, string> = {
   register: AGREEMENT_TYPE.REGISTER,
   privacy: AGREEMENT_TYPE.PRIVACY,
+  cookies: AGREEMENT_TYPE.COOKIES, // V4.0 GDPR
 };
 
 async function loadAgreement(locale: string, typeKey: string) {

@@ -7,6 +7,7 @@ import { getVisibleNav } from "@/server/content/nav";
 import { getActiveUserSession } from "@/lib/auth/session";
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
+import { CookieConsent } from "@/components/site/cookie-consent";
 import { OrganizationJsonLd } from "@/components/seo/json-ld";
 import { PageTracker } from "@/components/site/page-tracker";
 
@@ -80,9 +81,11 @@ export default async function SiteLayout({
         labels={{
           register: tFooter("agreementRegister"),
           privacy: tFooter("agreementPrivacy"),
+          cookies: tFooter("agreementCookies"),
           contact: tFooter("contact"),
         }}
       />
+      <CookieConsent />
     </div>
   );
 }

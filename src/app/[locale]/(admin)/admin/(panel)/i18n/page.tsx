@@ -280,7 +280,7 @@ function TranslationsTab({ locales }: { locales: string[] }) {
 }
 
 function AgreementsTab({ locales }: { locales: string[] }) {
-  const [type, setType] = useState<"REGISTER" | "PRIVACY">("REGISTER");
+  const [type, setType] = useState<"REGISTER" | "PRIVACY" | "COOKIES">("REGISTER");
   const [locale, setLocale] = useState(locales[0] ?? "zh-CN");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -291,7 +291,7 @@ function AgreementsTab({ locales }: { locales: string[] }) {
     setLoading(true);
     apiGet<{ title: string; body: string }>(`/api/admin/agreements?type=${type}&locale=${locale}`)
       .then((d) => {
-        setTitle(d.title || (type === "REGISTER" ? "用户注册协议" : "隐私政策"));
+        setTitle(d.title || (type === "REGISTER" ? "用户注册协议" : type === "COOKIES" ? "Cookie 政策" : "隐私政策"));
         setBody(d.body || "");
       })
       .catch((e) => toast.error(e.message))
@@ -318,13 +318,14 @@ function AgreementsTab({ locales }: { locales: string[] }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={type} onValueChange={(v) => setType(v as "REGISTER" | "PRIVACY")}>
+          <Select value={type} onValueChange={(v) => setType(v as "REGISTER" | "PRIVACY" | "COOKIES")}>
             <SelectTrigger className="w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="REGISTER">用户注册协议</SelectItem>
               <SelectItem value="PRIVACY">隐私政策</SelectItem>
+              <SelectItem value="COOKIES">Cookie 政策</SelectItem>
             </SelectContent>
           </Select>
           <Select value={locale} onValueChange={setLocale}>

@@ -55,6 +55,7 @@ export const targetTypeSchema = z.nativeEnum(TARGET_TYPE);
 export const AGREEMENT_TYPE = {
   REGISTER: "REGISTER", // 用户注册协议
   PRIVACY: "PRIVACY", // 隐私政策
+  COOKIES: "COOKIES", // Cookie 政策(V4.0 GDPR)
 } as const;
 export type AgreementType = (typeof AGREEMENT_TYPE)[keyof typeof AGREEMENT_TYPE];
 export const agreementTypeSchema = z.nativeEnum(AGREEMENT_TYPE);

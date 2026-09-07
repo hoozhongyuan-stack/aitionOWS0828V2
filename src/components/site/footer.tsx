@@ -16,7 +16,7 @@ export function SiteFooter({
 }: {
   brand: BrandConfig;
   locale: string;
-  labels: { register: string; privacy: string; contact: string };
+  labels: { register: string; privacy: string; cookies: string; contact: string };
 }) {
   return (
     <footer className="border-t bg-muted/30">
@@ -44,6 +44,12 @@ export function SiteFooter({
             className="block text-muted-foreground hover:text-primary"
           >
             {labels.privacy}
+          </Link>
+                    <Link
+            href={`/${locale}/agreement/cookies`}
+            className="block text-muted-foreground hover:text-primary"
+          >
+            {labels.cookies}
           </Link>
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
