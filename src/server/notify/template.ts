@@ -336,9 +336,9 @@ export async function renderUgcPendingNotify(opts: UgcPendingNotifyOptions): Pro
 }
 
 // ============================================================
-// 订单邮件(V4.0):下单确认/收款确认/发货/取消。
-// 文案双语规则与密码重置一致(locale 以 zh 开头→中文,否则英文);
-// 渲染永远成功(配置读取失败兜底内置默认),发送失败静默(NFR-004)。
+// 订单邮件(V4.0;V4.0.1 双语化):下单确认/收款确认/发货/取消。
+// 排布:逐段中英对照(中文在上、英文紧随其下,\n 换行),收件人无论语言都能读懂;
+// 商品名/金额为下单数据本身,不做翻译。渲染永远成功(NFR-004),发送失败静默。
 // ============================================================
 
 export interface OrderEmailLine {
@@ -359,7 +359,7 @@ export interface OrderEmailOptions {
   grandTotalCents: number;
   /** 线下付款指引(商店设置;下单确认邮件展示) */
   paymentInfo?: string;
-  /** 发货/取消时的备注(物流单号/原因) */
+  /** 发货/取消时的备注(物流公司/编号/原因) */
   remark?: string;
   brand?: Partial<BrandConfig>;
   theme?: Pick<ThemeConfig, "primary">;
@@ -370,30 +370,30 @@ function money(cents: number, currency: string): string {
   return `${(cents / 100).toFixed(2)} ${currency}`;
 }
 
-function orderLinesZh(o: OrderEmailOptions): string {
+/** 金额汇总双语段(明细行自身无语言,表头式说明逐行对照) */
+function orderSummaryText(o: OrderEmailOptions): string {
   const rows = o.items.map((l) => `・${l.title} × ${l.qty} = ${money(l.priceCents * l.qty, o.currency)}`).join("\n");
-  return `${rows}\n商品合计:${money(o.itemsTotalCents, o.currency)}\n运费:${o.shippingCents > 0 ? money(o.shippingCents, o.currency) : "免运费"}\n应付总额:${money(o.grandTotalCents, o.currency)}`;
-}
-
-function orderLinesEn(o: OrderEmailOptions): string {
-  const rows = o.items.map((l) => `- ${l.title} x ${l.qty} = ${money(l.priceCents * l.qty, o.currency)}`).join("\n");
-  return `${rows}\nItems: ${money(o.itemsTotalCents, o.currency)}\nShipping: ${o.shippingCents > 0 ? money(o.shippingCents, o.currency) : "Free"}\nTotal: ${money(o.grandTotalCents, o.currency)}`;
+  return [
+    `${rows}`,
+    `商品合计 Items: ${money(o.itemsTotalCents, o.currency)}`,
+    `运费 Shipping: ${o.shippingCents > 0 ? money(o.shippingCents, o.currency) : "免运费 Free"}`,
+    `应付总额 Total: ${money(o.grandTotalCents, o.currency)}`,
+  ].join("\n");
 }
 
 /** 下单确认(含线下付款指引) */
 export async function renderOrderPlacedEmail(o: OrderEmailOptions): Promise<string> {
-  const zh = o.locale.toLowerCase().startsWith("zh");
   return renderBrandEmail({
-    heading: zh ? `订单已提交(${o.orderNo})` : `Order placed (${o.orderNo})`,
+    heading: `订单已提交 / Order placed(${o.orderNo})`,
     blocks: [
-      { type: "paragraph", text: zh ? `${o.customerName},您好!我们已收到您的订单:` : `Hi ${o.customerName}, we have received your order:` },
-      { type: "kvTable", rows: [{ k: zh ? "明细" : "Items", v: orderLinesZh(o) }] },
+      { type: "paragraph", text: `${o.customerName},您好!我们已收到您的订单:\nHi ${o.customerName}, we have received your order:` },
+      { type: "kvTable", rows: [{ k: "明细 Items", v: orderSummaryText(o) }] },
       ...(o.paymentInfo?.trim()
         ? [
-            { type: "highlight" as const, text: (zh ? "付款方式:\n" : "Payment:\n") + o.paymentInfo.trim() },
-            { type: "paragraph" as const, text: zh ? "完成转账后我们将在确认收款后通过邮件通知您。" : "We will email you once your payment is confirmed." },
+            { type: "highlight" as const, text: `付款方式 Payment:\n${o.paymentInfo.trim()}` },
+            { type: "paragraph" as const, text: "完成转账后,我们确认收款将通过邮件通知您。\nWe will email you once your payment is confirmed." },
           ]
-        : [{ type: "paragraph" as const, text: zh ? "我们会尽快与您联系确认付款事宜。" : "We will contact you shortly to arrange payment." }]),
+        : [{ type: "paragraph" as const, text: "我们会尽快与您联系确认付款事宜。\nWe will contact you shortly to arrange payment." }]),
     ],
     brand: o.brand,
     theme: o.theme,
@@ -403,12 +403,11 @@ export async function renderOrderPlacedEmail(o: OrderEmailOptions): Promise<stri
 
 /** 收款确认 */
 export async function renderOrderConfirmedEmail(o: OrderEmailOptions): Promise<string> {
-  const zh = o.locale.toLowerCase().startsWith("zh");
   return renderBrandEmail({
-    heading: zh ? `收款已确认(${o.orderNo})` : `Payment confirmed (${o.orderNo})`,
+    heading: `收款已确认 / Payment confirmed(${o.orderNo})`,
     blocks: [
-      { type: "paragraph", text: zh ? `${o.customerName},您好!您的订单已完成付款确认,我们正安排备货:` : `Hi ${o.customerName}, your payment has been confirmed and your order is being prepared:` },
-      { type: "kvTable", rows: [{ k: zh ? "明细" : "Items", v: orderLinesZh(o) }] },
+      { type: "paragraph", text: `${o.customerName},您好!您的订单已完成付款确认,我们正安排备货:\nHi ${o.customerName}, your payment has been confirmed and your order is being prepared:` },
+      { type: "kvTable", rows: [{ k: "明细 Items", v: orderSummaryText(o) }] },
     ],
     brand: o.brand,
     theme: o.theme,
@@ -418,13 +417,12 @@ export async function renderOrderConfirmedEmail(o: OrderEmailOptions): Promise<s
 
 /** 发货通知 */
 export async function renderOrderShippedEmail(o: OrderEmailOptions): Promise<string> {
-  const zh = o.locale.toLowerCase().startsWith("zh");
   return renderBrandEmail({
-    heading: zh ? `订单已发货(${o.orderNo})` : `Order shipped (${o.orderNo})`,
+    heading: `订单已发货 / Order shipped(${o.orderNo})`,
     blocks: [
-      { type: "paragraph", text: zh ? `${o.customerName},您好!您的订单已发出:` : `Hi ${o.customerName}, your order has been shipped:` },
-      { type: "kvTable", rows: [{ k: zh ? "明细" : "Items", v: orderLinesZh(o) }] },
-      ...(o.remark?.trim() ? [{ type: "highlight" as const, text: (zh ? "物流信息:" : "Tracking: ") + o.remark.trim() }] : []),
+      { type: "paragraph", text: `${o.customerName},您好!您的订单已发出:\nHi ${o.customerName}, your order has been shipped:` },
+      { type: "kvTable", rows: [{ k: "明细 Items", v: orderSummaryText(o) }] },
+      ...(o.remark?.trim() ? [{ type: "highlight" as const, text: `物流信息 Shipping:\n${o.remark.trim()}` }] : []),
     ],
     brand: o.brand,
     theme: o.theme,
@@ -434,13 +432,12 @@ export async function renderOrderShippedEmail(o: OrderEmailOptions): Promise<str
 
 /** 取消通知 */
 export async function renderOrderCancelledEmail(o: OrderEmailOptions): Promise<string> {
-  const zh = o.locale.toLowerCase().startsWith("zh");
   return renderBrandEmail({
-    heading: zh ? `订单已取消(${o.orderNo})` : `Order cancelled (${o.orderNo})`,
+    heading: `订单已取消 / Order cancelled(${o.orderNo})`,
     blocks: [
-      { type: "paragraph", text: zh ? `${o.customerName},您好!您的订单已取消:` : `Hi ${o.customerName}, your order has been cancelled:` },
-      { type: "kvTable", rows: [{ k: zh ? "明细" : "Items", v: orderLinesZh(o) }] },
-      ...(o.remark?.trim() ? [{ type: "paragraph" as const, text: (zh ? "原因:" : "Reason: ") + o.remark.trim() }] : []),
+      { type: "paragraph", text: `${o.customerName},您好!您的订单已取消:\nHi ${o.customerName}, your order has been cancelled:` },
+      { type: "kvTable", rows: [{ k: "明细 Items", v: orderSummaryText(o) }] },
+      ...(o.remark?.trim() ? [{ type: "paragraph" as const, text: `原因 / Reason: ${o.remark.trim()}` }] : []),
     ],
     brand: o.brand,
     theme: o.theme,

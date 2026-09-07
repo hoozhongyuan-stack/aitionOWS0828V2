@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Menu, X, Globe, User, LogOut, UserRound, ShoppingCart } from "lucide-react";
+import { Menu, X, Globe, LogOut, UserRound, ShoppingCart, ChevronDown } from "lucide-react";
 import { CartBadge } from "@/components/site/cart-badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -54,12 +54,14 @@ export function SiteHeader({
 }) {
   const [open, setOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   // 「个人中心」入口文案走 i18n 命名空间 account(layout 无需新增 props,向后兼容)
   const tAccount = useTranslations("account");
   const tShop = useTranslations("shop");
   const accountLabel = tAccount("menu");
+  const ordersLabel = tAccount("tabOrders");
 
   /** 切换语言:替换路径中的语言段,保持当前页面 */
   function localeHref(code: string): string {
@@ -121,13 +123,6 @@ export function SiteHeader({
         </nav>
 
         <div className="flex items-center gap-1">
-          {/* 购物车(V4.0):角标由 localStorage 购物车实时驱动 */}
-          <Button variant="ghost" size="sm" asChild aria-label="购物车" className="relative">
-            <Link href={`/${currentLocale}/cart`}>
-              <ShoppingCart className="h-4 w-4" />
-              <CartBadge />
-            </Link>
-          </Button>
           {/* 语言切换 */}
           {locales.length > 1 && (
             <div className="relative">
@@ -154,31 +149,71 @@ export function SiteHeader({
             </div>
           )}
 
-          {/* 登录态 */}
+          {/* 购物车(V4.0):语言之后;文字+图标+角标 */}
+          <Button variant="ghost" size="sm" asChild className="relative hidden md:inline-flex">
+            <Link href={`/${currentLocale}/cart`}>
+              <ShoppingCart className="h-4 w-4" />
+              <span className="hidden lg:inline">{tShop("cart")}</span>
+              <CartBadge />
+            </Link>
+          </Button>
+
+          {/* 登录态(V4.0.1):用户菜单——头像+用户名一键入口,下拉含订单/投稿/退出 */}
           {user ? (
-            <div className="hidden items-center gap-1 md:flex">
-              <span className="flex items-center gap-1 px-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
-                {user.name}
-              </span>
-              <Link
-                href={`/${currentLocale}/account`}
-                className="flex items-center gap-1 rounded-md px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+            <div className="relative hidden md:block">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-1.5 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent"
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
               >
                 <UserRound className="h-4 w-4" />
-                {accountLabel}
-              </Link>
-              {showSubmissions && (
-                <Link
-                  href={`/${currentLocale}/submissions`}
-                  className="rounded-md px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                >
-                  {mySubmissionsLabel}
-                </Link>
+                <span className="max-w-24 truncate">{user.name}</span>
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", userMenuOpen && "rotate-180")} />
+              </button>
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} aria-hidden />
+                  <div className="absolute right-0 top-full z-50 mt-1 min-w-40 rounded-md border bg-popover p-1 shadow-md">
+                    <Link
+                      href={`/${currentLocale}/account`}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block rounded px-3 py-2 text-sm hover:bg-accent"
+                    >
+                      {accountLabel}
+                    </Link>
+                    <Link
+                      href={`/${currentLocale}/account?tab=orders`}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block rounded px-3 py-2 text-sm hover:bg-accent"
+                    >
+                      {ordersLabel}
+                    </Link>
+                    {showSubmissions && (
+                      <Link
+                        href={`/${currentLocale}/submissions`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block rounded px-3 py-2 text-sm hover:bg-accent"
+                      >
+                        {mySubmissionsLabel}
+                      </Link>
+                    )}
+                    <div className="my-1 border-t" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-muted-foreground hover:bg-accent"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {logoutLabel}
+                    </button>
+                  </div>
+                </>
               )}
-              <Button variant="ghost" size="sm" onClick={logout} aria-label={logoutLabel}>
-                <LogOut className="h-4 w-4" />
-              </Button>
             </div>
           ) : (
             <Button asChild size="sm" className="hidden md:inline-flex">
@@ -237,6 +272,13 @@ export function SiteHeader({
                 >
                   <UserRound className="h-4 w-4" />
                   {accountLabel}
+                </Link>
+                <Link
+                  href={`/${currentLocale}/account?tab=orders`}
+                  onClick={() => setOpen(false)}
+                  className="block rounded px-2 py-2.5 text-sm hover:bg-accent"
+                >
+                  {ordersLabel}
                 </Link>
                 {showSubmissions && (
                   <Link
