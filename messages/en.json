@@ -122,7 +122,24 @@
     "favoritedAt": "Favorited on",
     "typeArticle": "Article",
     "typeProduct": "Product",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "tabOrders": "My Orders",
+    "ordersEmpty": "No orders yet.",
+    "orderNo": "Order No.",
+    "orderStatus": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "SHIPPED": "Shipped",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "orderItems": "Items",
+    "orderShipping": "Shipping",
+    "orderTotal": "Total",
+    "orderTime": "Placed at",
+    "orderCarrier": "Carrier",
+    "orderTracking": "Tracking No.",
+    "orderRemark": "Remark"
   },
   "shop": {
     "cart": "Cart",

@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { Bookmark, FileText } from "lucide-react";
+import { Bookmark, FileText, ReceiptText } from "lucide-react";
 import { getActiveUserSession } from "@/lib/auth/session";
 import { listMyFavorites, listMySubmissions } from "@/server/ugc";
+import { listOrdersByUser } from "@/server/order";
+import { formatMoney } from "@/lib/utils";
 import { resolveContentDetailPath } from "@/server/content";
 import { cn, safeDateLocale } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -46,12 +48,14 @@ export default async function AccountPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const tab = parseAccountTab(sp.tab);
 
-  const [t, tSubmission, favorites, submissions] = await Promise.all([
+  const [t, tSubmission, tShop, favorites, submissions, myOrders] = await Promise.all([
     getTranslations("account"),
     getTranslations("submission"),
+    getTranslations("shop"),
     listMyFavorites(user.id, locale),
-    // 投稿视图才需要投稿数据(收藏视图零开销)
+    // 投稿/订单视图才需要对应数据(其余视图零开销)
     tab === "submissions" ? listMySubmissions(user.id) : Promise.resolve([]),
+    tab === "orders" ? listOrdersByUser(user.id) : Promise.resolve([]),
   ]);
 
   const statusBadge = (s: string) => {
@@ -60,9 +64,10 @@ export default async function AccountPage({ params, searchParams }: Props) {
     return <Badge variant="outline">{tSubmission("statusPending")}</Badge>;
   };
 
-  const tabs: { key: "favorites" | "submissions"; href: string; label: string; icon: React.ReactNode }[] = [
+  const tabs: { key: "favorites" | "submissions" | "orders"; href: string; label: string; icon: React.ReactNode }[] = [
     { key: "favorites", href: `/${locale}/account`, label: t("tabFavorites"), icon: <Bookmark className="h-4 w-4" /> },
     { key: "submissions", href: `/${locale}/account?tab=submissions`, label: t("tabSubmissions"), icon: <FileText className="h-4 w-4" /> },
+    { key: "orders", href: `/${locale}/account?tab=orders`, label: t("tabOrders"), icon: <ReceiptText className="h-4 w-4" /> },
   ];
 
   return (
@@ -92,7 +97,86 @@ export default async function AccountPage({ params, searchParams }: Props) {
         ))}
       </nav>
 
-      {tab === "favorites" ? (
+      {tab === "orders" ? (
+        myOrders.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-12 text-center text-sm text-muted-foreground">
+            {t("ordersEmpty")}
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {myOrders.map((o) => {
+              const statusLabel = t(`orderStatus.${o.status}`);
+              const shipped = o.status === "SHIPPED" || o.status === "COMPLETED";
+              return (
+                <li key={o.id} className="rounded-lg border p-4">
+                  <details>
+                    <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-medium">{o.no}</span>
+                          <Badge variant={o.status === "COMPLETED" ? "default" : "outline"}>{statusLabel}</Badge>
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {t("orderTime")}
+                          {new Date(o.createdAt).toLocaleString(safeDateLocale(locale))}
+                        </div>
+                      </div>
+                      <span className="font-heading text-lg font-bold">
+                        {formatMoney(o.grandTotalCents, o.currency, locale)}
+                      </span>
+                    </summary>
+                    <div className="mt-4 space-y-3 border-t pt-3 text-sm">
+                      <div>
+                        <p className="mb-1 font-medium">{t("orderItems")}</p>
+                        <ul className="space-y-1 text-muted-foreground">
+                          {o.items.map((i) => (
+                            <li key={i.id} className="flex justify-between gap-2">
+                              <span>
+                                {i.titleSnapshot} × {i.qty}
+                              </span>
+                              <span>{formatMoney(i.priceCentsSnapshot * i.qty, i.currency, locale)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-2 text-right">
+                          {t("orderTotal")}:
+                          <span className="font-semibold text-foreground">
+                            {formatMoney(o.grandTotalCents, o.currency, locale)}
+                          </span>
+                          {o.shippingCents > 0 && (
+                            <span className="ml-2 text-xs">
+                              ({t("shipping")} {formatMoney(o.shippingCents, o.currency, locale)})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {/* 物流信息(V4.0.1):发货后展示,后台/前台同源 */}
+                      {shipped && (o.shippingCarrier || o.trackingNumber || o.adminNote) && (
+                        <div className="rounded-md bg-muted p-3">
+                          <p className="mb-1 font-medium">{t("orderShipping")}</p>
+                          <p className="text-muted-foreground">
+                            {o.shippingCarrier && (
+                              <span>
+                                {t("orderCarrier")}:{o.shippingCarrier}{" "}
+                              </span>
+                            )}
+                            {o.trackingNumber && (
+                              <span>
+                                {t("orderTracking")}:{o.trackingNumber}{" "}
+                              </span>
+                            )}
+                            {o.adminNote && <span>({o.adminNote})</span>}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
+        )
+      ) : tab === "favorites" ? (
         favorites.length === 0 ? (
           <div className="rounded-lg border border-dashed p-12 text-center text-sm text-muted-foreground">
             {t("emptyFavorites")}

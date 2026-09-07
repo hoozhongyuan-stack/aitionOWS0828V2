@@ -76,6 +76,8 @@ export interface OrderView {
   shippingCents: number;
   grandTotalCents: number;
   adminNote: string | null;
+  shippingCarrier: string | null;
+  trackingNumber: string | null;
   createdAt: Date;
   confirmedAt: Date | null;
   shippedAt: Date | null;
@@ -211,6 +213,9 @@ export async function getOrderByNoAndEmail(no: string, email: string): Promise<O
 export interface AdminOrderQuery {
   status?: string;
   q?: string;
+  /** 下单时间区间(ISO 日期 YYYY-MM-DD,含端点;from/to 成对可单边) */
+  from?: string;
+  to?: string;
   page?: number;
   pageSize?: number;
 }
@@ -222,6 +227,10 @@ export async function listOrdersAdmin(q: AdminOrderQuery) {
   if (q.status && Object.values(ORDER_STATUS).includes(q.status as OrderStatus)) where.status = q.status;
   const kw = q.q?.trim();
   if (kw) where.OR = [{ no: { contains: kw } }, { email: { contains: kw } }, { name: { contains: kw } }];
+  const createdAt: Record<string, Date> = {};
+  if (q.from && /^\d{4}-\d{2}-\d{2}$/.test(q.from)) createdAt.gte = new Date(`${q.from}T00:00:00`);
+  if (q.to && /^\d{4}-\d{2}-\d{2}$/.test(q.to)) createdAt.lte = new Date(`${q.to}T23:59:59.999`);
+  if (Object.keys(createdAt).length) where.createdAt = createdAt;
   const [total, items] = await Promise.all([
     prisma.order.count({ where }),
     prisma.order.findMany({
@@ -240,6 +249,16 @@ export async function getOrderAdmin(id: number): Promise<OrderView | null> {
   return order ? (order as OrderView) : null;
 }
 
+/** 我的订单(前台个人中心):登录账号名下订单,含明细与物流;时间倒序 */
+export async function listOrdersByUser(userId: number): Promise<OrderView[]> {
+  const orders = await prisma.order.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { items: true },
+  });
+  return orders as OrderView[];
+}
+
 export type OrderAction = "confirm" | "ship" | "complete" | "cancel";
 
 /**
@@ -249,7 +268,7 @@ export type OrderAction = "confirm" | "ship" | "complete" | "cancel";
 export async function transitionOrder(
   id: number,
   action: OrderAction,
-  opts: { adminNote?: string; locale?: string } = {}
+  opts: { adminNote?: string; locale?: string; shippingCarrier?: string; trackingNumber?: string } = {}
 ): Promise<OrderView> {
   const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
   if (!order) throw new Error("订单不存在");
@@ -269,6 +288,13 @@ export async function transitionOrder(
       status: next.to,
       [next.at]: new Date(),
       ...(opts.adminNote?.trim() ? { adminNote: opts.adminNote.trim().slice(0, 500) } : {}),
+      // 物流信息(V4.0.1):仅发货时登记;非必填
+      ...(action === "ship"
+        ? {
+            shippingCarrier: opts.shippingCarrier?.trim().slice(0, 80) || null,
+            trackingNumber: opts.trackingNumber?.trim().slice(0, 80) || null,
+          }
+        : {}),
     },
     include: { items: true },
   });
@@ -285,7 +311,12 @@ export async function transitionOrder(
         itemsTotalCents: updated.itemsTotalCents,
         shippingCents: updated.shippingCents,
         grandTotalCents: updated.grandTotalCents,
-        remark: opts.adminNote,
+        remark:
+          action === "ship"
+            ? [opts.shippingCarrier && `物流公司:${opts.shippingCarrier.trim()}`, opts.trackingNumber && `物流编号:${opts.trackingNumber.trim()}`, opts.adminNote && `备注:${opts.adminNote.trim()}`]
+                .filter(Boolean)
+                .join(" / ")
+            : opts.adminNote,
       };
       let html: string | null = null;
       let subject = "";

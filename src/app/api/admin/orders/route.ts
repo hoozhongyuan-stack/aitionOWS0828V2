@@ -23,6 +23,8 @@ export async function GET(req: Request) {
     await listOrdersAdmin({
       status: sp.get("status") ?? undefined,
       q: sp.get("q") ?? undefined,
+      from: sp.get("from") ?? undefined,
+      to: sp.get("to") ?? undefined,
       page: Number(sp.get("page")) || 1,
       pageSize: Number(sp.get("pageSize")) || 20,
     })
@@ -33,6 +35,8 @@ const actionSchema = z.object({
   id: z.number().int().positive(),
   action: z.enum(["confirm", "ship", "complete", "cancel"]),
   adminNote: z.string().max(500).optional(),
+  shippingCarrier: z.string().max(80).optional(), // V4.0.1 发货物流(非必填)
+  trackingNumber: z.string().max(80).optional(),
 });
 
 export async function POST(req: Request) {
@@ -43,6 +47,8 @@ export async function POST(req: Request) {
   try {
     const order = await transitionOrder(parsed.data.id, parsed.data.action as OrderAction, {
       adminNote: parsed.data.adminNote,
+      shippingCarrier: parsed.data.shippingCarrier,
+      trackingNumber: parsed.data.trackingNumber,
     });
     return jsonOk(order);
   } catch (e) {

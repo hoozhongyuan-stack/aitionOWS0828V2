@@ -47,12 +47,12 @@ export function applyFavoriteOptimism(state: FavoriteUiState): FavoriteUiState {
   };
 }
 
-export type AccountTab = "favorites" | "submissions";
+export type AccountTab = "favorites" | "submissions" | "orders";
 
 /** 个人中心 Tab 解析(Next searchParams):仅 "submissions" 进投稿视图,其余一律收藏 */
 export function parseAccountTab(raw: string | string[] | undefined): AccountTab {
   const v = Array.isArray(raw) ? raw[0] : raw;
-  return v === "submissions" ? "submissions" : "favorites";
+  return v === "submissions" || v === "orders" ? v : "favorites";
 }
 
 /** 旧入口 /submissions 的兼容跳转目标(REQ-008 / AC-009) */

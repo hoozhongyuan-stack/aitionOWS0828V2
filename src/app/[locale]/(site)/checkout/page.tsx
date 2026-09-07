@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, useState } from "react";
+import { useSyncExternalStore, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -33,6 +33,22 @@ export default function CheckoutPage() {
     zip: "",
     note: "",
   });
+
+  // 登录用户预填邮箱/姓名(V4.0.1),可修改
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok && d.data) {
+          setForm((f) => ({
+            ...f,
+            email: f.email || d.data.email || "",
+            name: f.name || d.data.name || "",
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const total = lines.reduce((n, l) => n + l.priceCents * l.qty, 0);
   const currency = lines[0]?.currency ?? "USD";

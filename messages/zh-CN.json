@@ -122,7 +122,24 @@
     "favoritedAt": "收藏于",
     "typeArticle": "文章",
     "typeProduct": "商品",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "tabOrders": "我的订单",
+    "ordersEmpty": "还没有订单,去逛逛吧",
+    "orderNo": "订单号",
+    "orderStatus": {
+      "PENDING": "待确认",
+      "CONFIRMED": "已确认收款",
+      "SHIPPED": "已发货",
+      "COMPLETED": "已完成",
+      "CANCELLED": "已取消"
+    },
+    "orderItems": "商品明细",
+    "orderShipping": "物流信息",
+    "orderTotal": "应付总额",
+    "orderTime": "下单时间",
+    "orderCarrier": "物流公司",
+    "orderTracking": "物流编号",
+    "orderRemark": "备注"
   },
   "shop": {
     "cart": "购物车",

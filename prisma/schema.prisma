@@ -220,7 +220,9 @@ model Order {
   itemsTotalCents Int // 商品小计(快照重算)
   shippingCents   Int       @default(0) // 运费(站点级设置:固定运费/免邮门槛)
   grandTotalCents Int // 应付总额
-  adminNote       String? // 管理员备注(物流单号/内部记录)
+  adminNote       String? // 管理员备注(发货备注/取消原因/内部记录)
+  shippingCarrier  String? // 物流公司(V4.0.1,发货时登记,非必填)
+  trackingNumber   String? // 物流编号(V4.0.1,发货时登记,非必填)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   confirmedAt     DateTime?
