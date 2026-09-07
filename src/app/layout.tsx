@@ -26,7 +26,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const lang = localeFromPath(h.get("x-geo-path"));
 
   return (
-    <html lang={lang} suppressHydrationWarning data-theme={theme.preset === "aurora" ? "aurora" : undefined}>
+    <html lang={lang} suppressHydrationWarning data-theme={theme.preset === "aurora" || theme.preset === "harvest" ? theme.preset : undefined}>
       <head>
         {/* 运行时主题变量:覆盖 globals.css 默认值 */}
         <style id="theme-vars" dangerouslySetInnerHTML={{ __html: buildThemeCss(theme) }} />

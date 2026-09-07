@@ -41,6 +41,7 @@ const TRANSITIONS: Record<string, { to: string; at: string }[]> = {
   SHIPPED: [
     { to: "COMPLETED", at: "completedAt" },
     { to: "CANCELLED", at: "cancelledAt" },
+    { to: "REFUNDED", at: "refundedAt" },
   ],
   // 已支付订单(CONFIRMED/SHIPPED/COMPLETED)可经售后审核流转为已退款(V4.2)
   COMPLETED: [{ to: "REFUNDED", at: "refundedAt" }],
@@ -440,12 +441,19 @@ export async function reviewRefund(input: {
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("请填写退款金额");
   if (amount > order.grandTotalCents) throw new Error("退款金额不能超过订单实付金额");
 
-  await prisma.orderRefund.update({
-    where: { id: input.refundId },
-    data: { status: "APPROVED", refundAmountCents: amount, adminNote: input.adminNote?.trim().slice(0, 500) || null, reviewedAt: new Date() },
-  });
-  // 订单流转 REFUNDED(转换表校验;已终态(CANCELLED 等)会抛错)
-  await transitionOrder(order.id, "refund", { adminNote: `售后退款 ${(amount / 100).toFixed(2)} ${order.currency}` });
+  // 售后通过:转换校验+refund/order 双写同事务(防部分成功导致状态不一致)
+  const next = TRANSITIONS[order.status]?.find((t) => t.to === "REFUNDED");
+  if (!next) throw new Error(`当前状态(${order.status})不允许退款`);
+  await prisma.$transaction([
+    prisma.orderRefund.update({
+      where: { id: input.refundId },
+      data: { status: "APPROVED", refundAmountCents: amount, adminNote: input.adminNote?.trim().slice(0, 500) || null, reviewedAt: new Date() },
+    }),
+    prisma.order.update({
+      where: { id: order.id },
+      data: { status: "REFUNDED", [next.at]: new Date(), adminNote: `售后退款 ${(amount / 100).toFixed(2)} ${order.currency}` },
+    }),
+  ]);
   void (async () => {
     try {
       const html = await renderOrderRefundEmail({

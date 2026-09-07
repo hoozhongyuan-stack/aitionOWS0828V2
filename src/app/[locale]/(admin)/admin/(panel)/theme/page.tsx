@@ -62,6 +62,19 @@ const THEME_PRESETS: Record<string, { label: string; desc: string; values: Omit<
       radius: "1rem",
     },
   },
+  harvest: {
+    label: "禾野",
+    desc: "农业审美·麦绿丰收金·暖米白纸纹·衬线标题·自然生长动效,农产品/食品站推荐",
+    values: {
+      preset: "harvest",
+      primary: "#4a7c43",
+      secondary: "#f0ead8",
+      background: "#faf7f0",
+      foreground: "#2c3327",
+      mutedTextColor: "#8b6f4e",
+      radius: "1.1rem",
+    },
+  },
 };
 
 const FONT_PRESETS = [

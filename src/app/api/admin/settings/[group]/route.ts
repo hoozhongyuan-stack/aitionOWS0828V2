@@ -61,7 +61,7 @@ const themeSchema = z
     logoHeight: z.string().regex(PX).max(10),
     navFontSize: z.string().regex(PX).max(10),
     navBold: z.boolean(),
-    preset: z.enum(["classic", "aurora"]), // V3.1.1 主题风格包
+    preset: z.enum(["classic", "aurora", "harvest"]), // V3.1.1 主题风格包;V4.3 +禾野
   })
   .partial()
   .passthrough(); // passthrough:保留未知键入库;CSS 注入面只消费上面已校验的字段

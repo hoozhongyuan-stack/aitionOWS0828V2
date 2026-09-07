@@ -22,7 +22,7 @@ export interface ThemeConfig {
   logoHeight: string; // 页头 LOGO 高度(如 40px)
   navFontSize: string; // 顶部导航字号(如 15px)
   navBold: boolean; // 顶部导航是否加粗
-  preset: string; // 主题风格包(V3.1.1):classic=经典(默认) | aurora=极光(深色炫酷)
+  preset: string; // 主题风格包:classic=经典(默认) | aurora=极光(深色炫酷) | harvest=禾野(农业暖色,V4.3)
 }
 const THEME_DEFAULTS: ThemeConfig = {
   primary: "#0f172a",

@@ -325,3 +325,189 @@
     transform: none !important;
   }
 }
+
+/* ============================================================
+   V4.3 第三主题包「禾野 · Harvest」——农业审美(方向 A 沃野丰收)
+   麦绿 + 麦穗金 + 暖米白;暖纸纹理/阳光光斑/麦穗装饰/衬线标题/自然生长动效。
+   颜色变量仍由后台调色板注入(选择卡已预填禾野推荐色);本段只做结构性覆盖
+   与风格效果,组件代码零侵入。prefers-reduced-motion 用户自动降级。
+   ============================================================ */
+
+[data-theme="harvest"] {
+  color-scheme: light;
+  /* 主题私有变量(非调色板):丰收金强调/暖边框/纸纹 */
+  --harvest-gold: #d9a441;
+  --harvest-gold-soft: rgba(217, 164, 65, 0.16);
+  --harvest-border: #e8e0d0;
+  --harvest-card: #fffdf8;
+}
+
+/* —— 基底:暖米白 + 极淡编织纸纹 + 阳光光斑固定层 —— */
+[data-theme="harvest"] body {
+  background-color: #faf7f0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(139, 111, 78, 0.025) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(139, 111, 78, 0.02) 0 1px, transparent 1px 3px),
+    radial-gradient(52rem 36rem at 88% -8%, rgba(217, 164, 65, 0.14), transparent 62%),
+    radial-gradient(40rem 30rem at -10% 12%, rgba(74, 124, 67, 0.08), transparent 60%);
+  background-attachment: fixed;
+  color: #2c3327;
+  min-height: 100vh;
+}
+
+/* —— 卡片:暖白大圆角 + 暖边框 + hover 柔和上浮(无发光) —— */
+[data-theme="harvest"] .bg-card,
+[data-theme="harvest"] [data-slot="card"] {
+  background: var(--harvest-card);
+  border: 1px solid var(--harvest-border);
+  border-radius: 1.1rem;
+  box-shadow: 0 2px 10px rgba(139, 111, 78, 0.07);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+[data-theme="harvest"] .bg-card:hover,
+[data-theme="harvest"] [data-slot="card"]:hover {
+  transform: translateY(-4px);
+  border-color: rgba(74, 124, 67, 0.4);
+  box-shadow: 0 10px 28px rgba(139, 111, 78, 0.14);
+}
+
+/* —— 按钮:麦绿填充 + hover 深化上浮;价格/强调元素丰收金 —— */
+[data-theme="harvest"] button[class*="bg-primary"],
+[data-theme="harvest"] a[class*="bg-primary"] {
+  background-color: #4a7c43;
+  transition: background-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+[data-theme="harvest"] button[class*="bg-primary"]:hover:not(:disabled),
+[data-theme="harvest"] a[class*="bg-primary"]:hover {
+  background-color: #3d6b35;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(74, 124, 67, 0.28);
+}
+
+/* —— 标题:衬线人文感 + 墨绿;区块标题前麦穗装饰 —— */
+[data-theme="harvest"] h1,
+[data-theme="harvest"] h2 {
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+  color: #2c3327;
+}
+[data-theme="harvest"] h2::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5rem;
+  vertical-align: -3px;
+  opacity: 0.5;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a7c43' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 22V8'/%3E%3Cpath d='M12 8c0-3 2-5 4-5-1 3-2 4-4 5z'/%3E%3Cpath d='M12 12c0-3-2-5-4-5 1 3 2 4 4 5z'/%3E%3Cpath d='M12 16c0-3 2-5 4-5-1 3-2 4-4 5z'/%3E%3Cpath d='M12 20c0-3-2-5-4-5 1 3 2 4 4 5z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  animation: harvest-sway 4.5s ease-in-out infinite alternate;
+  transform-origin: bottom center;
+}
+@keyframes harvest-sway {
+  from { transform: rotate(-4deg); }
+  to { transform: rotate(5deg); }
+}
+
+/* —— Hero 区:清晨阳光光斑缓漂(柔和不霓虹) —— */
+[data-theme="harvest"] .aurora-hero {
+  position: relative;
+  overflow: hidden;
+}
+[data-theme="harvest"] .aurora-hero::before,
+[data-theme="harvest"] .aurora-hero::after {
+  content: "";
+  position: absolute;
+  width: 48vw;
+  height: 48vw;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.42;
+  pointer-events: none;
+  will-change: transform;
+}
+[data-theme="harvest"] .aurora-hero::before {
+  background: radial-gradient(circle, rgba(217, 164, 65, 0.4), transparent 62%);
+  top: -22%;
+  left: -12%;
+  animation: harvest-drift-a 30s ease-in-out infinite alternate;
+}
+[data-theme="harvest"] .aurora-hero::after {
+  background: radial-gradient(circle, rgba(74, 124, 67, 0.28), transparent 62%);
+  bottom: -28%;
+  right: -14%;
+  animation: harvest-drift-b 36s ease-in-out infinite alternate;
+}
+[data-theme="harvest"] .aurora-hero .aurora-parallax {
+  position: relative;
+  z-index: 1;
+}
+@keyframes harvest-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(6vw, 4vh, 0) scale(1.1); }
+}
+@keyframes harvest-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.08); }
+  to { transform: translate3d(-5vw, -4vh, 0) scale(0.96); }
+}
+
+/* —— 入场编排:生长式淡入上移(曲线更柔) —— */
+[data-theme="harvest"] .aurora-rise {
+  animation: harvest-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-theme="harvest"] .aurora-rise:nth-child(2),
+[data-theme="harvest"] .aurora-rise.aurora-delay-1 { animation-delay: 0.1s; }
+[data-theme="harvest"] .aurora-rise:nth-child(3),
+[data-theme="harvest"] .aurora-rise.aurora-delay-2 { animation-delay: 0.2s; }
+[data-theme="harvest"] .aurora-rise.aurora-delay-3 { animation-delay: 0.3s; }
+@keyframes harvest-rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* —— 滚动显现(复用 Reveal 组件;harvest 用同结构柔和曲线) —— */
+[data-theme="harvest"] .aurora-reveal {
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* —— 页头/页脚:暖纸融合 —— */
+[data-theme="harvest"] header {
+  background: rgba(250, 247, 240, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--harvest-border);
+}
+[data-theme="harvest"] footer {
+  border-top: 1px solid var(--harvest-border);
+  background: rgba(240, 234, 216, 0.6);
+}
+
+/* —— 表单控件:暖白融合 —— */
+[data-theme="harvest"] input,
+[data-theme="harvest"] textarea,
+[data-theme="harvest"] select {
+  background: #fffdf8;
+  color: #2c3327;
+  border-color: var(--harvest-border);
+}
+[data-theme="harvest"] input::placeholder,
+[data-theme="harvest"] textarea::placeholder {
+  color: #a89880;
+}
+
+/* —— 价格与强调:丰收金加粗(商品卡/结算合计等 font-bold 强调处不额外干预,仅强调色倾向) —— */
+[data-theme="harvest"] .text-primary {
+  color: #4a7c43;
+}
+
+/* —— 降级:偏好减弱动效的用户直接呈现终态 —— */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="harvest"] .aurora-hero::before,
+  [data-theme="harvest"] .aurora-hero::after,
+  [data-theme="harvest"] .aurora-rise,
+  [data-theme="harvest"] h2::before,
+  .aurora-reveal {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
