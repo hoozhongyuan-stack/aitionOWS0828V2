@@ -24,6 +24,7 @@ export async function GET(req: Request) {
   return jsonOk(
     await listUsersAdmin({
       page: Number(sp.get("page")) || 1,
+      pageSize: Number(sp.get("pageSize")) || 10,
       keyword: sp.get("keyword") || undefined,
       q: sp.get("q") || undefined,
     })

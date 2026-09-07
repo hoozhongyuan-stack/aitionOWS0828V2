@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     await listCommentsAdmin(
       sp.get("status") || undefined,
       Number(sp.get("page")) || 1,
-      20,
+      Number(sp.get("pageSize")) || 10,
       sp.get("dateFrom") || undefined,
       sp.get("dateTo") || undefined
     )

@@ -1,16 +1,17 @@
 import { z } from "zod";
 import { jsonOk, jsonErr, parseBody } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth/session";
-import { AGREEMENT_TYPE } from "@/types/domain";
+import { agreementTypeSchema } from "@/types/domain";
 import { getAgreementExact, saveAgreement } from "@/server/agreement";
 
 /**
  * 用户协议管理:GET/PUT /api/admin/agreements
- * 类型:REGISTER(注册协议)/ PRIVACY(隐私政策),按语言存富文本。
+ * 类型:REGISTER/PRIVACY/COOKIES(V4.0.2 起),按语言存富文本。
+ * 校验用 agreementTypeSchema(nativeEnum,与前端下拉自动同步,新增类型不再漏改此处)。
  */
 
 const putSchema = z.object({
-  type: z.enum([AGREEMENT_TYPE.REGISTER, AGREEMENT_TYPE.PRIVACY]),
+  type: agreementTypeSchema,
   locale: z.string().min(2),
   title: z.string().min(1, "请输入协议标题"),
   body: z.string(),

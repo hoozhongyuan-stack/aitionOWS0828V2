@@ -84,6 +84,10 @@ export interface OrderView {
   completedAt: Date | null;
   cancelledAt: Date | null;
   items: { id: number; contentId: number; titleSnapshot: string; priceCentsSnapshot: number; currency: string; qty: number; spu: string | null; coverUrl: string | null }[];
+  /** 下单账号(V4.0.2):登录用户名下信息;游客单为 null */
+  accountName?: string | null;
+  accountEmail?: string | null;
+  account?: { name: string | null; email: string | null; createdAt: Date } | null;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -243,12 +247,38 @@ export async function listOrdersAdmin(q: AdminOrderQuery) {
       include: { items: true },
     }),
   ]);
-  return { total, page, pageSize, items };
+  // 下单账号信息(V4.0.2):收件人可能≠登录账号,列表双行展示
+  const userIds = [...new Set(items.map((o) => o.userId).filter((v): v is number => v != null))];
+  const users = userIds.length
+    ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, nickname: true, email: true } })
+    : [];
+  const userMap = new Map(users.map((u) => [u.id, u]));
+  return {
+    total,
+    page,
+    pageSize,
+    items: items.map((o) => ({
+      ...o,
+      accountName: (o.userId && userMap.get(o.userId)?.nickname) || null,
+      accountEmail: (o.userId && userMap.get(o.userId)?.email) || null,
+    })),
+  };
 }
 
 export async function getOrderAdmin(id: number): Promise<OrderView | null> {
   const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
-  return order ? (order as OrderView) : null;
+  if (!order) return null;
+  // 下单账号信息(V4.0.2):详情页独立区块展示
+  const account = order.userId
+    ? await prisma.user.findUnique({
+        where: { id: order.userId },
+        select: { nickname: true, email: true, createdAt: true },
+      })
+    : null;
+  return {
+    ...(order as OrderView),
+    account: account ? { name: account.nickname, email: account.email, createdAt: account.createdAt } : null,
+  };
 }
 
 /** 我的订单(前台个人中心):登录账号名下订单,含明细与物流;时间倒序 */

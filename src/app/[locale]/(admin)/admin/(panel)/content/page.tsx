@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiGet, apiDelete } from "@/components/admin/api-client";
+import { TablePagination } from "@/components/admin/table-pagination";
 import { routing } from "@/i18n/routing";
 
 /** 后台列表显示:优先站点默认语言,缺失回退首条翻译 */
@@ -74,11 +75,13 @@ export default function ContentAdminPage() {
     dateFrom: "",
     dateTo: "",
     page: 1,
+    pageSize: 10, // V4.0.2:默认 10,可 50/100
   });
 
   const load = useCallback(() => {
     const q = new URLSearchParams();
     q.set("page", String(filter.page));
+    q.set("pageSize", String(filter.pageSize));
     if (filter.categoryId) q.set("categoryId", filter.categoryId);
     if (filter.status) q.set("status", filter.status);
     if (filter.keyword) q.set("keyword", filter.keyword);
@@ -263,6 +266,14 @@ export default function ContentAdminPage() {
           </Button>
         </div>
       )}
+          <TablePagination
+        total={data?.total ?? 0}
+        page={filter.page}
+        pageSize={filter.pageSize}
+        onPage={(p) => setFilter({ ...filter, page: p })}
+        onPageSize={(n) => setFilter({ ...filter, pageSize: n, page: 1 })}
+      />
     </div>
   );
 }
+

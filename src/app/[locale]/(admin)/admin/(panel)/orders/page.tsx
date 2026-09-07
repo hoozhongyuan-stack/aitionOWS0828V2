@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiGet } from "@/components/admin/api-client";
+import { TablePagination } from "@/components/admin/table-pagination";
 import { formatMoney } from "@/lib/utils";
 
 /**
@@ -14,6 +15,8 @@ import { formatMoney } from "@/lib/utils";
  * 详情移至独立页 /admin/orders/[id](含操作与物流表单)。
  */
 interface OrderRow {
+  accountName?: string | null;
+  accountEmail?: string | null;
   id: number;
   no: string;
   status: string;
@@ -48,11 +51,12 @@ export default function OrdersPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // V4.0.2:默认 10,可 50/100
   const [data, setData] = useState<{ total: number; page: number; pageSize: number; items: OrderRow[] } | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ page: String(page), pageSize: "20" });
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (status) params.set("status", status);
       if (q.trim()) params.set("q", q.trim());
       if (from) params.set("from", from);
@@ -64,7 +68,7 @@ export default function OrdersPage() {
     } catch {
       toast.error("订单加载失败");
     }
-  }, [status, q, from, to, page]);
+  }, [status, q, from, to, page, pageSize]);
 
   useEffect(() => {
     load();
@@ -143,8 +147,11 @@ export default function OrdersPage() {
                 <tr key={o.id} className="border-b">
                   <td className="py-2.5 font-mono text-xs">{o.no}</td>
                   <td className="py-2.5">
-                    {o.name}
-                    <span className="ml-2 text-xs text-muted-foreground">{o.email}</span>
+                    <div className="font-medium">{o.name}</div>
+                    <div className="text-xs text-muted-foreground">{o.email}</div>
+                    <div className="text-xs text-muted-foreground/70">
+                      {o.accountName ? `下单账号: ${o.accountName}` : "游客下单"}
+                    </div>
                   </td>
                   <td className="py-2.5 font-medium">{formatMoney(o.grandTotalCents, o.currency, "zh-CN")}</td>
                   <td className="py-2.5">
@@ -169,17 +176,18 @@ export default function OrdersPage() {
               )}
             </tbody>
           </table>
-          {data && data.total > data.pageSize && (
-            <div className="mt-4 flex items-center justify-end gap-2 text-sm">
-              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                上一页
-              </Button>
-              <span className="text-muted-foreground">
-                第 {page} 页 / 共 {Math.ceil(data.total / data.pageSize)} 页({data.total} 单)
-              </span>
-              <Button size="sm" variant="outline" disabled={page * data.pageSize >= data.total} onClick={() => setPage(page + 1)}>
-                下一页
-              </Button>
+          {data && (
+            <div className="mt-4">
+              <TablePagination
+                total={data.total}
+                page={page}
+                pageSize={pageSize}
+                onPage={(p) => setPage(p)}
+                onPageSize={(n) => {
+                  setPageSize(n);
+                  setPage(1);
+                }}
+              />
             </div>
           )}
         </CardContent>

@@ -101,7 +101,15 @@ export function SiteFooter({
       </div>
       <div className="border-t">
         <div className="container flex flex-col items-center justify-between gap-2 py-4 text-xs text-muted-foreground sm:flex-row">
-          <div>{brand.copyright}</div>
+          {/* 版权可点击跳品牌官网(V4.0.2);ICP 备案号按合规保持纯文本 */}
+          <a
+            href="https://www.aition.art"
+            target="_blank"
+            rel="noopener"
+            className="block text-muted-foreground transition-colors hover:text-primary"
+          >
+            {brand.copyright}
+          </a>
           {brand.icp && (
             <a
               href="https://beian.miit.gov.cn/"

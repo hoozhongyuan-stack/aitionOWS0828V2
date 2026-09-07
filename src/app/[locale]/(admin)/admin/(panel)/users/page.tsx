@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { TablePagination } from "@/components/admin/table-pagination";
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -75,18 +76,19 @@ export default function UsersAdminPage() {
   const [company, setCompany] = useState("");
   const [appliedCompany, setAppliedCompany] = useState(""); // 回车/点按钮才生效的搜索词
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // V4.0.2:默认 10,可 50/100
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [profile, setProfile] = useState<ProfileForm>(EMPTY_PROFILE);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(() => {
-    const q = new URLSearchParams({ page: String(page) });
+    const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (keyword) q.set("keyword", keyword);
     if (appliedCompany) q.set("q", appliedCompany);
     apiGet<ListData>(`/api/admin/users?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [page, keyword, appliedCompany]);
+  }, [page, pageSize, keyword, appliedCompany]);
 
   useEffect(load, [load]);
 
@@ -134,7 +136,6 @@ export default function UsersAdminPage() {
     }
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -272,19 +273,16 @@ export default function UsersAdminPage() {
         </TableBody>
       </Table>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2 text-sm">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            上一页
-          </Button>
-          <span className="text-muted-foreground">
-            {page} / {totalPages}
-          </span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-            下一页
-          </Button>
-        </div>
-      )}
+      <TablePagination
+        total={data?.total ?? 0}
+        page={page}
+        pageSize={pageSize}
+        onPage={(p) => setPage(p)}
+        onPageSize={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
       {/* 编辑资料弹窗(REQ-009):公司名称/国家/省/市,全部可留空 */}
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>

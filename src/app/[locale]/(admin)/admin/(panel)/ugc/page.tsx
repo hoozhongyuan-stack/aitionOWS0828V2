@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiGet, apiPost, apiDelete } from "@/components/admin/api-client";
+import { TablePagination } from "@/components/admin/table-pagination";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { Check, X, Trash2, Eye, Plus } from "lucide-react";
 
@@ -44,17 +45,21 @@ function CommentsTab() {
   const [status, setStatus] = useState("PENDING");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // V4.0.2
   const [data, setData] = useState<{ total: number; items: CommentRow[] } | null>(null);
 
   const load = useCallback(() => {
     const q = new URLSearchParams();
     q.set("status", status === "ALL" ? "" : status);
+    q.set("page", String(page));
+    q.set("pageSize", String(pageSize));
     if (dateFrom) q.set("dateFrom", dateFrom);
     if (dateTo) q.set("dateTo", dateTo);
     apiGet<{ total: number; items: CommentRow[] }>(`/api/admin/ugc/comments?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [status, dateFrom, dateTo]);
+  }, [status, dateFrom, dateTo, page, pageSize]);
   useEffect(load, [load]);
 
   async function review(id: number, s: "APPROVED" | "REJECTED") {
@@ -83,6 +88,16 @@ function CommentsTab() {
         <div>
           <CardTitle>评论审核</CardTitle>
           <CardDescription>共 {data?.total ?? "…"} 条;通过后才在前台展示</CardDescription>
+          <TablePagination
+            total={data?.total ?? 0}
+            page={page}
+            pageSize={pageSize}
+            onPage={(p) => setPage(p)}
+            onPageSize={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36" />
@@ -188,18 +203,22 @@ function SubmissionsTab() {
   const [status, setStatus] = useState("PENDING");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // V4.0.2
   const [data, setData] = useState<{ total: number; items: SubmissionRow[] } | null>(null);
   const [preview, setPreview] = useState<SubmissionRow | null>(null);
 
   const load = useCallback(() => {
     const q = new URLSearchParams();
     q.set("status", status === "ALL" ? "" : status);
+    q.set("page", String(page));
+    q.set("pageSize", String(pageSize));
     if (dateFrom) q.set("dateFrom", dateFrom);
     if (dateTo) q.set("dateTo", dateTo);
     apiGet<{ total: number; items: SubmissionRow[] }>(`/api/admin/ugc/submissions?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [status, dateFrom, dateTo]);
+  }, [status, dateFrom, dateTo, page, pageSize]);
   useEffect(load, [load]);
 
   async function review(id: number, approve: boolean) {
@@ -219,6 +238,16 @@ function SubmissionsTab() {
         <div>
           <CardTitle>投稿审核</CardTitle>
           <CardDescription>共 {data?.total ?? "…"} 条;通过后自动发布到对应栏目</CardDescription>
+          <TablePagination
+            total={data?.total ?? 0}
+            page={page}
+            pageSize={pageSize}
+            onPage={(p) => setPage(p)}
+            onPageSize={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36" />

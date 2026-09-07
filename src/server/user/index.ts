@@ -67,9 +67,9 @@ export async function loginByWechat(input: { openId: string; unionId?: string | 
  * keyword:邮箱/昵称模糊搜索;q:公司名称模糊搜索(REQ-009,可与 keyword 叠加)。
  * 列表项包含 4 个资料字段,供后台编辑弹窗回显(仅后台出口,NFR-001 不适用)。
  */
-export async function listUsersAdmin(opts: { page?: number; keyword?: string; q?: string }) {
+export async function listUsersAdmin(opts: { page?: number; pageSize?: number; keyword?: string; q?: string }) {
   const page = Math.max(1, opts.page ?? 1);
-  const pageSize = 20;
+  const pageSize = Math.min(100, Math.max(1, opts.pageSize ?? 10)); // V4.0.2:默认 10,可 50/100
   const where = {
     ...(opts.keyword
       ? {
