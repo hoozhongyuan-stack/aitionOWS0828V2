@@ -187,6 +187,15 @@
     "cookieNecessary": "Necessary only",
     "privacyPolicy": "Privacy Policy",
     "cookiePolicy": "Cookie Policy",
-    "terms": "Terms of Service"
+    "terms": "Terms of Service",
+    "refundRequest": "Request refund",
+    "refundReason": "Reason (required)",
+    "refundSubmit": "Submit",
+    "refundPending": "Refund pending",
+    "refundApproved": "Refunded",
+    "refundRejected": "Refund rejected",
+    "refundAmount": "Refund amount",
+    "refundNote": "Review note",
+    "refundSubmitted": "Refund request submitted"
   }
 }

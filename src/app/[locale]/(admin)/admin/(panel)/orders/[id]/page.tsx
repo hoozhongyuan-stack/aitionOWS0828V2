@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { apiGet, apiPost } from "@/components/admin/api-client";
 import { formatMoney } from "@/lib/utils";
@@ -40,6 +41,7 @@ interface OrderDetail {
   completedAt: string | null;
   cancelledAt: string | null;
   items: { id: number; contentId: number; titleSnapshot: string; priceCentsSnapshot: number; currency: string; qty: number; spu: string | null; coverUrl: string | null }[];
+  refund: { id: number; reason: string; status: string; refundAmountCents: number | null; adminNote: string | null; createdAt: string; reviewedAt: string | null } | null;
 }
 
 /** 一键复制(剪贴板;非安全上下文降级) */
@@ -68,6 +70,7 @@ const STATUS_TABS: Record<string, string> = {
   SHIPPED: "已发货",
   COMPLETED: "已完成",
   CANCELLED: "已取消",
+  REFUNDED: "已退款",
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -76,6 +79,7 @@ const STATUS_BADGE: Record<string, string> = {
   SHIPPED: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
   COMPLETED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
   CANCELLED: "bg-muted text-muted-foreground",
+  REFUNDED: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
 };
 
 export default function OrderDetailPage() {
@@ -86,6 +90,8 @@ export default function OrderDetailPage() {
   const [carrier, setCarrier] = useState("");
   const [tracking, setTracking] = useState("");
   const [remark, setRemark] = useState("");
+  const [refundAmount, setRefundAmount] = useState(""); // 售后退款金额(元;V4.2)
+  const [refundNote, setRefundNote] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -103,12 +109,42 @@ export default function OrderDetailPage() {
     load();
   }, [load]);
 
-  async function act(action: "confirm" | "ship" | "complete" | "cancel") {
+  async function act(action: "confirm" | "ship" | "complete" | "cancel" | "refundApprove" | "refundReject") {
     if (!order) return;
-    const labels: Record<string, string> = { confirm: "确认收款", ship: "标记发货", complete: "标记完成", cancel: "取消订单" };
-    if (!window.confirm(`确定「${labels[action]}」?${action === "cancel" ? "将通知买家订单已取消。" : ""}`)) return;
+    const labels: Record<string, string> = {
+      confirm: "确认收款",
+      ship: "标记发货",
+      complete: "标记完成",
+      cancel: "取消订单",
+      refundApprove: "通过售后退款",
+      refundReject: "拒绝售后",
+    };
+    if (
+      !window.confirm(
+        `确定「${labels[action]}」?${action === "cancel" ? "将通知买家订单已取消。" : action.startsWith("refund") ? "将邮件通知买家审核结果。" : ""}`
+      )
+    )
+      return;
     setBusy(true);
     try {
+      if (action === "refundApprove" || action === "refundReject") {
+        // 售后审核(V4.2):通过金额留空自动取订单实付
+        const cents =
+          action === "refundApprove"
+            ? refundAmount.trim() === ""
+              ? order.grandTotalCents
+              : Math.round(Number(refundAmount) * 100)
+            : undefined;
+        await apiPost("/api/admin/orders", {
+          id: order.refund!.id,
+          action,
+          adminNote: refundNote || undefined,
+          refundAmountCents: cents,
+        });
+        toast.success(`已${labels[action]},邮件已通知买家`);
+        load();
+        return;
+      }
       const d = await apiPost<OrderDetail>("/api/admin/orders", {
         id: order.id,
         action,
@@ -117,6 +153,7 @@ export default function OrderDetailPage() {
       });
       setOrder(d);
       toast.success(`已${labels[action]}${action === "ship" ? ",通知邮件已发出" : ""}`);
+      load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "操作失败");
     } finally {
@@ -276,8 +313,75 @@ export default function OrderDetailPage() {
         </Card>
       )}
 
+      {/* 售后审核(V4.2) */}
+      {order.refund && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              售后申请
+              <Badge variant={order.refund.status === "PENDING" ? "secondary" : order.refund.status === "APPROVED" ? "default" : "outline"}>
+                {order.refund.status === "PENDING" ? "待审核" : order.refund.status === "APPROVED" ? "已通过" : "已拒绝"}
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              申请于 {new Date(order.refund.createdAt).toLocaleString()}
+              {order.refund.reviewedAt && ` · 处理于 ${new Date(order.refund.reviewedAt).toLocaleString()}`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p>
+              <span className="text-muted-foreground">售后原因:</span>
+              {order.refund.reason}
+            </p>
+            {order.refund.status === "PENDING" ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>退款金额({order.currency},必填,≤实付)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={refundAmount}
+                      onChange={(e) => setRefundAmount(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      实付 {formatMoney(order.grandTotalCents, order.currency, "zh-CN")};留空点「通过」将以实付金额退款
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>审核备注(通过:说明/拒绝:原因,随邮件通知买家)</Label>
+                    <Input value={refundNote} onChange={(e) => setRefundNote(e.target.value)} />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button disabled={busy} onClick={() => act("refundApprove")}>
+                    通过并退款
+                  </Button>
+                  <Button variant="destructive" disabled={busy} onClick={() => act("refundReject")}>
+                    拒绝
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-md bg-muted p-3">
+                {order.refund.status === "APPROVED" && order.refund.refundAmountCents != null && (
+                  <p>
+                    退款金额:
+                    <span className="font-semibold">
+                      {formatMoney(order.refund.refundAmountCents, order.currency, "zh-CN")}
+                    </span>
+                  </p>
+                )}
+                {order.refund.adminNote && <p className="text-muted-foreground">备注:{order.refund.adminNote}</p>}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* 操作区(终态无操作) */}
-      {!["COMPLETED", "CANCELLED"].includes(order.status) && (
+      {!["COMPLETED", "CANCELLED", "REFUNDED"].includes(order.status) && (
         <Card>
           <CardHeader>
             <CardTitle>操作</CardTitle>

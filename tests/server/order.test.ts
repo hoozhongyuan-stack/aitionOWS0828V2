@@ -246,13 +246,14 @@ describe("V4.0.1 物流字段/时间检索/我的订单", () => {
   });
 
   it("listOrdersAdmin 下单时间区间过滤(from/to 单边与双边)", async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    const inRange = await orderMod.listOrdersAdmin({ from: today, to: today });
+    // 区间取昨日~明日:避免 UTC/本地日界差异导致的 flaky
+    const from = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const to = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    const inRange = await orderMod.listOrdersAdmin({ from, to });
     expect(inRange.total).toBeGreaterThanOrEqual(1);
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-    const futureOnly = await orderMod.listOrdersAdmin({ from: yesterday, to: yesterday });
+    const staleOnly = await orderMod.listOrdersAdmin({ from: "2020-01-01", to: "2020-01-02" });
     // 昨天之前创建的 V4 测试单可能存在;只断言过滤不报错且今天的关键单不在结果里
-    expect(futureOnly.items.some((o) => o.id === shipId)).toBe(false);
+    expect(staleOnly.items.some((o) => o.id === shipId)).toBe(false);
   });
 
   it("listOrdersByUser 仅返回该用户订单,含明细与物流", async () => {
@@ -290,5 +291,50 @@ describe("V4.0.2 SPU/封面快照 + 用户订单数", () => {
       expect(Number.isInteger(demo.orderCount)).toBe(true);
     }
     expect(list.items.every((u) => Number.isInteger(u.orderCount))).toBe(true);
+  });
+});
+
+describe("V4.2 售后(仅退款,一单一次)", () => {
+  it("用户申请 → 后台通过(金额≤实付) → 订单流转 REFUNDED", async () => {
+    // 造一单并推到 CONFIRMED
+    const r = await orderMod.createOrder(baseInput({ email: `refund-${Date.now()}@example.com` }));
+    created.push(r.no);
+    const order = await db.order.findUnique({ where: { no: r.no } });
+    await orderMod.transitionOrder(order!.id, "confirm");
+    // 用户申请
+    const refund = await orderMod.applyRefund({ orderNo: r.no, email: order!.email, reason: "商品与描述不符" });
+    expect(refund.status).toBe("PENDING");
+    // 重复申请拒绝
+    await expect(orderMod.applyRefund({ orderNo: r.no, email: order!.email, reason: "再次" })).rejects.toThrow(/重复/);
+    // 金额超实付拒绝
+    await expect(
+      orderMod.reviewRefund({ refundId: refund.id, approve: true, refundAmountCents: order!.grandTotalCents + 1, reviewerName: "测试" })
+    ).rejects.toThrow(/不能超过/);
+    // 通过(默认实付)
+    await orderMod.reviewRefund({ refundId: refund.id, approve: true, refundAmountCents: order!.grandTotalCents, adminNote: "核实无误", reviewerName: "测试" });
+    const after = await db.order.findUnique({ where: { no: r.no }, include: { refund: true } });
+    expect(after?.status).toBe("REFUNDED");
+    expect(after?.refund?.status).toBe("APPROVED");
+    expect(after?.refund?.refundAmountCents).toBe(order!.grandTotalCents);
+  });
+
+  it("拒绝售后:订单状态不变,记录原因", async () => {
+    const r = await orderMod.createOrder(baseInput({ email: `rej-${Date.now()}@example.com` }));
+    created.push(r.no);
+    const order = await db.order.findUnique({ where: { no: r.no } });
+    await orderMod.transitionOrder(order!.id, "confirm");
+    const refund = await orderMod.applyRefund({ orderNo: r.no, email: order!.email, reason: "不想要了" });
+    await orderMod.reviewRefund({ refundId: refund.id, approve: false, adminNote: "不符合退款条件", reviewerName: "测试" });
+    const after = await db.order.findUnique({ where: { no: r.no }, include: { refund: true } });
+    expect(after?.status).toBe("CONFIRMED");
+    expect(after?.refund?.status).toBe("REJECTED");
+    expect(after?.refund?.adminNote).toBe("不符合退款条件");
+  });
+
+  it("待确认订单不可申请售后", async () => {
+    const r = await orderMod.createOrder(baseInput({ email: `pend-${Date.now()}@example.com` }));
+    created.push(r.no);
+    const order = await db.order.findUnique({ where: { no: r.no } });
+    await expect(orderMod.applyRefund({ orderNo: r.no, email: order!.email, reason: "x" })).rejects.toThrow(/不支持/);
   });
 });

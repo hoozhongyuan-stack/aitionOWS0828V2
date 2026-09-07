@@ -15,7 +15,7 @@ export interface UploadMeta {
 /** 保存文件并登记资产,返回含访问 URL 的记录 */
 export async function createMedia(
   input: { buffer: Buffer; originalName: string; mime: string },
-  meta: UploadMeta
+  meta: UploadMeta & { folderId?: number | null } // V4.2:上传时可归档到文件夹
 ) {
   const saved = await saveUpload(input);
   const asset = await prisma.mediaAsset.create({
@@ -29,6 +29,7 @@ export async function createMedia(
       alt: meta.alt || saved.filename.replace(/\.[^.]+$/, ""), // 默认用文件名做 alt,后台可改
       uploaderType: meta.uploaderType,
       uploaderId: meta.uploaderId ?? null,
+      folderId: meta.folderId ?? null,
     },
   });
   return { ...asset, url: `/uploads/${asset.path}` };
@@ -67,4 +68,79 @@ export async function deleteMedia(id: number) {
   if (!asset) return;
   await removeUploadFile(asset.path);
   await prisma.mediaAsset.delete({ where: { id } });
+}
+
+// ============================================================
+// V4.2 媒体文件夹(二级)与素材选择器数据
+// ============================================================
+
+/** 文件夹树(两级):一级 + children */
+export async function listFolders() {
+  const all = await prisma.mediaFolder.findMany({ orderBy: [{ sort: "asc" }, { id: "asc" }] });
+  const roots = all.filter((f) => f.parentId == null);
+  return roots.map((r) => ({ ...r, children: all.filter((c) => c.parentId === r.id) }));
+}
+
+/** 创建文件夹(parentId 仅允许一级 id——二级封顶);同名同级拒绝 */
+export async function createFolder(name: string, parentId?: number | null) {
+  const trimmed = name.trim().slice(0, 40);
+  if (!trimmed) throw new Error("请输入文件夹名称");
+  if (parentId != null) {
+    const parent = await prisma.mediaFolder.findUnique({ where: { id: parentId } });
+    if (!parent) throw new Error("上级文件夹不存在");
+    if (parent.parentId != null) throw new Error("仅支持两级文件夹");
+  }
+  const siblings = await prisma.mediaFolder.findMany({
+    where: { name: trimmed, parentId: parentId ?? null },
+  });
+  if (siblings.length) throw new Error("同级已存在同名文件夹");
+  return prisma.mediaFolder.create({ data: { name: trimmed, parentId: parentId ?? null } });
+}
+
+/** 重命名文件夹 */
+export async function renameFolder(id: number, name: string) {
+  const trimmed = name.trim().slice(0, 40);
+  if (!trimmed) throw new Error("请输入文件夹名称");
+  const row = await prisma.mediaFolder.findUnique({ where: { id } });
+  if (!row) throw new Error("文件夹不存在");
+  await prisma.mediaFolder.update({ where: { id }, data: { name: trimmed } });
+}
+
+/** 删除文件夹:非空(含素材或子文件夹)禁止,提示先移走(防误删引用) */
+export async function deleteFolder(id: number) {
+  const hasChildren = await prisma.mediaFolder.count({ where: { parentId: id } });
+  if (hasChildren) throw new Error("该文件夹包含子文件夹,请先移走");
+  const hasAssets = await prisma.mediaAsset.count({ where: { folderId: id } });
+  if (hasAssets) throw new Error("该文件夹内仍有文件,请先移走或删除");
+  await prisma.mediaFolder.delete({ where: { id } });
+}
+
+/** 素材列表(素材选择器/文件页共用):按文件夹过滤(null=未分类),图片置前按时间倒序 */
+export async function listAssetsForPicker(opts: { folderId?: number | null; mime?: string; page?: number; pageSize?: number; keyword?: string }) {
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, opts.pageSize ?? 24));
+  const where: Record<string, unknown> = {};
+  if (opts.folderId === undefined || opts.folderId === null) {
+    where.folderId = null;
+  } else {
+    where.folderId = { in: [opts.folderId, ...(await prisma.mediaFolder.findMany({ where: { parentId: opts.folderId }, select: { id: true } })).map((c) => c.id)] };
+  }
+  if (opts.mime) where.mime = { startsWith: opts.mime };
+  const kw = opts.keyword?.trim();
+  if (kw) where.filename = { contains: kw };
+  const [total, items] = await Promise.all([
+    prisma.mediaAsset.count({ where }),
+    prisma.mediaAsset.findMany({
+      where,
+      orderBy: [{ id: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+  return { total, page, pageSize, items };
+}
+
+/** 移动素材到文件夹(文件页/选择器内可用) */
+export async function moveAssets(ids: number[], folderId: number | null) {
+  await prisma.mediaAsset.updateMany({ where: { id: { in: ids } }, data: { folderId } });
 }

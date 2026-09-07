@@ -7,6 +7,7 @@ import { getActiveUserSession } from "@/lib/auth/session";
 import { listMyFavorites, listMySubmissions } from "@/server/ugc";
 import { listOrdersByUser } from "@/server/order";
 import { formatMoney } from "@/lib/utils";
+import { RefundRequestButton } from "@/app/[locale]/(site)/account/refund-request-button";
 import { resolveContentDetailPath } from "@/server/content";
 import { cn, safeDateLocale } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +116,16 @@ export default async function AccountPage({ params, searchParams }: Props) {
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-sm font-medium">{o.no}</span>
                           <Badge variant={o.status === "COMPLETED" ? "default" : "outline"}>{statusLabel}</Badge>
+                          {/* 售后状态(V4.2) */}
+                          {o.refund && (
+                            <Badge variant={o.refund.status === "APPROVED" ? "default" : "secondary"}>
+                              {o.refund.status === "PENDING"
+                                ? t("refundPending")
+                                : o.refund.status === "APPROVED"
+                                  ? t("refundApproved")
+                                  : t("refundRejected")}
+                            </Badge>
+                          )}
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
                           {t("orderTime")}
@@ -176,6 +187,35 @@ export default async function AccountPage({ params, searchParams }: Props) {
                             )}
                             {o.adminNote && <span>({o.adminNote})</span>}
                           </p>
+                        </div>
+                      )}
+                      {/* 售后(V4.2):可申请状态且未申请 → 申请按钮;已有申请 → 结果展示 */}
+                      {["CONFIRMED", "SHIPPED", "COMPLETED"].includes(o.status) && (
+                        <div className="flex items-center justify-between rounded-md border p-3">
+                          <span className="text-sm text-muted-foreground">
+                            {o.refund
+                              ? `${t("refundPending")} · ${o.refund.reason}`
+                              : t("refundRequest")}
+                          </span>
+                          {!o.refund && <RefundRequestButton orderNo={o.no} />}
+                        </div>
+                      )}
+                      {o.refund && (
+                        <div className="rounded-md bg-muted p-3 text-sm">
+                          <p className="text-muted-foreground">{t("refundReason")}: {o.refund.reason}</p>
+                          {o.refund.status === "APPROVED" && o.refund.refundAmountCents != null && (
+                            <p className="mt-1">
+                              {t("refundAmount")}:{" "}
+                              <span className="font-semibold text-foreground">
+                                {formatMoney(o.refund.refundAmountCents, o.currency, locale)}
+                              </span>
+                            </p>
+                          )}
+                          {o.refund.adminNote && (
+                            <p className="mt-1 text-muted-foreground">
+                              {t("refundNote")}: {o.refund.adminNote}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

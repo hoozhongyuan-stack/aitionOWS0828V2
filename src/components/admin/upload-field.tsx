@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { apiUpload } from "@/components/admin/api-client";
 import { ImagePlus, X } from "lucide-react";
+import { MediaPicker } from "@/components/admin/media-picker";
 
 /**
  * 通用图片上传字段(后台):选择文件 → 本地存储 → 回填 URL。
@@ -26,6 +27,7 @@ export function UploadField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false); // 素材库(V4.2)
 
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -58,6 +60,9 @@ export function UploadField({
         <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
           {uploading ? "上传中…" : value ? "更换" : "上传"}
         </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setPickerOpen(true)}>
+          素材库
+        </Button>
         {value && (
           <Button type="button" variant="ghost" size="icon" onClick={() => onChange("")}>
             <X className="h-4 w-4" />
@@ -65,6 +70,14 @@ export function UploadField({
         )}
       </div>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      <MediaPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onPick={(url) => {
+          onChange(url);
+          toast.success("已从素材库选择");
+        }}
+      />
     </div>
   );
 }

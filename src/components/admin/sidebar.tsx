@@ -28,6 +28,7 @@ import {
   ReceiptText,
   UserCog,
   ScrollText,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canSeeMenu } from "@/server/admin/permissions";
@@ -64,8 +65,9 @@ const NAV_GROUPS: { title: string; items: { href: string; label: string; icon: R
   {
     title: "交易",
     items: [
-      { href: "/admin/shop", label: "商店设置", icon: Store },
+      { href: "/admin/products", label: "商品管理", icon: Package },
       { href: "/admin/orders", label: "订单管理", icon: ReceiptText },
+      { href: "/admin/shop", label: "商店设置", icon: Store },
     ],
   },
   {

@@ -32,9 +32,11 @@ export async function POST(req: Request) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
+    const folderIdRaw = Number(form.get("folderId"));
+    const folderId = Number.isInteger(folderIdRaw) && folderIdRaw > 0 ? folderIdRaw : null;
     const asset = await createMedia(
       { buffer, originalName: file.name, mime: file.type },
-      { uploaderType: "admin", uploaderId: guard.admin.id, alt }
+      { uploaderType: "admin", uploaderId: guard.admin.id, alt, folderId }
     );
     return jsonOk(asset);
   } catch (e) {

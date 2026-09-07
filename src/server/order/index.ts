@@ -6,6 +6,7 @@ import {
   renderOrderConfirmedEmail,
   renderOrderShippedEmail,
   renderOrderCancelledEmail,
+  renderOrderRefundEmail,
 } from "@/server/notify/template";
 import { sendMail, notifyAdmin } from "@/server/notify";
 
@@ -22,6 +23,7 @@ export const ORDER_STATUS = {
   SHIPPED: "SHIPPED",
   COMPLETED: "COMPLETED",
   CANCELLED: "CANCELLED",
+  REFUNDED: "REFUNDED", // V4.2 售后退款完成
 } as const;
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
@@ -34,12 +36,15 @@ const TRANSITIONS: Record<string, { to: string; at: string }[]> = {
   CONFIRMED: [
     { to: "SHIPPED", at: "shippedAt" },
     { to: "CANCELLED", at: "cancelledAt" },
+    { to: "REFUNDED", at: "refundedAt" },
   ],
   SHIPPED: [
     { to: "COMPLETED", at: "completedAt" },
     { to: "CANCELLED", at: "cancelledAt" },
   ],
-  COMPLETED: [],
+  // 已支付订单(CONFIRMED/SHIPPED/COMPLETED)可经售后审核流转为已退款(V4.2)
+  COMPLETED: [{ to: "REFUNDED", at: "refundedAt" }],
+  REFUNDED: [],
   CANCELLED: [],
 };
 
@@ -84,6 +89,8 @@ export interface OrderView {
   completedAt: Date | null;
   cancelledAt: Date | null;
   items: { id: number; contentId: number; titleSnapshot: string; priceCentsSnapshot: number; currency: string; qty: number; spu: string | null; coverUrl: string | null }[];
+  refundedAt?: Date | null;
+  refund?: { id: number; reason: string; status: string; refundAmountCents: number | null; adminNote: string | null; createdAt: Date; reviewedAt: Date | null } | null;
   /** 下单账号(V4.0.2):登录用户名下信息;游客单为 null */
   accountName?: string | null;
   accountEmail?: string | null;
@@ -210,7 +217,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ no: string
 export async function getOrderByNoAndEmail(no: string, email: string): Promise<OrderView | null> {
   const order = await prisma.order.findUnique({
     where: { no },
-    include: { items: true },
+    include: { items: true, refund: true },
   });
   if (!order || order.email !== email.trim().toLowerCase()) return null;
   return order as OrderView;
@@ -266,7 +273,7 @@ export async function listOrdersAdmin(q: AdminOrderQuery) {
 }
 
 export async function getOrderAdmin(id: number): Promise<OrderView | null> {
-  const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+  const order = await prisma.order.findUnique({ where: { id }, include: { items: true, refund: true } });
   if (!order) return null;
   // 下单账号信息(V4.0.2):详情页独立区块展示
   const account = order.userId
@@ -286,12 +293,12 @@ export async function listOrdersByUser(userId: number): Promise<OrderView[]> {
   const orders = await prisma.order.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
-    include: { items: true },
+    include: { items: true, refund: true },
   });
   return orders as OrderView[];
 }
 
-export type OrderAction = "confirm" | "ship" | "complete" | "cancel";
+export type OrderAction = "confirm" | "ship" | "complete" | "cancel" | "refund";
 
 /**
  * 订单状态流转(后台):校验合法转换 → 更新状态与时间戳 → 异步发买家邮件。
@@ -310,6 +317,7 @@ export async function transitionOrder(
     ship: TRANSITIONS[order.status]?.find((t) => t.to === "SHIPPED"),
     complete: TRANSITIONS[order.status]?.find((t) => t.to === "COMPLETED"),
     cancel: TRANSITIONS[order.status]?.find((t) => t.to === "CANCELLED"),
+    refund: TRANSITIONS[order.status]?.find((t) => t.to === "REFUNDED"),
   };
   const next = actionMap[action];
   if (!next) throw new Error(`当前状态(${order.status})不允许此操作`);
@@ -369,4 +377,84 @@ export async function transitionOrder(
   })();
 
   return updated as OrderView;
+}
+
+// ============================================================
+// V4.2 售后(仅退款,一单一次申请)
+// ============================================================
+
+/** 用户发起售后:已支付订单(CONFIRMED/SHIPPED/COMPLETED)可申请;归属校验+唯一申请 */
+export async function applyRefund(input: { orderNo: string; email?: string; userId?: number; reason: string }) {
+  const reason = input.reason?.trim();
+  if (!reason) throw new Error("请填写售后原因");
+  const order = await prisma.order.findUnique({ where: { no: input.orderNo }, include: { refund: true } });
+  if (!order) throw new Error("订单不存在");
+  if (input.userId ? order.userId !== input.userId : order.email !== input.email?.trim().toLowerCase()) {
+    throw new Error("订单不属于当前用户");
+  }
+  if (!["CONFIRMED", "SHIPPED", "COMPLETED"].includes(order.status)) throw new Error("当前订单状态不支持申请售后");
+  if (order.refund) throw new Error("该订单已提交过售后申请,请勿重复提交");
+  const refund = await prisma.orderRefund.create({
+    data: { orderId: order.id, reason: reason.slice(0, 500) },
+  });
+  void notifyAdmin("新售后申请待审核", [
+    `订单号:${order.no}`,
+    `原因:${reason.slice(0, 100)}`,
+  ]);
+  return refund;
+}
+
+/** 后台审核售后:通过(金额必填且≤实付)/拒绝(备注原因);通过同时订单流转 REFUNDED+双语邮件 */
+export async function reviewRefund(input: {
+  refundId: number;
+  approve: boolean;
+  refundAmountCents?: number;
+  adminNote?: string;
+  reviewerName: string;
+}): Promise<void> {
+  const refund = await prisma.orderRefund.findUnique({ where: { id: input.refundId }, include: { order: { include: { items: true } } } });
+  if (!refund) throw new Error("售后申请不存在");
+  if (refund.status !== "PENDING") throw new Error("该售后已处理");
+  const order = refund.order;
+
+  if (!input.approve) {
+    await prisma.orderRefund.update({
+      where: { id: input.refundId },
+      data: { status: "REJECTED", adminNote: input.adminNote?.trim().slice(0, 500) || null, reviewedAt: new Date() },
+    });
+    void (async () => {
+      try {
+        const html = await renderOrderRefundEmail({
+          locale: "zh", orderNo: order.no, customerName: order.name,
+          items: order.items.map((i) => ({ title: i.titleSnapshot, qty: i.qty, priceCents: i.priceCentsSnapshot })),
+          currency: order.currency, itemsTotalCents: order.itemsTotalCents, shippingCents: order.shippingCents, grandTotalCents: order.grandTotalCents,
+          approved: false, refundAmountCents: null, remark: input.adminNote,
+        });
+        await sendMail({ to: [order.email], subject: `售后审核结果 ${order.no}`, lines: [order.no], html });
+      } catch { /* 静默 */ }
+    })();
+    return;
+  }
+
+  const amount = Math.floor(Number(input.refundAmountCents));
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("请填写退款金额");
+  if (amount > order.grandTotalCents) throw new Error("退款金额不能超过订单实付金额");
+
+  await prisma.orderRefund.update({
+    where: { id: input.refundId },
+    data: { status: "APPROVED", refundAmountCents: amount, adminNote: input.adminNote?.trim().slice(0, 500) || null, reviewedAt: new Date() },
+  });
+  // 订单流转 REFUNDED(转换表校验;已终态(CANCELLED 等)会抛错)
+  await transitionOrder(order.id, "refund", { adminNote: `售后退款 ${(amount / 100).toFixed(2)} ${order.currency}` });
+  void (async () => {
+    try {
+      const html = await renderOrderRefundEmail({
+        locale: "zh", orderNo: order.no, customerName: order.name,
+        items: order.items.map((i) => ({ title: i.titleSnapshot, qty: i.qty, priceCents: i.priceCentsSnapshot })),
+        currency: order.currency, itemsTotalCents: order.itemsTotalCents, shippingCents: order.shippingCents, grandTotalCents: order.grandTotalCents,
+        approved: true, refundAmountCents: amount, remark: input.adminNote,
+      });
+      await sendMail({ to: [order.email], subject: `售后审核结果 ${order.no}`, lines: [order.no], html });
+    } catch { /* 静默 */ }
+  })();
 }

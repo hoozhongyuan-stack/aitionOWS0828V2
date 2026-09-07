@@ -25,7 +25,13 @@ interface MediaRow {
   alt: string | null;
   createdAt: string;
 }
+interface FolderNode {
+  id: number;
+  name: string;
+  children: { id: number; name: string }[];
+}
 interface ListData {
+  folders?: FolderNode[];
   total: number;
   page: number;
   pageSize: number;
@@ -37,14 +43,16 @@ export default function MediaAdminPage() {
   const [page, setPage] = useState(1);
   const [mime, setMime] = useState("all");
   const [altEdit, setAltEdit] = useState<Record<number, string>>({});
+  const [folder, setFolder] = useState(""); // V4.2 选中文件夹(""=全部)
 
   const load = useCallback(() => {
     const q = new URLSearchParams({ page: String(page) });
     if (mime !== "all") q.set("mime", mime);
+    if (folder !== "") q.set("folderId", folder);
     apiGet<ListData>(`/api/admin/media?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [page, mime]);
+  }, [page, mime, folder]);
   // 文件选择框按后台"上传允许类型"过滤,从源头避免选了必被拒的文件
   const [accept, setAccept] = useState("image/*,video/mp4");
   useEffect(() => {
@@ -119,6 +127,114 @@ export default function MediaAdminPage() {
             语义。
           </p>
         </div>
+      </div>
+
+      {/* 文件夹条(V4.2):两级文件夹;选中后列表按文件夹过滤 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          className={`rounded-md border px-3 py-1.5 text-sm ${folder === "" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+          onClick={() => {
+            setFolder("");
+            setPage(1);
+          }}
+        >
+          全部文件
+        </button>
+        {(data?.folders ?? []).map((f) => (
+          <span key={f.id} className="flex items-center gap-1">
+            <button
+              className={`rounded-md border px-3 py-1.5 text-sm ${folder === String(f.id) ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+              onClick={() => {
+                setFolder(String(f.id));
+                setPage(1);
+              }}
+            >
+              {f.name}
+            </button>
+            {f.children.map((c) => (
+              <button
+                key={c.id}
+                className={`rounded-md border px-2.5 py-1.5 text-sm text-muted-foreground ${folder === String(c.id) ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+                onClick={() => {
+                  setFolder(String(c.id));
+                  setPage(1);
+                }}
+              >
+                └ {c.name}
+              </button>
+            ))}
+            <button
+              className="text-xs text-muted-foreground hover:text-primary"
+              title="重命名"
+              onClick={async () => {
+                const name = window.prompt("重命名文件夹", f.name);
+                if (!name?.trim()) return;
+                try {
+                  await apiPost("/api/admin/media", { action: "renameFolder", id: f.id, name: name.trim() });
+                  load();
+                  toast.success("已重命名");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "操作失败");
+                }
+              }}
+            >
+              ✎
+            </button>
+            <button
+              className="text-xs text-destructive hover:underline"
+              title="删除(需为空)"
+              onClick={async () => {
+                if (!window.confirm(`删除文件夹「${f.name}」?(需为空)`)) return;
+                try {
+                  await apiPost("/api/admin/media", { action: "deleteFolder", id: f.id });
+                  if (folder === String(f.id)) setFolder("");
+                  load();
+                  toast.success("已删除");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "删除失败");
+                }
+              }}
+            >
+              ✕
+            </button>
+          </span>
+        ))}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={async () => {
+            const name = window.prompt("新建文件夹名称(一级)");
+            if (!name?.trim()) return;
+            try {
+              await apiPost("/api/admin/media", { action: "createFolder", name: name.trim(), parentId: null });
+              load();
+              toast.success("已创建");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "创建失败");
+            }
+          }}
+        >
+          + 新建文件夹
+        </Button>
+        {folder !== "" && Number(folder) > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={async () => {
+              const name = window.prompt("子文件夹名称(二级)");
+              if (!name?.trim()) return;
+              try {
+                await apiPost("/api/admin/media", { action: "createFolder", name: name.trim(), parentId: Number(folder) });
+                load();
+                toast.success("已创建");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "创建失败");
+              }
+            }}
+          >
+            + 新建子文件夹
+          </Button>
+        )}
         <div className="flex items-center gap-2">
           <Select
             value={mime}

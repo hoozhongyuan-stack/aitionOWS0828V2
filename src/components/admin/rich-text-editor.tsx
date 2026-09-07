@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import { toast } from "sonner";
+import { MediaPicker } from "@/components/admin/media-picker";
 import {
   Bold,
   Italic,
@@ -22,6 +23,8 @@ import {
   Video,
   Undo2,
   Redo2,
+  Images,
+  GalleryVerticalEnd,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiUpload } from "@/components/admin/api-client";
@@ -79,6 +82,7 @@ export function RichTextEditor({
   const doUpload = uploader ?? ((file: File) => apiUpload(file));
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
+  const [pickerMode, setPickerMode] = useState<null | "image" | "video">(null); // 素材库选择(V4.2)
 
   const editor = useEditor({
     immediatelyRender: false, // SSR 环境必需
@@ -96,6 +100,16 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),
   });
+
+  // 素材库选中插入(V4.2)
+  function insertFromPicker(url: string) {
+    if (!editor) return;
+    if (pickerMode === "image") {
+      editor.chain().focus().setImage({ src: url, alt: "" }).run();
+    } else {
+      editor.chain().focus().insertContent(`<video src="${url}" controls preload="metadata" style="max-width:100%"></video><p></p>`).run();
+    }
+  }
 
   // 外部 value 变化(如切换语言 tab)时同步编辑器内容
   useEffect(() => {
@@ -217,6 +231,13 @@ export function RichTextEditor({
         <ToolbarButton title="插入视频(本地上传)" onClick={() => videoRef.current?.click()}>
           <Video className="h-4 w-4" />
         </ToolbarButton>
+        {/* 素材库(V4.2):从已上传素材中选择图片/视频插入 */}
+        <ToolbarButton title="从素材库插入图片" onClick={() => setPickerMode("image")}>
+          <Images className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton title="从素材库插入视频" onClick={() => setPickerMode("video")}>
+          <GalleryVerticalEnd className="h-4 w-4" />
+        </ToolbarButton>
         <span className="mx-1 h-5 w-px bg-border" />
         <ToolbarButton title="撤销" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
           <Undo2 className="h-4 w-4" />
@@ -233,6 +254,11 @@ export function RichTextEditor({
       </div>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickImage} />
       <input ref={videoRef} type="file" accept="video/mp4" className="hidden" onChange={pickVideo} />
+      <MediaPicker
+        open={pickerMode !== null}
+        onOpenChange={(v) => !v && setPickerMode(null)}
+        onPick={insertFromPicker}
+      />
     </div>
   );
 }

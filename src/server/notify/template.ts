@@ -444,3 +444,45 @@ export async function renderOrderCancelledEmail(o: OrderEmailOptions): Promise<s
     baseUrl: o.baseUrl,
   });
 }
+
+/** 售后审核结果邮件(V4.2):双语对照;通过含退款金额,拒绝含原因 */
+export interface OrderRefundEmailOptions {
+  locale: string;
+  orderNo: string;
+  customerName: string;
+  items: OrderEmailLine[];
+  currency: string;
+  itemsTotalCents: number;
+  shippingCents: number;
+  grandTotalCents: number;
+  approved: boolean;
+  refundAmountCents: number | null;
+  remark?: string;
+  brand?: Partial<BrandConfig>;
+  theme?: Pick<ThemeConfig, "primary">;
+  baseUrl?: string;
+}
+
+export async function renderOrderRefundEmail(o: OrderRefundEmailOptions): Promise<string> {
+  const amountLine = o.approved && o.refundAmountCents != null ? `退款金额 Refund: ${money(o.refundAmountCents, o.currency)}\n` : "";
+  const remarkLine = o.remark?.trim() ? `备注 / Note: ${o.remark.trim()}\n` : "";
+  return renderBrandEmail({
+    heading: o.approved ? `售后已通过 / Refund approved(${o.orderNo})` : `售后未通过 / Refund rejected(${o.orderNo})`,
+    blocks: [
+      {
+        type: "paragraph",
+        text: o.approved
+          ? `${o.customerName},您好!您的售后申请已通过:\\nHi ${o.customerName}, your refund request has been approved:`
+          : `${o.customerName},您好!很抱歉,您的售后申请未通过:\\nHi ${o.customerName}, unfortunately your refund request was not approved:`,
+      },
+      { type: "highlight", text: `${amountLine}${remarkLine}` },
+      { type: "kvTable", rows: [{ k: "订单明细 Order items", v: orderSummaryText(o) }] },
+      ...(o.approved
+        ? [{ type: "paragraph" as const, text: "退款将按原付款方式退回,请留意查收。\\nThe refund will be returned via your original payment method." }]
+        : [{ type: "paragraph" as const, text: "如有疑问请联系我们。\\nIf you have any questions, please contact us." }]),
+    ],
+    brand: o.brand,
+    theme: o.theme,
+    baseUrl: o.baseUrl,
+  });
+}

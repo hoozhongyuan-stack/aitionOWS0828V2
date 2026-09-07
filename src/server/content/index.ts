@@ -634,3 +634,74 @@ function shapeCard(
     currency: c.currency ?? null,
   };
 }
+
+// ============================================================
+// V4.2 商品管理(交易模块入口):数据仍为 Content(product 栏目),管理视图剥离
+// ============================================================
+
+/** 商品管理列表(交易组):仅 product 类栏目下的内容,带价格/SPU/封面/栏目名 */
+export async function listProductsAdmin(q: { keyword?: string; categoryId?: number; status?: string; page?: number; pageSize?: number }) {
+  await promoteScheduled();
+  const page = Math.max(1, q.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, q.pageSize ?? 10));
+  const cats = await prisma.category.findMany({
+    where: { moduleType: "product" },
+    select: { id: true },
+  });
+  const catIds = cats.map((c) => c.id);
+  const where: Record<string, unknown> = {
+    categoryId: { in: q.categoryId ? [q.categoryId] : catIds },
+  };
+  if (q.status) where.status = q.status;
+  const kw = q.keyword?.trim();
+  if (kw) where.translations = { some: { title: { contains: kw } } };
+  const [total, items] = await Promise.all([
+    prisma.content.count({ where }),
+    prisma.content.findMany({
+      where,
+      orderBy: { id: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        slug: true,
+        status: true,
+        coverUrl: true,
+        priceCents: true,
+        currency: true,
+        spu: true,
+        categoryId: true,
+        translations: { select: { locale: true, title: true } },
+        category: { select: { translations: { select: { locale: true, name: true } } } },
+      },
+    }),
+  ]);
+  const nameOf = (rows: { locale: string; name?: string; title?: string }[], fallback: string) =>
+    (rows.find((r) => r.locale === "zh-CN") ?? rows[0])?.name ?? (rows.find((r) => r.locale === "zh-CN") ?? rows[0])?.title ?? fallback;
+  return {
+    total,
+    page,
+    pageSize,
+    items: items.map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      status: c.status,
+      coverUrl: c.coverUrl,
+      priceCents: c.priceCents,
+      currency: c.currency,
+      spu: c.spu,
+      categoryId: c.categoryId,
+      title: nameOf(c.translations as never, c.slug),
+      categoryName: nameOf(c.category.translations as never, "-"),
+    })),
+  };
+}
+
+/** 商品可选栏目(product 类,新建/筛选下拉用) */
+export async function listProductCategories() {
+  return prisma.category.findMany({
+    where: { moduleType: "product" },
+    orderBy: [{ sort: "asc" }, { id: "asc" }],
+    select: { id: true, translations: { select: { locale: true, name: true } } },
+  });
+}

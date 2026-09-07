@@ -187,6 +187,15 @@
     "cookieNecessary": "仅必要",
     "privacyPolicy": "隐私政策",
     "cookiePolicy": "Cookie 政策",
-    "terms": "服务条款"
+    "terms": "服务条款",
+    "refundRequest": "申请售后",
+    "refundReason": "售后原因(必填)",
+    "refundSubmit": "提交申请",
+    "refundPending": "售后中",
+    "refundApproved": "已退款",
+    "refundRejected": "售后未通过",
+    "refundAmount": "退款金额",
+    "refundNote": "审核备注",
+    "refundSubmitted": "售后申请已提交,请等待审核"
   }
 }

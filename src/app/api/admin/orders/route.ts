@@ -2,7 +2,7 @@ import { z } from "zod";
 import { logAdmin } from "@/server/admin";
 import { jsonErr, jsonOk, parseBody, getClientIp } from "@/lib/api";
 import { requirePerm } from "@/lib/auth/session";
-import { getOrderAdmin, listOrdersAdmin, transitionOrder, type OrderAction } from "@/server/order";
+import { getOrderAdmin, listOrdersAdmin, reviewRefund, transitionOrder, type OrderAction } from "@/server/order";
 
 /**
  * 后台订单管理(V4.0):
@@ -34,10 +34,11 @@ export async function GET(req: Request) {
 
 const actionSchema = z.object({
   id: z.number().int().positive(),
-  action: z.enum(["confirm", "ship", "complete", "cancel"]),
+  action: z.enum(["confirm", "ship", "complete", "cancel", "refundApprove", "refundReject"]),
   adminNote: z.string().max(500).optional(),
   shippingCarrier: z.string().max(80).optional(), // V4.0.1 发货物流(非必填)
   trackingNumber: z.string().max(80).optional(),
+  refundAmountCents: z.number().int().positive().optional(), // V4.2 售后通过金额
 });
 
 export async function POST(req: Request) {
@@ -47,6 +48,21 @@ export async function POST(req: Request) {
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, actionSchema);
   if (parsed.error) return parsed.error;
+  // V4.2 售后审核
+  if (parsed.data.action === "refundApprove" || parsed.data.action === "refundReject") {
+    try {
+      await reviewRefund({
+        refundId: parsed.data.id,
+        approve: parsed.data.action === "refundApprove",
+        refundAmountCents: parsed.data.refundAmountCents,
+        adminNote: parsed.data.adminNote,
+        reviewerName: guard.admin.name,
+      });
+      return jsonOk();
+    } catch (e) {
+      return jsonErr(e instanceof Error ? e.message : "操作失败");
+    }
+  }
   try {
     const order = await transitionOrder(parsed.data.id, parsed.data.action as OrderAction, {
       adminNote: parsed.data.adminNote,

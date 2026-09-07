@@ -207,7 +207,7 @@ model ContentTranslation {
 model Order {
   id              Int       @id @default(autoincrement())
   no              String    @unique // 订单号 AO-YYYYMMDD-XXXX
-  status          String    @default("PENDING") // PENDING/CONFIRMED/SHIPPED/COMPLETED/CANCELLED
+  status          String    @default("PENDING") // PENDING/CONFIRMED/SHIPPED/COMPLETED/CANCELLED/REFUNDED(V4.2)
   userId          Int? // 登录用户关联;游客下单为 null
   email           String
   name            String
@@ -230,11 +230,27 @@ model Order {
   shippedAt       DateTime?
   completedAt     DateTime?
   cancelledAt     DateTime?
+  refundedAt      DateTime? // 售后退款完成时间(V4.2)
 
-  items OrderItem[]
+  items     OrderItem[]
+  refund    OrderRefund?
 
   @@index([status, createdAt])
   @@index([email])
+}
+
+/// 订单售后(V4.2):仅退款;一单一次申请(unique orderId);审核通过填退款金额
+model OrderRefund {
+  id                Int      @id @default(autoincrement())
+  orderId           Int      @unique
+  reason            String // 用户填写的售后原因
+  status            String   @default("PENDING") // PENDING/APPROVED/REJECTED
+  refundAmountCents Int? // 审核通过时填写(≤订单实付)
+  adminNote         String? // 审核备注(通过:说明;拒绝:原因)
+  createdAt         DateTime @default(now())
+  reviewedAt        DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 /// 订单条目(V4.0):下单快照(title/price);contentId 无外键,内容删除后快照保留
@@ -468,6 +484,15 @@ model AIReferralStat {
 // ------------------------- 文件 / 媒体 -------------------------
 
 /// 本地文件资产:统一登记,便于文件管理与 alt 语义
+/// 媒体文件夹(V4.2):二级(parentId 仅 null 或一级 id,应用层禁第三级)
+model MediaFolder {
+  id        Int      @id @default(autoincrement())
+  name      String
+  parentId  Int? // null=一级
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model MediaAsset {
   id           Int      @id @default(autoincrement())
   path         String // 相对 uploads/ 的路径
@@ -479,6 +504,7 @@ model MediaAsset {
   alt          String? // 图片 alt 语义(SEO)
   uploaderType String   @default("admin") // admin / user
   uploaderId   Int?
+  folderId     Int? // 归属文件夹(V4.2);null=未分类
   createdAt    DateTime @default(now())
 
   @@index([mime])
