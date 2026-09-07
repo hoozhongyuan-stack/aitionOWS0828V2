@@ -151,12 +151,50 @@ export default function OrderDetailPage() {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-lg border p-3 text-sm">
-            <p className="mb-1 font-medium">收货地址</p>
-            <p className="text-muted-foreground">
-              {order.country} · {order.city} · {order.zip || "无邮编"}
-              <br />
-              {order.address}
-            </p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="font-medium">收货信息</p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={async () => {
+                  // 一键复制全部收货信息(键值对拼接;V4.0.2 用户确认的交互形态)
+                  const text = [
+                    `订单号: ${order.no}`,
+                    `姓名: ${order.name}`,
+                    `邮箱: ${order.email}`,
+                    `电话: ${order.phone || "-"}`,
+                    `国家: ${order.country}`,
+                    `城市: ${order.city}`,
+                    `邮编: ${order.zip || "-"}`,
+                    `地址: ${order.country} ${order.city} ${order.address}${order.zip ? " " + order.zip : ""}`,
+                  ].join("\n");
+                  const ok = await copyText(text);
+                  if (ok) toast.success("收货信息已复制");
+                  else toast.error("复制失败,请手动选择复制");
+                }}
+              >
+                复制全部
+              </Button>
+            </div>
+            <dl className="space-y-1.5">
+              {(
+                [
+                  ["姓名", order.name],
+                  ["邮箱", order.email],
+                  ["电话", order.phone || "-"],
+                  ["国家/地区", order.country],
+                  ["城市", order.city],
+                  ["邮编", order.zip || "-"],
+                  ["详细地址", order.address],
+                ] as [string, string][]
+              ).map(([k, v]) => (
+                <div key={k} className="flex gap-2">
+                  <dt className="w-20 shrink-0 text-muted-foreground">{k}</dt>
+                  <dd className="min-w-0 break-all font-medium">{v}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
           <div className="rounded-lg border p-3 text-sm">
             <p className="mb-1 font-medium">买家备注</p>
@@ -182,7 +220,20 @@ export default function OrderDetailPage() {
             <tbody>
               {order.items.map((i) => (
                 <tr key={i.id} className="border-b">
-                  <td className="py-2">{i.titleSnapshot}</td>
+                  <td className="py-2">
+                    <div className="flex items-center gap-3">
+                      {i.coverUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={i.coverUrl} alt={i.titleSnapshot} className="h-10 w-14 shrink-0 rounded object-cover" />
+                      ) : (
+                        <div className="h-10 w-14 shrink-0 rounded bg-muted" aria-hidden />
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{i.titleSnapshot}</p>
+                        {i.spu && <p className="text-xs text-muted-foreground">SPU: {i.spu}</p>}
+                      </div>
+                    </div>
+                  </td>
                   <td className="py-2 text-right">{formatMoney(i.priceCentsSnapshot, i.currency, "zh-CN")}</td>
                   <td className="py-2 text-right">{i.qty}</td>
                   <td className="py-2 text-right">{formatMoney(i.priceCentsSnapshot * i.qty, i.currency, "zh-CN")}</td>
