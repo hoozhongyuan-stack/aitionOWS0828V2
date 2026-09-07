@@ -13,7 +13,7 @@ import { VALID_PERMISSION_KEYS } from "@/server/admin/permissions";
  * 全部写操作记操作日志。
  */
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   const guard = await requireOwner();
   if ("error" in guard) return guard.error;
   return jsonOk(await listAdminUsers());

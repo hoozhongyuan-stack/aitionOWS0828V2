@@ -49,10 +49,9 @@ export default async function AccountPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const tab = parseAccountTab(sp.tab);
 
-  const [t, tSubmission, tShop, favorites, submissions, myOrders] = await Promise.all([
+  const [t, tSubmission, favorites, submissions, myOrders] = await Promise.all([
     getTranslations("account"),
     getTranslations("submission"),
-    getTranslations("shop"),
     listMyFavorites(user.id, locale),
     // 投稿/订单视图才需要对应数据(其余视图零开销)
     tab === "submissions" ? listMySubmissions(user.id) : Promise.resolve([]),

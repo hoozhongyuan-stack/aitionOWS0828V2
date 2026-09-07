@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getActiveUserSession } from "@/lib/auth/session";
-import { calcShipping, getShopConfig, type ShopConfig } from "@/server/shop";
+import { calcShipping, getShopConfig } from "@/server/shop";
 import {
   renderOrderPlacedEmail,
   renderOrderConfirmedEmail,

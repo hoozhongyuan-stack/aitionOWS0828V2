@@ -28,10 +28,6 @@ import { ArrowRight } from "lucide-react";
 
 type FloorCard = HomeFloorSection["items"][number];
 
-interface Props {
-  params: Promise<{ locale: string }>;
-}
-
 export async function generateMetadata({
   params,
 }: {

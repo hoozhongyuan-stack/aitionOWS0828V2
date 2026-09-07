@@ -57,12 +57,11 @@ export default async function ProductPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
 
-  const [content, features, brand, t, tShop, tInter, user] = await Promise.all([
+  const [content, features, brand, t, tInter, user] = await Promise.all([
     getProductDetail(slug, locale),
     getFeatureFlags(),
     getBrandConfig(),
     getTranslations("product"),
-    getTranslations("shop"),
     getTranslations("interaction"),
     getActiveUserSession(),
   ]);

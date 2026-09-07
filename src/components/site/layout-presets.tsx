@@ -46,7 +46,7 @@ export function ListItemRow({ item, dateLabel }: { item: ListItem; dateLabel: st
 
 /** V3.2 布局预设:客户端开关式 CTA 横幅(hero-list 预设尾部) */
 export function CtaBanner({ text, href, label }: { text: string; href: string; label: string }) {
-  const [hidden, setHidden] = useState(false);
+  const [hidden] = useState(false);
   if (hidden) return null;
   return (
     <section className="container pb-16">
