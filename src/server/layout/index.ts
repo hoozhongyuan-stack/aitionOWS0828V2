@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { listPublishedByCategory } from "@/server/content";
 
 /**
  * V3.2 前台布局预设(方案 A · 轻量):
@@ -90,6 +91,45 @@ export async function getHomeFloors(): Promise<HomeFloor[]> {
     if (out.length >= FLOOR_MAX) break;
   }
   return out;
+}
+
+/** 首页楼层渲染数据:配置 + 栏目(slug/名称/moduleType) + 该栏目最新内容(shapeCard 同构) */
+export interface HomeFloorSection {
+  floor: HomeFloor;
+  slug: string;
+  name: string;
+  moduleType: "product" | undefined;
+  items: NonNullable<Awaited<ReturnType<typeof listPublishedByCategory>>>["items"];
+}
+
+/**
+ * 组装首页楼层渲染数据(首页 page 的唯一数据入口,页面层不查库):
+ * 各楼层并行取栏目与最新内容;已删/不可见栏目或无内容的楼层返回时自然剔除。
+ */
+export async function getHomeFloorSections(locale: string): Promise<HomeFloorSection[]> {
+  const cfgs = await getHomeFloors();
+  const sections = await Promise.all(
+    cfgs.map(async (floor): Promise<HomeFloorSection | null> => {
+      const cat = await prisma.category.findUnique({
+        where: { id: floor.categoryId },
+        include: { translations: true },
+      });
+      if (!cat || !cat.visible) return null;
+      const data = await listPublishedByCategory(cat.slug, locale, 1, floor.limit);
+      if (!data || data.items.length === 0) return null;
+      return {
+        floor,
+        slug: cat.slug,
+        name:
+          cat.translations.find((tr) => tr.locale === locale)?.name ??
+          cat.translations[0]?.name ??
+          cat.slug,
+        moduleType: cat.moduleType === "product" ? "product" : undefined,
+        items: data.items,
+      };
+    })
+  );
+  return sections.filter((x): x is HomeFloorSection => x !== null);
 }
 
 /** 保存布局配置(后台);非法值回退默认,保证落库数据始终合法 */

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
-import { listLatestPublished, listPublishedByCategory } from "@/server/content";
-import { getHomeLayout, getHomeFloors, type HomeFloor } from "@/server/layout";
-import { prisma } from "@/lib/db";
+import { listLatestPublished } from "@/server/content";
+import { getHomeLayout, getHomeFloorSections, type HomeFloorSection } from "@/server/layout";
 import { getActiveBanners } from "@/server/banner";
 import { getSeoMetaFor } from "@/server/seo";
 import { getBrandConfig } from "@/lib/config";
@@ -27,15 +26,7 @@ import { ArrowRight } from "lucide-react";
  * - Hero 文案来自多语言文案;分享 OG 同源(V3.1 REQ-003)
  */
 
-/** 楼层渲染数据:配置 + 栏目(slug/名称/moduleType) + 该栏目最新内容(shapeCard 同构) */
-type FloorCard = Awaited<ReturnType<typeof listLatestPublished>>[number];
-interface FloorSectionData {
-  floor: HomeFloor;
-  slug: string;
-  name: string;
-  moduleType: "product" | undefined;
-  items: FloorCard[];
-}
+type FloorCard = HomeFloorSection["items"][number];
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -71,43 +62,18 @@ export default async function HomePage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, tCommon, tInter, latest, banners, homeLayout, floorCfgs] = await Promise.all([
+  const [t, tCommon, tInter, latest, banners, homeLayout, floorSections] = await Promise.all([
     getTranslations("site"),
     getTranslations("common"),
     getTranslations("interaction"),
     listLatestPublished(locale, 6),
     getActiveBanners(),
     getHomeLayout(),
-    getHomeFloors(),
+    getHomeFloorSections(locale),
   ]);
   const hasBanners = homeLayout.sections.banners && banners.length > 0;
   const showLatest = homeLayout.sections.latest;
   const preset = homeLayout.preset;
-
-  // —— 首页楼层(V3.3 D):并行取各楼层栏目与最新内容;已删栏目/不可见/无内容跳过 ——
-  const floorSections = (
-    await Promise.all(
-      floorCfgs.map(async (floor): Promise<FloorSectionData | null> => {
-        const cat = await prisma.category.findUnique({
-          where: { id: floor.categoryId },
-          include: { translations: true },
-        });
-        if (!cat || !cat.visible) return null;
-        const data = await listPublishedByCategory(cat.slug, locale, 1, floor.limit);
-        if (!data || data.items.length === 0) return null;
-        return {
-          floor,
-          slug: cat.slug,
-          name:
-            cat.translations.find((tr) => tr.locale === locale)?.name ??
-            cat.translations[0]?.name ??
-            cat.slug,
-          moduleType: cat.moduleType === "product" ? "product" : undefined,
-          items: data.items,
-        };
-      })
-    )
-  ).filter((x): x is FloorSectionData => x !== null);
 
   // —— 通用 Hero 文案(grid 与 split 共用;hero-list 用居中变体) ——
   const heroCopy = (
@@ -302,7 +268,7 @@ function FloorSection({
   readMoreLabel,
   viewsLabel,
 }: {
-  data: FloorSectionData;
+  data: HomeFloorSection;
   locale: string;
   readMoreLabel: string;
   viewsLabel: string;

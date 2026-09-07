@@ -33,6 +33,13 @@ npm run prisma:deploy / prisma:generate              # 迁移/客户端
 - 服务器 1.9G 内存,**swap 4G 已配置**(/swapfile),构建/运行依赖它,别删
 
 
+## V3.3 交付记忆(2026-09-07,首页楼层+全局 404+国内引擎白名单)
+
+- **根布局重构(C1)**:html/head/主题注入自 [locale]/layout **上移至 src/app/layout.tsx**(新建;动态 lang 从 middleware x-geo-path 首段提取);[locale]/layout 剥壳为 NextIntlClientProvider 直通——**后续开发:全站 html 壳在根 layout,[locale]/layout 禁止再输出 html**;根级 not-found.tsx 承接全部 404(带点路径/段内未匹配),内联样式+后台错误页配置
+- 首页楼层(D):存 Setting(group=layout,key=floors) **JSON 裸数组**(后台通用 settings API 整组保存);getHomeFloors 读取兼容裸数组/{floors:[]} 包装,逐条容错(非法跳过/style 回退/limit 收敛 1~12/上限 8/visible 过滤);**数据组装在服务层 getHomeFloorSections(locale)(铁律 1,页面不查库)**;已删栏目/无内容楼层渲染侧自然跳过;样式 grid3/list/feature,feature 复用 ContentCard featured
+- GEO 白名单(C3):AI_BOTS 现含 18 引擎(新增 Kimi×3/ChatGLM-Spider/TongyiBot/PanguBot,UA 核实自 ai-robots.txt);**腾讯混元/元宝与百度无公开 AI 爬虫 UA,勿凭空添加**(Baiduspider 是传统搜索爬虫,计入污染 GEO 口径);geo-monitor stats API 附 knownBots,明细 Tab 引擎下拉选项自动跟随白名单
+- 本地库 data/app.db 现存 3 层测试楼层配置(products=feature/product-news=grid3/news 隐藏)供验收;生产库无 floors 键=现状布局零变化;A(GEO 二期)/B(分享海报)暂缓,方案在 docs/V3.3升级计划.md
+
 ## V3.2 交付记忆(2026-09-06,布局预设+GEO 监测一期)
 
 - 布局预设存 Setting(group=layout,key=home/category);缺省=现状布局,升级零变化;服务层 src/server/layout/index.ts
