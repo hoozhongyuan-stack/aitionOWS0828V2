@@ -74,6 +74,19 @@ const layoutSchema = z
         header: z.boolean().optional(),
       })
       .optional(),
+    // V3.3 D 首页楼层:每层绑定栏目+样式+条数(读取侧 server/layout getHomeFloors 同口径容错)
+    floors: z
+      .array(
+        z.object({
+          categoryId: z.number().int().positive(),
+          style: z.enum(["grid3", "list", "feature"]).optional(),
+          limit: z.number().int().min(1).max(12).optional(),
+          title: z.string().max(60).optional(),
+          visible: z.boolean().optional(),
+        })
+      )
+      .max(8)
+      .optional(),
   })
   .partial()
   .passthrough();

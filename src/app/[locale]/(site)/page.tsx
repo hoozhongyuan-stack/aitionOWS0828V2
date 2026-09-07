@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
-import { listLatestPublished } from "@/server/content";
-import { getHomeLayout } from "@/server/layout";
+import { listLatestPublished, listPublishedByCategory } from "@/server/content";
+import { getHomeLayout, getHomeFloors, type HomeFloor } from "@/server/layout";
+import { prisma } from "@/lib/db";
 import { getActiveBanners } from "@/server/banner";
 import { getSeoMetaFor } from "@/server/seo";
 import { getBrandConfig } from "@/lib/config";
@@ -15,14 +16,26 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 /**
- * 前台首页(SSR · V3.2 布局预设):
+ * 前台首页(SSR · V3.2 布局预设 · V3.3 楼层):
  * - preset=grid(现状默认):轮播 Hero → 最新动态网格
  * - preset=hero-list:全宽 Hero → 最新动态列表条目 → CTA 横幅
  * - preset=split:左右分屏 Hero → 最新动态网格
+ * - 楼层(V3.3 D):最新动态之后按后台配置逐层渲染(绑定栏目,grid3/list/feature 三样式);
+ *   未配置楼层=现状布局零变化;楼层引用已删栏目或栏目无内容时该层自然跳过
  * - 布局由后台「站点配置 → 页面布局」选择(Setting group=layout);缺省 grid,升级零变化
  * - 区块显隐(轮播/最新动态)由后台配置(sections);双主题自动适配(classic/aurora)
  * - Hero 文案来自多语言文案;分享 OG 同源(V3.1 REQ-003)
  */
+
+/** 楼层渲染数据:配置 + 栏目(slug/名称/moduleType) + 该栏目最新内容(shapeCard 同构) */
+type FloorCard = Awaited<ReturnType<typeof listLatestPublished>>[number];
+interface FloorSectionData {
+  floor: HomeFloor;
+  slug: string;
+  name: string;
+  moduleType: "product" | undefined;
+  items: FloorCard[];
+}
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -58,17 +71,43 @@ export default async function HomePage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, tCommon, tInter, latest, banners, homeLayout] = await Promise.all([
+  const [t, tCommon, tInter, latest, banners, homeLayout, floorCfgs] = await Promise.all([
     getTranslations("site"),
     getTranslations("common"),
     getTranslations("interaction"),
     listLatestPublished(locale, 6),
     getActiveBanners(),
     getHomeLayout(),
+    getHomeFloors(),
   ]);
   const hasBanners = homeLayout.sections.banners && banners.length > 0;
   const showLatest = homeLayout.sections.latest;
   const preset = homeLayout.preset;
+
+  // —— 首页楼层(V3.3 D):并行取各楼层栏目与最新内容;已删栏目/不可见/无内容跳过 ——
+  const floorSections = (
+    await Promise.all(
+      floorCfgs.map(async (floor): Promise<FloorSectionData | null> => {
+        const cat = await prisma.category.findUnique({
+          where: { id: floor.categoryId },
+          include: { translations: true },
+        });
+        if (!cat || !cat.visible) return null;
+        const data = await listPublishedByCategory(cat.slug, locale, 1, floor.limit);
+        if (!data || data.items.length === 0) return null;
+        return {
+          floor,
+          slug: cat.slug,
+          name:
+            cat.translations.find((tr) => tr.locale === locale)?.name ??
+            cat.translations[0]?.name ??
+            cat.slug,
+          moduleType: cat.moduleType === "product" ? "product" : undefined,
+          items: data.items,
+        };
+      })
+    )
+  ).filter((x): x is FloorSectionData => x !== null);
 
   // —— 通用 Hero 文案(grid 与 split 共用;hero-list 用居中变体) ——
   const heroCopy = (
@@ -105,6 +144,22 @@ export default async function HomePage({
       )}
     </Reveal>
   );
+
+  // —— 楼层区块(V3.3 D):三种预设共用,插在最新动态之后 ——
+  const floorBlocks =
+    floorSections.length > 0 ? (
+      <>
+        {floorSections.map((fs) => (
+          <FloorSection
+            key={fs.floor.categoryId}
+            data={fs}
+            locale={locale}
+            readMoreLabel={tCommon("readMore")}
+            viewsLabel={tInter("views")}
+          />
+        ))}
+      </>
+    ) : null;
 
   return (
     <main>
@@ -169,6 +224,8 @@ export default async function HomePage({
             </section>
           )}
 
+          {floorBlocks}
+
           {/* CTA 横幅(hero-list 尾部) */}
           <section className="container pb-16">
             <Reveal>
@@ -207,6 +264,7 @@ export default async function HomePage({
             </div>
           </section>
           {showLatest && latestGrid}
+          {floorBlocks}
         </>
       )}
 
@@ -230,8 +288,79 @@ export default async function HomePage({
             </Parallax>
           </section>
           {showLatest && latestGrid}
+          {floorBlocks}
         </>
       )}
     </main>
+  );
+}
+
+/** 首页楼层区块(V3.3 D):层标题(可覆盖) + 查看更多 → 栏目页 + 三种楼层样式 */
+function FloorSection({
+  data,
+  locale,
+  readMoreLabel,
+  viewsLabel,
+}: {
+  data: FloorSectionData;
+  locale: string;
+  readMoreLabel: string;
+  viewsLabel: string;
+}) {
+  const { floor, slug, name, moduleType, items } = data;
+  const hrefOf = (item: FloorCard) =>
+    item.moduleType === "product" ? `/${locale}/product/${item.slug}` : `/${locale}/article/${item.slug}`;
+  return (
+    <section className="container py-12">
+      <Reveal>
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="font-heading text-2xl font-bold">{floor.title ?? name}</h2>
+          <Link
+            href={`/${locale}/c/${slug}`}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
+          >
+            {readMoreLabel}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        {floor.style === "list" && (
+          <div className="space-y-3">
+            {items.map((item) => (
+              <ListItemRow
+                key={item.id}
+                item={{
+                  slug: item.slug,
+                  title: item.title,
+                  summary: item.summary,
+                  coverUrl: item.coverUrl,
+                  publishedAt: item.publishedAt,
+                  href: hrefOf(item),
+                }}
+                dateLabel={viewsLabel}
+              />
+            ))}
+          </div>
+        )}
+        {floor.style === "feature" && (
+          <div className="space-y-6">
+            <ContentCard locale={locale} item={items[0]} viewsLabel={viewsLabel} moduleType={moduleType} featured />
+            {items.length > 1 && (
+              <div className="grid gap-6 sm:grid-cols-2">
+                {items.slice(1).map((item) => (
+                  <ContentCard key={item.id} locale={locale} item={item} viewsLabel={viewsLabel} moduleType={moduleType} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {floor.style === "grid3" && (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
+              <ContentCard key={item.id} locale={locale} item={item} viewsLabel={viewsLabel} moduleType={moduleType} />
+            ))}
+          </div>
+        )}
+      </Reveal>
+    </section>
   );
 }
