@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { requireOwner } from "@/lib/auth/session";
 import { agreementTypeSchema } from "@/types/domain";
 import { getAgreementExact, saveAgreement } from "@/server/agreement";
 
@@ -18,7 +19,7 @@ const putSchema = z.object({
 });
 
 export async function GET(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
   if ("error" in guard) return guard.error;
   const url = new URL(req.url);
   const type = url.searchParams.get("type");
@@ -29,7 +30,9 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "agreements.put", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, putSchema);
   if (parsed.error) return parsed.error;

@@ -1,5 +1,5 @@
 import { jsonErr, jsonOk } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { requirePerm } from "@/lib/auth/session";
 import { AI_BOTS, getGeoMonitorStats, listCrawlEvents, listReferralEvents } from "@/server/geo";
 
 /**
@@ -11,7 +11,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_SPAN_DAYS = 92;
 
 export async function GET(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("geo");
   if ("error" in guard) return guard.error;
 
   const sp = new URL(req.url).searchParams;

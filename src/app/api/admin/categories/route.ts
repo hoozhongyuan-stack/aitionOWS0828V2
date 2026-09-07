@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { requirePerm } from "@/lib/auth/session";
 import { listCategories, saveCategory, deleteCategory } from "@/server/content";
 
 /** 栏目管理:GET(列表)/ PUT(新建或更新)/ DELETE ?id= */
@@ -27,13 +28,15 @@ const putSchema = z.object({
 });
 
 export async function GET() {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
   if ("error" in guard) return guard.error;
   return jsonOk(await listCategories());
 }
 
 export async function PUT(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "categories.put", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, putSchema);
   if (parsed.error) return parsed.error;
@@ -46,7 +49,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "categories.delete", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const id = Number(new URL(req.url).searchParams.get("id"));
   if (!id) return jsonErr("缺少 id");

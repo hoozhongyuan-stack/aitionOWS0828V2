@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { requirePerm } from "@/lib/auth/session";
 import { listBanners, saveBanners, MAX_BANNERS } from "@/server/banner";
 
 /** 轮播图管理:GET(列表)/ PUT(整组覆盖保存,最多 MAX_BANNERS 张) */
@@ -18,13 +19,15 @@ const putSchema = z.object({
 });
 
 export async function GET() {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
   if ("error" in guard) return guard.error;
   return jsonOk(await listBanners());
 }
 
 export async function PUT(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "banners.put", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, putSchema);
   if (parsed.error) return parsed.error;

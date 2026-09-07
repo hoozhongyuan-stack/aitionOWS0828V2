@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { requireOwner } from "@/lib/auth/session";
 import { adminUpdateProfile, listUsersAdmin, setUserStatus, userProfileSchema } from "@/server/user";
 
 /**
@@ -18,7 +19,7 @@ const postSchema = z.object({
 const patchSchema = z.object({ id: z.number().int() }).extend(userProfileSchema.shape);
 
 export async function GET(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
   if ("error" in guard) return guard.error;
   const sp = new URL(req.url).searchParams;
   return jsonOk(
@@ -32,7 +33,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "users.post", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, postSchema);
   if (parsed.error) return parsed.error;
@@ -46,7 +49,9 @@ export async function POST(req: Request) {
 
 /** 资料更新(REQ-009):4 字段全可选;服务层二次 zod 校验(trim/≤100) */
 export async function PATCH(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "users.patch", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, patchSchema);
   if (parsed.error) return parsed.error;

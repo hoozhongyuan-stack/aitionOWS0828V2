@@ -28,6 +28,24 @@ execSync("npx prisma migrate deploy", {
   stdio: "pipe",
 });
 
+// V4.1 权限守卫(requireOwner/requirePerm)查库校验角色——测试统一种子一个 OWNER(id=1),
+// 与各测试文件 signToken({ sub: "1", typ: "admin" }) 的约定一致。
+// passwordHash 任意串(测试不走密码校验路径)。
+try {
+  const { PrismaClient } = require("@prisma/client");
+  const seedDb = new PrismaClient();
+  seedDb.adminUser
+    .upsert({
+      where: { username: "admin" },
+      update: { role: "OWNER", status: "ACTIVE" },
+      create: { id: 1, username: "admin", passwordHash: "test-only", displayName: "测试管理员", role: "OWNER", status: "ACTIVE" },
+    })
+    .then(() => seedDb.$disconnect())
+    .catch(() => seedDb.$disconnect());
+} catch {
+  // 种子失败不影响「不依赖守卫查库」的旧测试
+}
+
 afterAll(() => {
   try {
     rmSync(TMP_DIR, { recursive: true, force: true });

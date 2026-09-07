@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
-import { getAdminSession } from "@/lib/auth/session";
+import { getGuardedAdmin } from "@/lib/auth/session";
 import { getBrandConfig, getSecurityConfig } from "@/lib/config";
 import { isInsecureSecret } from "@/lib/auth/jwt";
 import { AdminSidebar } from "@/components/admin/sidebar";
@@ -24,7 +24,7 @@ export default async function AdminPanelLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const admin = await getAdminSession();
+  const admin = await getGuardedAdmin();
   if (!admin) redirect(`/${locale}/admin/login`);
 
   const [brand, security] = await Promise.all([getBrandConfig(), getSecurityConfig()]);
@@ -32,12 +32,19 @@ export default async function AdminPanelLayout({
   return (
     <div className="flex min-h-screen bg-muted/30">
       <Toaster richColors position="top-center" />
-      <AdminSidebar siteName={brand.siteName} />
+      <AdminSidebar
+        siteName={brand.siteName}
+        adminRole={admin.role}
+        adminPermissions={admin.permissions}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b bg-background px-6">
           <div className="text-sm text-muted-foreground">企业官网管理后台</div>
           <div className="text-sm">
-            {admin.name} <span className="text-muted-foreground">(管理员)</span>
+            {admin.name}{" "}
+            <span className="text-muted-foreground">
+              {admin.role === "OWNER" ? "(主账号)" : "(子账号)"}
+            </span>
           </div>
         </header>
         <main className="flex-1 space-y-4 p-6">

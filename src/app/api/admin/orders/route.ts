@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonErr, jsonOk, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonErr, jsonOk, parseBody, getClientIp } from "@/lib/api";
+import { requirePerm } from "@/lib/auth/session";
 import { getOrderAdmin, listOrdersAdmin, transitionOrder, type OrderAction } from "@/server/order";
 
 /**
@@ -10,7 +11,7 @@ import { getOrderAdmin, listOrdersAdmin, transitionOrder, type OrderAction } fro
  */
 
 export async function GET(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("commerce");
   if ("error" in guard) return guard.error;
   const sp = new URL(req.url).searchParams;
   const id = Number(sp.get("id"));
@@ -40,7 +41,9 @@ const actionSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("commerce");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "orders.post", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, actionSchema);
   if (parsed.error) return parsed.error;

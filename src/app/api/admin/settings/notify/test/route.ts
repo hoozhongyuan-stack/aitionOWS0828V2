@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { requireOwner } from "@/lib/auth/session";
 import { getNotifyConfig } from "@/lib/config";
 
 /**
@@ -25,7 +26,9 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "settings.notify.post", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, schema);
   if (parsed.error) return parsed.error;

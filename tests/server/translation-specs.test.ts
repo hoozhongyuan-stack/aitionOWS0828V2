@@ -17,6 +17,8 @@ vi.mock("@/lib/auth/session", async (importOriginal) => {
   return {
     ...actual,
     requireAdmin: async () => ({ admin: { id: 1, name: "tester" } }),
+    requireOwner: async () => ({ admin: { id: 1, name: "tester", role: "OWNER", permissions: [] } }),
+    requirePerm: async () => ({ admin: { id: 1, name: "tester", role: "OWNER", permissions: [] } }),
   };
 });
 

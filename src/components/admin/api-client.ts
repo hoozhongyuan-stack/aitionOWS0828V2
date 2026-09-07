@@ -54,3 +54,14 @@ export async function apiUpload(file: File, alt?: string) {
   if (alt) fd.append("alt", alt);
   return apiPost<{ id: number; url: string; path: string; filename: string }>("/api/admin/upload", fd);
 }
+
+/** PATCH 请求(V4.1 子账号更新等) */
+export async function apiPatch<T = unknown>(url: string, body: unknown): Promise<T> {
+  return handle<T>(
+    await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+}

@@ -4,7 +4,7 @@ import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { ADMIN_COOKIE, sessionCookieOptions, guardAuthSecret } from "@/lib/auth/session";
 import { getSecurityConfig } from "@/lib/config";
-import { findAdminByUsername, touchAdminLogin } from "@/server/admin";
+import { findAdminByUsername, touchAdminLogin, logAdmin } from "@/server/admin";
 
 /**
  * 管理员登录:POST /api/admin/auth/login
@@ -48,6 +48,7 @@ export async function POST(req: Request) {
   fails.delete(ip);
 
   await touchAdminLogin(admin.id);
+  void logAdmin({ adminId: admin.id, adminName: admin.displayName || admin.username, action: "auth.login", ip });
 
   const token = await signToken(
     { sub: String(admin.id), typ: "admin", name: admin.displayName || admin.username },

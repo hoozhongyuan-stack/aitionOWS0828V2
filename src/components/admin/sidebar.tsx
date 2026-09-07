@@ -26,8 +26,11 @@ import {
   ExternalLink,
   Store,
   ReceiptText,
+  UserCog,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { canSeeMenu } from "@/server/admin/permissions";
 import { toast } from "sonner";
 import { apiPost } from "@/components/admin/api-client";
 
@@ -86,13 +89,23 @@ const NAV_GROUPS: { title: string; items: { href: string; label: string; icon: R
   {
     title: "系统",
     items: [
+      { href: "/admin/admin-users", label: "子账号", icon: UserCog },
+      { href: "/admin/admin-logs", label: "操作日志", icon: ScrollText },
       { href: "/admin/backup", label: "备份", icon: DatabaseBackup },
       { href: "/admin/security", label: "安全", icon: ShieldCheck },
     ],
   },
 ];
 
-export function AdminSidebar({ siteName }: { siteName: string }) {
+export function AdminSidebar({
+  siteName,
+  adminRole = "OWNER",
+  adminPermissions = [],
+}: {
+  siteName: string;
+  adminRole?: string;
+  adminPermissions?: string[];
+}) {
   const pathname = usePathname();
   const locale = useLocale();
   const router = useRouter();
@@ -116,7 +129,12 @@ export function AdminSidebar({ siteName }: { siteName: string }) {
         </span>
       </div>
       <nav className="flex-1 space-y-4 overflow-y-auto p-3">
-        {NAV_GROUPS.map((group) => (
+        {NAV_GROUPS.map((group) => ({
+          ...group,
+          items: group.items.filter((it) => canSeeMenu(it.href, adminRole, adminPermissions as never)),
+        }))
+          .filter((group) => group.items.length > 0)
+          .map((group) => (
           <div key={group.title}>
             <div className="px-2 pb-1 text-xs font-medium text-muted-foreground">{group.title}</div>
             <div className="space-y-0.5">

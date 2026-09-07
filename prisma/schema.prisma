@@ -308,14 +308,32 @@ model User {
 }
 
 /// 后台管理员(与前台用户隔离,安全边界清晰)
+/// 后台管理员(V4.1):OWNER 主账号全部权限;STAFF 子账号按预定义权限组(permissions)受限
 model AdminUser {
   id           Int       @id @default(autoincrement())
   username     String    @unique
   passwordHash String
   displayName  String?
-  role         String    @default("admin") // 预留角色扩展
+  role         String    @default("OWNER") // OWNER/STAFF
+  status       String    @default("ACTIVE") // ACTIVE/DISABLED(子账号禁用,登录与会话校验即失效)
+  permissions  String? // JSON 数组文本(["content","commerce","moderation","geo"]);OWNER 忽略
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
+}
+
+/// 后台操作日志(V4.1):敏感写操作审计,只增不改
+model AdminLog {
+  id        Int      @id @default(autoincrement())
+  adminId   Int? // 登录失败等场景可为空
+  adminName String // 显示名快照
+  action    String // 动作标识(如 content.delete / settings.update / auth.login)
+  target    String? // 对象标识(如 content:12 / settings:theme)
+  detail    String? // 详情摘要
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([createdAt])
 }
 
 /// 密码重置令牌(忘记密码邮件链接):只存哈希,一次性,30 分钟过期

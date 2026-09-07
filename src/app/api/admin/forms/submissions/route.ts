@@ -1,5 +1,6 @@
-import { jsonOk, jsonErr } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { jsonOk, jsonErr, getClientIp } from "@/lib/api";
+import { logAdmin } from "@/server/admin";
+import { requirePerm } from "@/lib/auth/session";
 import {
   listSubmissions,
   deleteSubmission,
@@ -14,7 +15,7 @@ import {
  * DELETE ?id=                           删除单条
  */
 export async function GET(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
   if ("error" in guard) return guard.error;
   const sp = new URL(req.url).searchParams;
   const formId = Number(sp.get("formId"));
@@ -47,7 +48,9 @@ export async function GET(req: Request) {
 
 /** 标记处理状态:PUT { id, status: "HANDLED" | "UNHANDLED" } */
 export async function PUT(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "forms.submissions.put", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const body = (await req.json().catch(() => ({}))) as { id?: number; status?: string };
   if (!body.id || !body.status) return jsonErr("缺少 id/status");
@@ -60,7 +63,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "forms.submissions.delete", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const id = Number(new URL(req.url).searchParams.get("id"));
   if (!id) return jsonErr("缺少 id");

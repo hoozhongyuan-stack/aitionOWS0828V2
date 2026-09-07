@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { logAdmin } from "@/server/admin";
 import { requireAdmin } from "@/lib/auth/session";
 import { saveSettingGroup } from "@/server/setting";
 import { changeAdminPassword } from "@/server/admin";
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
   }
 
   await saveSettingGroup("security", { defaultPwChanged: true });
+  void logAdmin({ adminId: guard.admin.id, adminName: guard.admin.name, action: "auth.password_changed", ip: getClientIp(req) });
 
   return jsonOk();
 }

@@ -1,5 +1,5 @@
 import { jsonOk, jsonErr } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireOwner } from "@/lib/auth/session";
 import { getDashboardStats, DashboardRangeError } from "@/server/analytics";
 
 /**
@@ -8,7 +8,7 @@ import { getDashboardStats, DashboardRangeError } from "@/server/analytics";
  * 返回区间逐日序列 range.series;非法参数 400 jsonErr;无参数响应结构与既有契约兼容。查询值空串视为未传(与 UI 行为一致;评审 Low-5 口径)。
  */
 export async function GET(request: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
   if ("error" in guard) return guard.error;
 
   const { searchParams } = new URL(request.url);

@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { requireOwner } from "@/lib/auth/session";
 import { getSettingGroup, saveSettingGroup } from "@/server/setting";
 
 /**
@@ -134,7 +135,7 @@ function validateGroup(
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ group: string }> }) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
   if ("error" in guard) return guard.error;
   const { group } = await ctx.params;
   if (!ALLOWED_GROUPS.has(group)) return jsonErr("未知配置分组", 404);
@@ -147,7 +148,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ group: string 
 }
 
 export async function PUT(req: Request, ctx: { params: Promise<{ group: string }> }) {
-  const guard = await requireAdmin();
+  const guard = await requireOwner();
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "settings.put", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const { group } = await ctx.params;
   if (!ALLOWED_GROUPS.has(group)) return jsonErr("未知配置分组", 404);

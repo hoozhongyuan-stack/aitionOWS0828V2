@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { jsonOk, jsonErr, parseBody } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/session";
+import { logAdmin } from "@/server/admin";
+import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
+import { requirePerm } from "@/lib/auth/session";
 import { listCommentsAdmin, reviewComment, deleteComment } from "@/server/ugc";
 
 /** 评论审核:GET ?status=&page= / POST {id,status}(通过/驳回)/ DELETE ?id= */
@@ -11,7 +12,7 @@ const postSchema = z.object({
 });
 
 export async function GET(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("moderation");
   if ("error" in guard) return guard.error;
   const sp = new URL(req.url).searchParams;
   return jsonOk(
@@ -26,7 +27,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("moderation");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "ugc.comments.post", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const parsed = await parseBody(req, postSchema);
   if (parsed.error) return parsed.error;
@@ -39,7 +42,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("moderation");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "ugc.comments.delete", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
   const id = Number(new URL(req.url).searchParams.get("id"));
   if (!id) return jsonErr("缺少 id");

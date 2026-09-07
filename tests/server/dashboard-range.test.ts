@@ -14,10 +14,14 @@ import type { PrismaClient } from "@prisma/client";
 
 const sessionMocks = vi.hoisted(() => ({
   requireAdmin: vi.fn<() => Promise<{ admin: { id: number; name: string } }>>(),
+
+  requireOwner: vi.fn<() => Promise<{ admin: { id: number; name: string } }>>(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({
   requireAdmin: sessionMocks.requireAdmin,
+
+  requireOwner: sessionMocks.requireOwner,
 }));
 
 /** getDashboardStats 目标形态(GREEN 后签名);RED 期经此类型化调用,屏蔽旧签名差异 */
@@ -54,6 +58,7 @@ beforeAll(async () => {
   callGet = (query) => (route.GET as unknown as GetRoute)(new Request(`http://localhost/api/admin/dashboard${query}`));
 
   sessionMocks.requireAdmin.mockResolvedValue({ admin: { id: 1, name: "看板管理员" } });
+  sessionMocks.requireOwner.mockResolvedValue({ admin: { id: 1, name: "看板管理员", role: "OWNER", permissions: [] } });
 
   // 区间种子:2026-08-01..2026-08-10 内仅部分日期有数据;
   // 2026-08-05 故意插一行 path="/x"(具体路径),断言区间序列不计入

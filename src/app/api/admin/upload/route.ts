@@ -1,5 +1,6 @@
-import { requireAdmin } from "@/lib/auth/session";
-import { jsonOk, jsonErr, contentLengthExceeds } from "@/lib/api";
+import { requirePerm } from "@/lib/auth/session";
+import { jsonOk, jsonErr, contentLengthExceeds, getClientIp } from "@/lib/api";
+import { logAdmin } from "@/server/admin";
 import { VIDEO_MAX_SIZE_MB } from "@/lib/config";
 import { createMedia } from "@/server/media";
 
@@ -8,7 +9,9 @@ import { createMedia } from "@/server/media";
  * 校验管理员会话;类型/大小限制由 Setting.upload 控制(视频单独放宽,上限见 VIDEO_MAX_SIZE_MB)。
  */
 export async function POST(req: Request) {
-  const guard = await requireAdmin();
+  const guard = await requirePerm("content");
+  const admin = "admin" in guard ? guard.admin : null;
+  void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: "media.upload.post", ip: getClientIp(req) });
   if ("error" in guard) return guard.error;
 
   // 读取 body 前的体积预检:超最大上限直接拒,避免大文件整体进内存

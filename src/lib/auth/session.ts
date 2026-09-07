@@ -98,3 +98,53 @@ export function sessionCookieOptions(maxAgeSeconds: number) {
     maxAge: maxAgeSeconds,
   };
 }
+
+// ============================================================
+// V4.1 权限守卫:主账号(OWNER)/子账号(STAFF 预定义权限组)
+// 每次查库校验角色与状态——禁用子账号立即失效,不依赖 token 余期。
+// ============================================================
+import { getAdminWithRole, parsePermissions } from "@/server/admin";
+import type { PermissionKey } from "@/server/admin/permissions";
+
+export interface GuardedAdmin {
+  id: number;
+  name: string;
+  role: string;
+  permissions: PermissionKey[];
+}
+
+/** 查库取当前管理员(含角色/权限);未登录/不存在/DISABLED → null */
+export async function getGuardedAdmin(): Promise<GuardedAdmin | null> {
+  const session = await getAdminSession();
+  if (!session) return null;
+  const row = await getAdminWithRole(session.id);
+  if (!row || row.status !== "ACTIVE") return null;
+  return {
+    id: row.id,
+    name: row.displayName || row.username,
+    role: row.role,
+    permissions: parsePermissions(row.permissions),
+  };
+}
+
+function denied(message = "无权限执行此操作") {
+  return { error: jsonErr(message, 403) };
+}
+
+/** 主账号专属守卫:站点配置/用户/子账号/日志/备份/数据看板等 */
+export async function requireOwner(): Promise<{ admin: GuardedAdmin } | { error: ReturnType<typeof jsonErr> }> {
+  const admin = await getGuardedAdmin();
+  if (!admin) return { error: jsonErr("未登录或会话已过期", 401) };
+  if (admin.role !== "OWNER") return denied();
+  return { admin };
+}
+
+/** 预定义权限组守卫:OWNER 全通过;STAFF 按勾选组 */
+export async function requirePerm(
+  key: PermissionKey
+): Promise<{ admin: GuardedAdmin } | { error: ReturnType<typeof jsonErr> }> {
+  const admin = await getGuardedAdmin();
+  if (!admin) return { error: jsonErr("未登录或会话已过期", 401) };
+  if (admin.role !== "STAFF" || admin.permissions.includes(key)) return { admin };
+  return denied();
+}
