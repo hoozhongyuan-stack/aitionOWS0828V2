@@ -108,6 +108,7 @@ export function ProductJsonLd({
   category,
   brand,
   specs,
+  price,
 }: {
   name: string;
   description: string;
@@ -116,6 +117,8 @@ export function ProductJsonLd({
   category?: string | null;
   brand?: string | null;
   specs?: { k: string; v: string }[] | null;
+  /** V4.0:价格(整数分+币种);提供时输出 schema.org offers(Google 免费商品列表要求) */
+  price?: { cents: number; currency: string } | null;
 }) {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const absolutize = (u: string) => new URL(u, base).toString();
@@ -136,6 +139,17 @@ export function ProductJsonLd({
         ...(brand ? { brand: { "@type": "Brand", name: brand } } : {}),
         ...(category ? { category } : {}),
         ...(model ? { sku: model.v.trim() } : {}),
+        ...(price && Number.isFinite(price.cents)
+          ? {
+              offers: {
+                "@type": "Offer",
+                price: (price.cents / 100).toFixed(2),
+                priceCurrency: price.currency,
+                availability: "https://schema.org/InStock",
+                url,
+              },
+            }
+          : {}),
       }}
     />
   );

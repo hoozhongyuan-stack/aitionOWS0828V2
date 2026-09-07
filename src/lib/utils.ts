@@ -16,3 +16,19 @@ import { routing } from "@/i18n/routing";
 export function safeDateLocale(locale: string | undefined | null): string {
   return locale && /^[a-zA-Z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(locale) ? locale : routing.defaultLocale;
 }
+
+/** 常见结算币种(商店设置下拉/商品币种下拉共用) */
+export const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "SGD", "HKD", "CNY"] as const;
+
+/** 金额格式化(V4.0):整数"分" → 本地化货币字符串(如 $1,299.00);非法输入回退原文 */
+export function formatMoney(cents: number, currency: string, locale = "en-US"): string {
+  if (!Number.isFinite(cents)) return String(cents);
+  try {
+    return new Intl.NumberFormat(safeDateLocale(locale), {
+      style: "currency",
+      currency: /^[A-Z]{3}$/.test(currency) ? currency : "USD",
+    }).format(cents / 100);
+  } catch {
+    return `${(cents / 100).toFixed(2)} ${currency}`;
+  }
+}

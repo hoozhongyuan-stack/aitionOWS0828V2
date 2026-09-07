@@ -210,6 +210,7 @@ export interface ContentInput {
   publishAt: string | null; // ISO 字符串
   gallery?: string[] | null; // 商品图集(有序图片路径,仅 product 栏目使用);未传=不改动
   specs?: ProductSpec[] | null; // 商品规格参数(有序键值对);未传=不改动
+  price?: { priceCents: number | null; currency: string | null } | null; // 交易字段(V4.0);未传=不改动;null 值=清除价格(转仅询盘)
   translations: {
     locale: string;
     title: string;
@@ -295,6 +296,19 @@ export async function saveContent(
     // 商品图集/规格参数(V3.0):传了才写(未传保留既有值),空数组存 null
     ...(galleryJson !== undefined ? { gallery: galleryJson } : {}),
     ...(specsJson !== undefined ? { specs: specsJson } : {}),
+    // 交易字段(V4.0):传了才写;currency 缺省跟随站点默认(null)
+    ...(input.price
+      ? {
+          priceCents:
+            input.price.priceCents == null
+              ? null
+              : Math.max(0, Math.floor(Number(input.price.priceCents))),
+          currency:
+            input.price.priceCents == null || !input.price.currency
+              ? null
+              : String(input.price.currency).toUpperCase().slice(0, 3),
+        }
+      : {}),
     ...(input.id ? {} : { source, authorUserId: authorUserId ?? null }),
   };
 
@@ -414,11 +428,19 @@ async function collectDescendantIds(rootId: number): Promise<number[]> {
 }
 
 /** 栏目页列表(仅已发布;商品栏目聚合其全部后代栏目,父栏目页聚合子栏目商品) */
+export interface CategoryListFilter {
+  q?: string; // 关键词(标题/摘要 contains)
+  minPriceCents?: number; // 价格区间(整数分;含价格筛选时无价商品自然排除)
+  maxPriceCents?: number;
+  sort?: "latest" | "priceAsc" | "priceDesc";
+}
+
 export async function listPublishedByCategory(
   categorySlug: string,
   locale: string,
   page = 1,
-  pageSize = 12
+  pageSize = 12,
+  filter: CategoryListFilter = {}
 ) {
   await promoteScheduled();
   const category = await prisma.category.findUnique({
@@ -437,12 +459,27 @@ export async function listPublishedByCategory(
   const catIds = isProduct
     ? [category.id, ...descendantIds]
     : [category.id, ...category.children.map((c) => c.id)];
-  const where = { categoryId: { in: catIds }, status: CONTENT_STATUS.PUBLISHED };
+  const where: Record<string, unknown> = { categoryId: { in: catIds }, status: CONTENT_STATUS.PUBLISHED };
+  const and: Record<string, unknown>[] = [];
+  const q = filter.q?.trim();
+  if (q) {
+    and.push({
+      translations: { some: { OR: [{ title: { contains: q } }, { summary: { contains: q } }] } },
+    });
+  }
+  if (filter.minPriceCents != null) and.push({ priceCents: { gte: filter.minPriceCents } });
+  if (filter.maxPriceCents != null) and.push({ priceCents: { lte: filter.maxPriceCents } });
+  if (and.length) where.AND = and;
+  // 价格排序只对有价商品生效(点价格排序即想比价;无价商品仍出现在最新排序)
+  const orderBy: Record<string, "asc" | "desc">[] =
+    filter.sort === "priceAsc" || filter.sort === "priceDesc"
+      ? [{ priceCents: filter.sort === "priceAsc" ? "asc" : "desc" }, { id: "desc" }]
+      : [{ publishAt: "desc" }, { id: "desc" }];
   const [total, items] = await Promise.all([
     prisma.content.count({ where }),
     prisma.content.findMany({
       where,
-      orderBy: [{ publishAt: "desc" }, { id: "desc" }],
+      orderBy,
       skip: (page - 1) * pageSize,
       take: pageSize,
       // 投影排除 gallery/specs(NFR-006):大字段仅详情页读取,防止列表性能退化
@@ -454,6 +491,8 @@ export async function listPublishedByCategory(
         likeCount: true,
         publishAt: true,
         createdAt: true,
+        priceCents: true,
+        currency: true,
         translations: { select: { locale: true, title: true, summary: true } },
       },
     }),
@@ -569,6 +608,8 @@ function shapeCard(
     likeCount: number;
     publishAt: Date | null;
     createdAt: Date;
+    priceCents?: number | null;
+    currency?: string | null;
     translations: { locale: string; title: string; summary: string | null }[];
     category?: { moduleType: string };
   },
@@ -586,5 +627,7 @@ function shapeCard(
     title: t?.title ?? "",
     summary: t?.summary ?? null,
     moduleType: moduleType ?? c.category?.moduleType,
+    priceCents: c.priceCents ?? null,
+    currency: c.currency ?? null,
   };
 }

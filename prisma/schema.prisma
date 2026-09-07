@@ -155,6 +155,9 @@ model Content {
   authorName   String? // 作者显示名:后台发布时单独设置(必填);UGC 投稿自动取投稿人昵称
   formId       Int? // 关联表单(可选):非空且表单启用时,文章详情页底部渲染该表单;无外键,应用层维护一致性
   publishAt    DateTime? // 定时发布时间
+  // —— 交易字段(V4.0):priceCents 整数"分"存;null=不展示价格,仅询盘(混合模式)——
+  priceCents   Int? // 价格(最小货币单位);商品类型栏目使用
+  currency     String? // ISO 4217(USD/EUR…);null=用站点默认币种(Setting group=shop)
   // —— 互动统计计数(后台可手动改/清零)——
   viewCount    Int       @default(0)
   likeCount    Int       @default(0)
@@ -198,6 +201,54 @@ model ContentTranslation {
 // ------------------------- 表单获客 -------------------------
 
 /// 表单定义:字段结构以 JSON 存(可视化构建器输出),可关联栏目/页面
+/// 订单(V4.0):线下付款+后台审核流。金额快照模式(下单时锁定),状态机
+/// PENDING→CONFIRMED→SHIPPED→COMPLETED,任意非终态可 CANCELLED。
+model Order {
+  id              Int       @id @default(autoincrement())
+  no              String    @unique // 订单号 AO-YYYYMMDD-XXXX
+  status          String    @default("PENDING") // PENDING/CONFIRMED/SHIPPED/COMPLETED/CANCELLED
+  userId          Int? // 登录用户关联;游客下单为 null
+  email           String
+  name            String
+  phone           String?
+  country         String
+  address         String
+  city            String
+  zip             String?
+  note            String? // 买家备注
+  currency        String
+  itemsTotalCents Int // 商品小计(快照重算)
+  shippingCents   Int       @default(0) // 运费(站点级设置:固定运费/免邮门槛)
+  grandTotalCents Int // 应付总额
+  adminNote       String? // 管理员备注(物流单号/内部记录)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  confirmedAt     DateTime?
+  shippedAt       DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+
+  items OrderItem[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+/// 订单条目(V4.0):下单快照(title/price);contentId 无外键,内容删除后快照保留
+model OrderItem {
+  id                 Int    @id @default(autoincrement())
+  orderId            Int
+  contentId          Int
+  titleSnapshot      String
+  priceCentsSnapshot Int
+  currency           String
+  qty                Int
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
 model Form {
   id            Int      @id @default(autoincrement())
   name          String

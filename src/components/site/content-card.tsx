@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Eye, ThumbsUp } from "lucide-react";
-import { safeDateLocale } from "@/lib/utils";
+import { formatMoney, safeDateLocale } from "@/lib/utils";
 import { resolveContentDetailPath } from "@/server/content";
 
 /**
@@ -24,6 +24,9 @@ export function ContentCard({
     viewCount: number;
     likeCount: number;
     publishedAt: Date | string;
+    /** V4.0 交易字段:有价商品卡片展示价格;null 不展示(仅询盘) */
+    priceCents?: number | null;
+    currency?: string | null;
   };
   viewsLabel: string;
   /** 所属栏目模块类型(product → 商品详情路由);缺省按 article 处理 */
@@ -51,6 +54,11 @@ export function ContentCard({
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h3 className={(featured ? "text-base sm:text-lg " : "") + "line-clamp-2 font-heading font-semibold group-hover:text-primary"}>{item.title}</h3>
         {item.summary && <p className="line-clamp-2 text-sm text-muted-foreground">{item.summary}</p>}
+        {item.priceCents != null && moduleType === "product" && (
+          <span className="font-heading text-lg font-bold text-primary">
+            {formatMoney(item.priceCents, item.currency || "USD", locale)}
+          </span>
+        )}
         <div className="mt-auto flex items-center gap-3 pt-2 text-xs text-muted-foreground">
           <time dateTime={date.toISOString()}>{date.toLocaleDateString(safeDateLocale(locale))}</time>
           <span className="inline-flex items-center gap-1" title={viewsLabel}>

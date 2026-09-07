@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Menu, X, Globe, User, LogOut, UserRound } from "lucide-react";
+import { Menu, X, Globe, User, LogOut, UserRound, ShoppingCart } from "lucide-react";
+import { CartBadge } from "@/components/site/cart-badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { NavLink } from "@/server/content/nav";
@@ -57,6 +58,7 @@ export function SiteHeader({
   const router = useRouter();
   // 「个人中心」入口文案走 i18n 命名空间 account(layout 无需新增 props,向后兼容)
   const tAccount = useTranslations("account");
+  const tShop = useTranslations("shop");
   const accountLabel = tAccount("menu");
 
   /** 切换语言:替换路径中的语言段,保持当前页面 */
@@ -119,6 +121,13 @@ export function SiteHeader({
         </nav>
 
         <div className="flex items-center gap-1">
+          {/* 购物车(V4.0):角标由 localStorage 购物车实时驱动 */}
+          <Button variant="ghost" size="sm" asChild aria-label="购物车" className="relative">
+            <Link href={`/${currentLocale}/cart`}>
+              <ShoppingCart className="h-4 w-4" />
+              <CartBadge />
+            </Link>
+          </Button>
           {/* 语言切换 */}
           {locales.length > 1 && (
             <div className="relative">
@@ -188,6 +197,14 @@ export function SiteHeader({
       {open && (
         <div className="border-t bg-background md:hidden">
           <nav className="container flex flex-col py-2" aria-label="移动端导航">
+            {/* 购物车入口(V4.0) */}
+            <Link
+              href={`/${currentLocale}/cart`}
+              onClick={() => setOpen(false)}
+              className="block rounded px-2 py-2.5 text-sm hover:bg-accent"
+            >
+              {tShop("cart")}
+            </Link>
             {nav.map((item) => (
               <div key={item.id}>
                 <Link

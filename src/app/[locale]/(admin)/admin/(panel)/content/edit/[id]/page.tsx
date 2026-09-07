@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CURRENCIES } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -127,6 +128,9 @@ export default function ContentEditPage() {
   // gallery 存主表跨语言通用;specs(V3.1)按语言存 ContentTranslation.specs,
   // 每语言 Tab 独立编辑、全量往返提交,默认语言 Tab 保存时同步写顶层 specs 兜底列
   const [gallery, setGallery] = useState<string[]>([]);
+  // 价格/币种(V4.0):价格留空=仅询盘(提交 null 清除);仅商品栏目展示
+  const [priceInput, setPriceInput] = useState("");
+  const [currencyInput, setCurrencyInput] = useState("USD");
   const [defaultLocale, setDefaultLocale] = useState("zh-CN"); // 默认语言 Tab(顶层兜底列同步源)
   const [favoriteCount, setFavoriteCount] = useState(0); // 只读展示,与阅读/赞/转对称
   const [loading, setLoading] = useState(true);
@@ -158,6 +162,8 @@ export default function ContentEditPage() {
             formId: number | null;
             gallery: string | null;
             specs: string | null;
+            priceCents: number | null;
+            currency: string | null;
             favoriteCount: number;
             translations: (Partial<Translation> & { specs?: SpecRow[] | null })[];
           }>(`/api/admin/contents?id=${id}`);
@@ -170,6 +176,8 @@ export default function ContentEditPage() {
           setPublishAt(c.publishAt ? toLocalInput(new Date(c.publishAt)) : "");
           setGallery(parseGalleryJson(c.gallery)); // 保存后重开即回显(AC-001)
           setFavoriteCount(c.favoriteCount ?? 0);
+          setPriceInput(c.priceCents != null ? String(c.priceCents / 100) : "");
+          setCurrencyInput(c.currency || "USD");
           // 顶层 specs 兜底列(GET 返回 JSON 串):默认语言 Tab 回显的兜底来源
           const mainRows = parseSpecsJson(c.specs);
           const map: Record<string, Translation> = {};
@@ -238,6 +246,11 @@ export default function ContentEditPage() {
           ? {
               gallery: gallery.map((u) => u.trim()).filter(Boolean),
               specs: defaultRows,
+              // 价格:留空=仅询盘(存 null);填写时以「元」输入换算整数分
+              price: {
+                priceCents: priceInput.trim() === "" ? null : Math.round(Number(priceInput) * 100),
+                currency: currencyInput,
+              },
             }
           : {}),
         translations: Object.values(trans).map((t) => ({
@@ -405,6 +418,37 @@ export default function ContentEditPage() {
             <CardTitle>商品信息</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
+              <div className="space-y-2">
+                <Label>价格(留空 = 仅询盘)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="如 199.00"
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>币种</Label>
+                <Select value={currencyInput} onValueChange={setCurrencyInput}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground sm:pb-2">
+                填写价格后前台显示「加入购物车」;留空则仅展示询盘表单
+              </p>
+            </div>
             <div className="space-y-2">
               <Label>
                 商品图集(有序,最多 20 张;跨语言通用,详情页按此顺序展示,封面图仅在图集为空时兜底)

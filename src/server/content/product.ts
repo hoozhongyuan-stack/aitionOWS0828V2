@@ -122,6 +122,8 @@ export async function getProductDetail(slug: string, locale: string) {
     authorName: content.authorName,
     favoriteCount: content.favoriteCount,
     viewCount: content.viewCount,
+    priceCents: content.priceCents,
+    currency: content.currency,
     likeCount: content.likeCount,
     shareCount: content.shareCount,
     publishedAt: content.publishAt ?? content.createdAt,

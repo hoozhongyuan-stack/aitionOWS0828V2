@@ -24,6 +24,8 @@ import {
   ShieldCheck,
   LogOut,
   ExternalLink,
+  Store,
+  ReceiptText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -55,6 +57,13 @@ const NAV_GROUPS: { title: string; items: { href: string; label: string; icon: R
   {
     title: "获客",
     items: [{ href: "/admin/forms", label: "表单", icon: ClipboardList }],
+  },
+  {
+    title: "交易",
+    items: [
+      { href: "/admin/shop", label: "商店设置", icon: Store },
+      { href: "/admin/orders", label: "订单管理", icon: ReceiptText },
+    ],
   },
   {
     title: "用户与互动",

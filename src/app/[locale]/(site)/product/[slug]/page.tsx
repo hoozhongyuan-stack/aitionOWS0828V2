@@ -14,6 +14,8 @@ import { ViewTracker } from "@/components/site/view-tracker";
 import { InteractionBar } from "@/components/site/interaction-bar";
 import { FormRenderer } from "@/components/site/form-renderer";
 import { ProductJsonLd } from "@/components/seo/json-ld";
+import { AddToCartButton } from "@/components/site/add-to-cart-button";
+import { formatMoney } from "@/lib/utils";
 import { GalleryViewer } from "@/components/site/gallery-viewer";
 import { Eye, UserRound } from "lucide-react";
 
@@ -55,11 +57,12 @@ export default async function ProductPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
 
-  const [content, features, brand, t, tInter, user] = await Promise.all([
+  const [content, features, brand, t, tShop, tInter, user] = await Promise.all([
     getProductDetail(slug, locale),
     getFeatureFlags(),
     getBrandConfig(),
     getTranslations("product"),
+    getTranslations("shop"),
     getTranslations("interaction"),
     getActiveUserSession(),
   ]);
@@ -83,6 +86,11 @@ export default async function ProductPage({ params }: Props) {
         category={content.category.name}
         brand={brand.siteName}
         specs={content.specs}
+        price={
+          content.priceCents != null
+            ? { cents: content.priceCents, currency: content.currency || "USD" }
+            : null
+        }
       />
 
       <nav className="mb-4 text-sm text-muted-foreground" aria-label="面包屑">
@@ -119,6 +127,24 @@ export default async function ProductPage({ params }: Props) {
           </div>
 
           {content.summary && <p className="mt-4 text-muted-foreground">{content.summary}</p>}
+
+          {/* 价格与加购(V4.0):priceCents 为空=仅询盘,与现状一致 */}
+          {content.priceCents != null && (
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <span className="font-heading text-3xl font-bold text-primary">
+                {formatMoney(content.priceCents, content.currency || "USD", locale)}
+              </span>
+              <AddToCartButton
+                locale={locale}
+                contentId={content.id}
+                slug={content.slug}
+                title={content.title}
+                priceCents={content.priceCents}
+                currency={content.currency || "USD"}
+                coverUrl={content.coverUrl}
+              />
+            </div>
+          )}
 
           {/* 规格参数表(REQ-002) */}
           {content.specs.length > 0 && (

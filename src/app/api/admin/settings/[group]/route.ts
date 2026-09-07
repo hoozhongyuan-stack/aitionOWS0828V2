@@ -19,6 +19,7 @@ const ALLOWED_GROUPS = new Set([
   "wechat",
   "notify",
   "errors",
+  "shop",
 ]);
 
 const SECRET_KEYS: Record<string, string[]> = {
@@ -91,6 +92,16 @@ const layoutSchema = z
   .partial()
   .passthrough();
 
+// V4.0 商店设置:币种 ISO 代码/付款指引/运费(整数分)
+const shopSchema = z
+  .object({
+    currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+    paymentInfo: z.string().max(2000).optional(),
+    shippingFeeCents: z.number().int().min(0).optional(),
+    freeShippingOverCents: z.number().int().min(0).nullable().optional(),
+  })
+  .partial();
+
 function validateGroup(
   group: string,
   values: Record<string, unknown>
@@ -100,6 +111,14 @@ function validateGroup(
     if (!r.success) {
       const first = r.error.issues[0];
       return jsonErr(`布局配置格式不正确:${first?.path?.join(".") ?? ""} ${first?.message ?? ""}`.trim());
+    }
+    return null;
+  }
+  if (group === "shop") {
+    const r = shopSchema.safeParse(values);
+    if (!r.success) {
+      const first = r.error.issues[0];
+      return jsonErr(`商店设置格式不正确:${first?.path?.join(".") ?? ""} ${first?.message ?? ""}`.trim());
     }
     return null;
   }

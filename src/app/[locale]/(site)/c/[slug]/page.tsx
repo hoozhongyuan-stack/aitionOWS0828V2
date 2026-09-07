@@ -4,6 +4,9 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { listPublishedByCategory, listCategories } from "@/server/content";
 import { getCategoryLayout } from "@/server/layout";
+import { getShopConfig } from "@/server/shop";
+import { ProductFilterBar } from "@/components/site/product-filter-bar";
+import { Suspense } from "react";
 import { Reveal } from "@/components/site/aurora-motion";
 import { buildAlternates } from "@/lib/seo/alternates";
 import { buildOpenGraph } from "@/lib/seo/open-graph";
@@ -27,7 +30,7 @@ import { ChevronLeft, PenLine } from "lucide-react";
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; min?: string; max?: string; sort?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -65,13 +68,24 @@ const tabClass = (active: boolean) =>
 
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
-  const { page: pageRaw } = await searchParams;
+  const { page: pageRaw, q, min, max, sort } = await searchParams;
   setRequestLocale(locale);
 
   const page = Math.max(1, Number(pageRaw) || 1);
-  const [data, categoryLayout] = await Promise.all([
-    listPublishedByCategory(slug, locale, page),
+  const toCents = (v: string | undefined) => {
+    const n = Number(v);
+    return v && Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined;
+  };
+  const sortKey = sort === "priceAsc" || sort === "priceDesc" ? sort : undefined;
+  const [data, categoryLayout, shop] = await Promise.all([
+    listPublishedByCategory(slug, locale, page, 12, {
+      q,
+      minPriceCents: toCents(min),
+      maxPriceCents: toCents(max),
+      sort: sortKey,
+    }),
     getCategoryLayout(),
+    getShopConfig(),
   ]);
   if (!data) notFound();
   // V3.2 布局预设:magazine=首条大图特写 + 其余双列;list=现状网格
@@ -126,6 +140,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           </Button>
         )}
       </header>
+
+      {/* 商品筛选条(V4.0):仅商品栏目;URL searchParams 驱动 */}
+      {isProduct && (
+        <Suspense fallback={null}>
+          <ProductFilterBar currency={shop.currency} />
+        </Suspense>
+      )}
 
       {/* 商品父栏目页:子分类页签(全部 = 聚合本栏目树商品) */}
       {isProduct && !parentCategory && data.category.children.length > 0 && (
