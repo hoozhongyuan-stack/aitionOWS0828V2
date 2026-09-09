@@ -165,3 +165,44 @@ describe("服务层兜底(saveContent)", () => {
     expect(cleared?.specs).toBeNull();
   });
 });
+
+describe("V4.1.2 修复:price/spu 字段过 zod 校验(生产事故回归锁)", () => {
+  it("PUT 携带 price/spu → 落库成功;缺失时 zod 剥离不静默", async () => {
+    const { PUT } = await import("@/app/api/admin/contents/route");
+    const { prisma } = await import("@/lib/db");
+    const cat = await prisma.category.findFirst({ where: { moduleType: "product" }, include: { translations: true } });
+    const content = await prisma.content.create({
+      data: {
+        slug: `v412-${Date.now()}`,
+        categoryId: cat!.id,
+        status: "DRAFT",
+        authorName: "t",
+        translations: { create: { locale: "zh-CN", title: "V4.1.2 测试", body: "b" } },
+      },
+    });
+    const res = await PUT(
+      new Request("http://localhost/api/admin/contents", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: content.id,
+          slug: content.slug,
+          categoryId: cat!.id,
+          status: "DRAFT",
+          authorName: "t",
+          coverUrl: null,
+          publishAt: null,
+          price: { priceCents: 123400, currency: "USD" },
+          spu: "SPU-REG-412",
+          translations: [{ locale: "zh-CN", title: "V4.1.2 测试", body: "b" }],
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+    const row = await prisma.content.findUnique({ where: { id: content.id } });
+    expect(row?.priceCents).toBe(123400);
+    expect(row?.currency).toBe("USD");
+    expect(row?.spu).toBe("SPU-REG-412");
+    await prisma.content.delete({ where: { id: content.id } });
+  });
+});

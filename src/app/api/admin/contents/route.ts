@@ -49,6 +49,20 @@ const putSchema = z.object({
     .max(50, "规格参数最多 50 行")
     .nullable()
     .optional(),
+  // 交易字段(V4.0/V4.0.2):zod 未声明会被剥除导致"保存不报错但不生效"(生产事故,必查)
+  price: z
+    .object({
+      priceCents: z.number().int().min(0).nullable(), // null=清除价格(仅询盘)
+      currency: z.string().regex(/^[A-Z]{3}$/).nullable(),
+    })
+    .nullable()
+    .optional(),
+  spu: z
+    .string()
+    .min(0)
+    .max(60)
+    .nullable()
+    .optional(),
   translations: z.array(
     z.object({
       locale: z.string(),
