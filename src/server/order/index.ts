@@ -230,6 +230,8 @@ export interface AdminOrderQuery {
   /** 下单时间区间(ISO 日期 YYYY-MM-DD,含端点;from/to 成对可单边) */
   from?: string;
   to?: string;
+  /** V4.1.1:仅看有待审核售后的订单 */
+  refundPending?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -245,6 +247,8 @@ export async function listOrdersAdmin(q: AdminOrderQuery) {
   if (q.from && /^\d{4}-\d{2}-\d{2}$/.test(q.from)) createdAt.gte = new Date(`${q.from}T00:00:00`);
   if (q.to && /^\d{4}-\d{2}-\d{2}$/.test(q.to)) createdAt.lte = new Date(`${q.to}T23:59:59.999`);
   if (Object.keys(createdAt).length) where.createdAt = createdAt;
+  // 售后中筛选(V4.1.1):有待审核(PENDING)售后的订单
+  if (q.refundPending) where.refund = { status: "PENDING" };
   const [total, items] = await Promise.all([
     prisma.order.count({ where }),
     prisma.order.findMany({
@@ -252,7 +256,7 @@ export async function listOrdersAdmin(q: AdminOrderQuery) {
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { items: true },
+      include: { items: true, refund: true },
     }),
   ]);
   // 下单账号信息(V4.0.2):收件人可能≠登录账号,列表双行展示

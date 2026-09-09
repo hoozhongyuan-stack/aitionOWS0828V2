@@ -1,15 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { apiUpload } from "@/components/admin/api-client";
 import { ImagePlus, X } from "lucide-react";
 import { MediaPicker } from "@/components/admin/media-picker";
 
 /**
- * 通用图片上传字段(后台):选择文件 → 本地存储 → 回填 URL。
- * 用于 LOGO / favicon / 封面图等场景。
+ * 通用图片上传字段(后台):单一入口——点击「上传/更换」直接拉起素材选择器
+ * (V4.1.1 统一入口:选择器内含「素材库|本地上传」双 Tab,上传后自动选用)。
+ * 用于 LOGO / favicon / 封面图 / 图集等场景。
  */
 export function UploadField({
   value,
@@ -22,28 +22,10 @@ export function UploadField({
   onChange: (url: string) => void;
   label?: string;
   accept?: string;
-  /** 建议尺寸/格式提示,展示在上传按钮下方,帮助后台人员上传合适的图片 */
+  /** 建议尺寸/格式提示,展示在按钮下方,帮助后台人员上传合适的图片 */
   hint?: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false); // 素材库(V4.2)
-
-  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setUploading(true);
-    try {
-      const r = await apiUpload(file, label);
-      onChange(r.url);
-      toast.success("上传成功");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "上传失败");
-    } finally {
-      setUploading(false);
-    }
-  }
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <div className="space-y-1">
@@ -56,12 +38,8 @@ export function UploadField({
             <ImagePlus className="h-5 w-5" />
           </div>
         )}
-        <input ref={inputRef} type="file" accept={accept} onChange={pick} className="hidden" />
-        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
-          {uploading ? "上传中…" : value ? "更换" : "上传"}
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setPickerOpen(true)}>
-          素材库
+        <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+          {value ? "更换" : "上传"}
         </Button>
         {value && (
           <Button type="button" variant="ghost" size="icon" onClick={() => onChange("")}>
@@ -73,9 +51,10 @@ export function UploadField({
       <MediaPicker
         open={pickerOpen}
         onOpenChange={setPickerOpen}
+        accept={accept}
         onPick={(url) => {
           onChange(url);
-          toast.success("已从素材库选择");
+          toast.success("已选用");
         }}
       />
     </div>

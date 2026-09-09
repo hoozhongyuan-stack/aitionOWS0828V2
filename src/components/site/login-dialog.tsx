@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/auth/password-input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
@@ -74,7 +75,7 @@ export function LoginDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="ld-password">{t("password")}</Label>
-            <Input id="ld-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <PasswordInput id="ld-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? "…" : t("login")}

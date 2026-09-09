@@ -15,7 +15,7 @@ export const PERMISSION_GROUPS: { key: PermissionKey; label: string; desc: strin
   },
   { key: "commerce", label: "交易管理", desc: "订单查看与售后/状态操作(商店设置为 OWNER 专属)", menus: ["/admin/orders"] },
   { key: "moderation", label: "互动审核", desc: "评论与投稿审核", menus: ["/admin/ugc"] },
-  { key: "geo", label: "GEO 监测", desc: "AI 爬虫与引荐数据查看", menus: ["/admin/geo-monitor"] },
+  { key: "geo", label: "GEO 监测", desc: "AI 爬虫与引荐数据查看", menus: ["/admin/geo-monitor", "/admin/geo-events"] },
 ];
 
 /** OWNER 专属菜单(不可授权给子账号):站点配置/用户/子账号/日志/备份/安全/数据看板 */

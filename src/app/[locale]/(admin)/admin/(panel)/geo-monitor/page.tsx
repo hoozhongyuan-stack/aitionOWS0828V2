@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiGet } from "@/components/admin/api-client";
 import Link from "next/link";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiGet } from "@/components/admin/api-client";
 
 /**
  * GEO 监测(V3.2):AI 爬虫趋势 / 被爬页面 Top / AI 渠道引荐。
@@ -45,53 +44,18 @@ export default function GeoMonitorPage() {
   const [range, setRange] = useState(fmtRange(7));
   const [custom, setCustom] = useState({ from: "", to: "" });
   const [error, setError] = useState("");
-  // 明细 Tab(V3.2.1):type=crawl 爬虫明细 / referral 引荐明细
-  const [eventType, setEventType] = useState<"crawl" | "referral">("crawl");
-  const [events, setEvents] = useState<{
-    total: number;
-    page: number;
-    pageSize: number;
-    items: { id: number; bot?: string; path: string; source?: string; landing?: string; ua?: string | null; ts: string }[];
-  } | null>(null);
-  const [evFilter, setEvFilter] = useState({ bot: "", pathLike: "" });
 
   useEffect(() => {
-    load(range.from, range.to);
-  }, [range.from, range.to]);
-
-  async function load(from: string, to: string) {
-    try {
-      setError("");
-      const d = await apiGet<GeoStats>(`/api/admin/geo-monitor?from=${from}&to=${to}`);
-      setStats(d);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "加载失败");
-    }
-  }
-
-  async function loadEvents(type: "crawl" | "referral", page = 1, filter = evFilter) {
-    const qs = new URLSearchParams({
-      type: "events",
-      eventType: type,
-      from: range.from,
-      to: range.to,
-      page: String(page),
-      pageSize: "50",
-    });
-    if (type === "crawl" && filter.bot) qs.set("bot", filter.bot);
-    if (filter.pathLike) qs.set("pathLike", filter.pathLike);
-    try {
-      const d = await apiGet<{
-        total: number;
-        page: number;
-        pageSize: number;
-        items: { id: number; bot?: string; path: string; source?: string; landing?: string; ua?: string | null; ts: string }[];
-      }>(`/api/admin/geo-monitor?${qs.toString()}`);
-      setEvents({ total: d.total, page: d.page ?? page, pageSize: d.pageSize ?? 50, items: d.items });
-    } catch {
-      setError("明细加载失败");
-    }
-  }
+    void (async () => {
+      try {
+        setError("");
+        const d = await apiGet<GeoStats>(`/api/admin/geo-monitor?from=${range.from}&to=${range.to}`);
+        setStats(d);
+      } catch {
+        setError("加载失败");
+      }
+    })();
+  }, [range]);
 
   const engines = stats
     ? [...new Set(stats.trend.flatMap((t) => Object.keys(t).filter((k) => k !== "date")))]
@@ -258,151 +222,19 @@ export default function GeoMonitorPage() {
             </CardContent>
           </Card>
 
-          {/* 访问明细(V3.2.1):时间/引擎/路径筛选 + CSV 导出 */}
+          {/* 访问明细入口(V4.1.1):已拆独立页(含分页器) */}
           <Card>
             <CardHeader>
-              <CardTitle>访问明细</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                访问明细
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/zh-CN/admin/geo-events">查看访问明细 →</Link>
+                </Button>
+              </CardTitle>
               <CardDescription>
-                AI 爬虫与渠道引荐的逐条记录(秒级),支持筛选与 CSV 导出;明细保留 180 天
+                AI 爬虫与渠道引荐的逐条记录(秒级),支持时间/引擎/路径筛选、分页与 CSV 导出;保留 180 天
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  variant={eventType === "crawl" ? "default" : "outline"}
-                  onClick={() => {
-                    setEventType("crawl");
-                    loadEvents("crawl", 1);
-                  }}
-                >
-                  爬虫明细
-                </Button>
-                <Button
-                  size="sm"
-                  variant={eventType === "referral" ? "default" : "outline"}
-                  onClick={() => {
-                    setEventType("referral");
-                    loadEvents("referral", 1);
-                  }}
-                >
-                  引荐明细
-                </Button>
-                {eventType === "crawl" && (
-                  <select
-                    className="rounded-md border bg-background px-2 py-1 text-sm"
-                    value={evFilter.bot}
-                    onChange={(e) => {
-                      const f = { ...evFilter, bot: e.target.value };
-                      setEvFilter(f);
-                      loadEvents("crawl", 1, f);
-                    }}
-                  >
-                    <option value="">全部引擎</option>
-                    {(stats.knownBots ?? []).map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                <input
-                  placeholder={eventType === "referral" ? "落地页关键字…" : "路径关键字…"}
-                  className="ml-auto w-48 rounded-md border bg-background px-2 py-1 text-sm"
-                  value={evFilter.pathLike}
-                  onChange={(e) => setEvFilter({ ...evFilter, pathLike: e.target.value })}
-                />
-                <Button size="sm" variant="outline" onClick={() => loadEvents(eventType, 1)}>
-                  查询
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const items = events?.items ?? [];
-                    if (!items.length) {
-                      setError("当前无明细数据");
-                      return;
-                    }
-                    const rows = items.map((i) =>
-                      eventType === "crawl"
-                        ? { ts: i.ts, bot: i.bot ?? "", path: i.path, ua: i.ua ?? "" }
-                        : { ts: i.ts, source: i.source ?? "", landing: i.landing ?? "" }
-                    );
-                    const head = Object.keys(rows[0]).join(",");
-                    const csv =
-                      head +
-                      "\n" +
-                      rows.map((r) => Object.values(r).map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-                    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
-                    const a = document.createElement("a");
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `geo-${eventType}-${range.from}_${range.to}.csv`;
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-                  }}
-                >
-                  导出 CSV
-                </Button>
-              </div>
-
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="py-2">时间</th>
-                    <th className="py-2">{eventType === "crawl" ? "AI 引擎" : "AI 渠道"}</th>
-                    <th className="py-2">{eventType === "crawl" ? "路径" : "落地页"}</th>
-                    {eventType === "crawl" && <th className="py-2">UA</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(events?.items ?? []).map((i) => (
-                    <tr key={i.id} className="border-b">
-                      <td className="py-1.5">{new Date(i.ts).toLocaleString()}</td>
-                      <td className="py-1.5">{eventType === "crawl" ? i.bot : i.source}</td>
-                      <td className="py-1.5 max-w-[280px] truncate" title={eventType === "crawl" ? i.path : i.landing}>
-                        {eventType === "crawl" ? i.path : i.landing}
-                      </td>
-                      {eventType === "crawl" && (
-                        <td className="py-1.5 max-w-[200px] truncate text-muted-foreground" title={i.ua ?? ""}>
-                          {i.ua ?? ""}
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                  {(events?.items?.length ?? 0) === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-4 text-center text-muted-foreground">
-                        暂无明细
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              {events && events.total > (events.items?.length ?? 0) && (
-                <div className="flex items-center justify-end gap-2 text-sm">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={(events.page ?? 1) <= 1}
-                    onClick={() => loadEvents(eventType, (events.page ?? 1) - 1)}
-                  >
-                    上一页
-                  </Button>
-                  <span className="text-muted-foreground">
-                    第 {events.page} 页 / 共 {Math.ceil(events.total / events.pageSize)} 页({events.total} 条)
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={(events.page ?? 1) * events.pageSize >= events.total}
-                    onClick={() => loadEvents(eventType, (events.page ?? 1) + 1)}
-                  >
-                    下一页
-                  </Button>
-                </div>
-              )}
-            </CardContent>
           </Card>
 
           <p className="text-xs text-muted-foreground">

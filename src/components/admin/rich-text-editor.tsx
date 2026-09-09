@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import { toast } from "sonner";
 import { MediaPicker } from "@/components/admin/media-picker";
 import {
   Bold,
@@ -23,11 +22,8 @@ import {
   Video,
   Undo2,
   Redo2,
-  Images,
-  GalleryVerticalEnd,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiUpload } from "@/components/admin/api-client";
 
 /**
  * Tiptap 富文本编辑器(需求 4.4):
@@ -70,7 +66,6 @@ export function RichTextEditor({
   onChange,
   placeholder,
   minHeight = 280,
-  uploader,
 }: {
   value: string;
   onChange: (html: string) => void;
@@ -79,9 +74,6 @@ export function RichTextEditor({
   /** 自定义上传通道(默认走后台管理员上传;前台投稿传入用户上传) */
   uploader?: (file: File) => Promise<{ url: string }>;
 }) {
-  const doUpload = uploader ?? ((file: File) => apiUpload(file));
-  const fileRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLInputElement>(null);
   const [pickerMode, setPickerMode] = useState<null | "image" | "video">(null); // 素材库选择(V4.2)
 
   const editor = useEditor({
@@ -121,34 +113,7 @@ export function RichTextEditor({
 
   if (!editor) return <div className="rounded-md border p-4 text-sm text-muted-foreground">编辑器加载中…</div>;
 
-  async function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !editor) return;
-    try {
-      const r = await doUpload(file);
-      editor.chain().focus().setImage({ src: r.url, alt: file.name.replace(/\.[^.]+$/, "") }).run();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "图片上传失败");
-    }
-  }
 
-  async function pickVideo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !editor) return;
-    try {
-      const r = await doUpload(file);
-      // 语义化 video 标签(SEO/可访问性),受敏感属性控制
-      editor
-        .chain()
-        .focus()
-        .insertContent(`<video src="${r.url}" controls preload="metadata" style="max-width:100%"></video><p></p>`)
-        .run();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "视频上传失败");
-    }
-  }
 
   function setLink() {
     if (!editor) return;
@@ -225,18 +190,12 @@ export function RichTextEditor({
         <ToolbarButton title="移除链接" disabled={!editor.isActive("link")} onClick={() => editor.chain().focus().unsetLink().run()}>
           <Unlink className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton title="插入图片(本地上传)" onClick={() => fileRef.current?.click()}>
+        {/* V4.1.1 统一入口:按钮直接拉起素材选择器(素材库|本地上传 双 Tab) */}
+        <ToolbarButton title="插入图片" onClick={() => setPickerMode("image")}>
           <ImagePlus className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton title="插入视频(本地上传)" onClick={() => videoRef.current?.click()}>
+        <ToolbarButton title="插入视频" onClick={() => setPickerMode("video")}>
           <Video className="h-4 w-4" />
-        </ToolbarButton>
-        {/* 素材库(V4.2):从已上传素材中选择图片/视频插入 */}
-        <ToolbarButton title="从素材库插入图片" onClick={() => setPickerMode("image")}>
-          <Images className="h-4 w-4" />
-        </ToolbarButton>
-        <ToolbarButton title="从素材库插入视频" onClick={() => setPickerMode("video")}>
-          <GalleryVerticalEnd className="h-4 w-4" />
         </ToolbarButton>
         <span className="mx-1 h-5 w-px bg-border" />
         <ToolbarButton title="撤销" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
@@ -252,11 +211,10 @@ export function RichTextEditor({
         )}
         <EditorContent editor={editor} />
       </div>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickImage} />
-      <input ref={videoRef} type="file" accept="video/mp4" className="hidden" onChange={pickVideo} />
       <MediaPicker
         open={pickerMode !== null}
         onOpenChange={(v) => !v && setPickerMode(null)}
+        accept={pickerMode === "video" ? "video/mp4" : "image/*"}
         onPick={insertFromPicker}
       />
     </div>

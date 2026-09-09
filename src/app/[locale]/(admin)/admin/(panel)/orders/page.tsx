@@ -17,6 +17,7 @@ import { formatMoney } from "@/lib/utils";
 interface OrderRow {
   accountName?: string | null;
   accountEmail?: string | null;
+  refund?: { id: number; status: string } | null;
   id: number;
   no: string;
   status: string;
@@ -34,6 +35,8 @@ const STATUS_TABS = [
   { key: "SHIPPED", label: "已发货" },
   { key: "COMPLETED", label: "已完成" },
   { key: "CANCELLED", label: "已取消" },
+  { key: "REFUNDED", label: "已退款" },
+  { key: "__refundPending", label: "售后中" },
 ];
 
 const STATUS_BADGE: Record<string, string> = {
@@ -42,6 +45,7 @@ const STATUS_BADGE: Record<string, string> = {
   SHIPPED: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
   COMPLETED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
   CANCELLED: "bg-muted text-muted-foreground",
+  REFUNDED: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
 };
 
 export default function OrdersPage() {
@@ -57,7 +61,8 @@ export default function OrdersPage() {
   const load = useCallback(async () => {
     try {
       const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-      if (status) params.set("status", status);
+      if (status === "__refundPending") params.set("refundPending", "1");
+      else if (status) params.set("status", status);
       if (q.trim()) params.set("q", q.trim());
       if (from) params.set("from", from);
       if (to) params.set("to", to);
@@ -158,6 +163,11 @@ export default function OrdersPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[o.status] ?? ""}`}>
                       {STATUS_TABS.find((t) => t.key === o.status)?.label ?? o.status}
                     </span>
+                    {o.refund?.status === "PENDING" && (
+                      <span className="ml-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                        售后中
+                      </span>
+                    )}
                   </td>
                   <td className="py-2.5 text-muted-foreground">{new Date(o.createdAt).toLocaleString()}</td>
                   <td className="py-2.5 text-right">

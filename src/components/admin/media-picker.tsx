@@ -36,12 +36,16 @@ export function MediaPicker({
   open,
   onOpenChange,
   onPick,
+  accept,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   /** 选中素材回调(返回 /uploads/... URL) */
   onPick: (url: string) => void;
+  /** 类型限定(如 "image/*"、"video/mp4");素材列表与上传过滤;缺省=全部 */
+  accept?: string;
 }) {
+  const [tab, setTab] = useState<"library" | "upload">("library");
   const [folders, setFolders] = useState<FolderNode[]>([]);
   const [current, setCurrent] = useState<string>(""); // ""=未分类;数字串=文件夹 id
   const [assets, setAssets] = useState<AssetRow[]>([]);
@@ -56,6 +60,8 @@ export function MediaPicker({
       const q = new URLSearchParams({ picker: "1", page: String(page), pageSize: String(pageSize) });
       q.set("folderId", current === "" ? "unassigned" : current);
       if (keyword.trim()) q.set("keyword", keyword.trim());
+      if (accept?.startsWith("image")) q.set("mime", "image");
+      else if (accept?.startsWith("video")) q.set("mime", "video");
       const d = await apiGet<{ folders: FolderNode[]; items: AssetRow[]; total: number }>(
         `/api/admin/media?${q}`
       );
@@ -65,7 +71,7 @@ export function MediaPicker({
     } catch {
       toast.error("素材加载失败");
     }
-  }, [current, page, keyword]);
+  }, [current, page, keyword, accept]);
   useEffect(() => {
     if (open) load();
   }, [open, load]);
@@ -80,8 +86,8 @@ export function MediaPicker({
       const d = await r.json();
       if (!r.ok || !d.ok) throw new Error(d.message || "上传失败");
       toast.success("上传成功");
-      setPage(1);
-      load();
+      onPick(d.data.url); // 上传即选中(V4.1.1 统一入口)
+      onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "上传失败");
     } finally {
@@ -105,10 +111,28 @@ export function MediaPicker({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>素材库</DialogTitle>
-          <DialogDescription>选择已有素材,或上传新文件到当前文件夹</DialogDescription>
+          <DialogTitle>选择素材</DialogTitle>
+          <DialogDescription>从素材库选择,或本地上传(上传后自动选用)</DialogDescription>
         </DialogHeader>
-        <div className="flex gap-4">
+        <div className="flex gap-1 border-b">
+          {([
+            ["library", "素材库"],
+            ["upload", "本地上传"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              className={cn(
+                "-mb-px border-b-2 px-4 py-2 text-sm transition-colors",
+                tab === k ? "border-primary font-medium text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setTab(k)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className={cn("flex gap-4", tab !== "library" && "hidden")}>
           {/* 文件夹树 */}
           <div className="w-44 shrink-0 space-y-1">
             <button
@@ -219,6 +243,7 @@ export function MediaPicker({
               <label className="shrink-0">
                 <input
                   type="file"
+                  accept={accept}
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -272,6 +297,26 @@ export function MediaPicker({
               </div>
             )}
           </div>
+        </div>
+        {/* 本地上传 Tab(V4.1.1):选文件→传到当前文件夹→自动选用 */}
+        <div className={cn("space-y-3", tab !== "upload" && "hidden")}>
+          <label className="flex min-h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/30 p-8 text-center transition-colors hover:bg-muted/60">
+            <Upload className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm font-medium">点击选择文件{accept ? `(限 ${accept})` : ""}</span>
+            <span className="text-xs text-muted-foreground">
+              上传到「{current === "" ? "未分类" : folders.flatMap((f) => [f, ...f.children]).find((x) => String(x.id) === current)?.name ?? "当前"}」文件夹
+            </span>
+            <input
+              type="file"
+              accept={accept}
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) upload(f);
+              }}
+            />
+          </label>
         </div>
       </DialogContent>
     </Dialog>

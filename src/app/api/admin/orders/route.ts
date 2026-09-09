@@ -26,6 +26,7 @@ export async function GET(req: Request) {
       q: sp.get("q") ?? undefined,
       from: sp.get("from") ?? undefined,
       to: sp.get("to") ?? undefined,
+      refundPending: sp.get("refundPending") === "1",
       page: Number(sp.get("page")) || 1,
       pageSize: Number(sp.get("pageSize")) || 20,
     })

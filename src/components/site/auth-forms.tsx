@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/auth/password-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,9 +83,9 @@ function LoginFormInner({ wechatEnabled }: { wechatEnabled: boolean }) {
                 {t("forgotPassword")}
               </Link>
             </div>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
+             
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -181,9 +182,9 @@ function RegisterFormInner() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="rpass">{t("password")}</Label>
-            <Input
+            <PasswordInput
               id="rpass"
-              type="password"
+             
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -192,9 +193,9 @@ function RegisterFormInner() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="rconfirm">{t("confirmPassword")}</Label>
-            <Input
+            <PasswordInput
               id="rconfirm"
-              type="password"
+             
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required

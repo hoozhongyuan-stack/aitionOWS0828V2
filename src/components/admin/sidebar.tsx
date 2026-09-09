@@ -46,6 +46,7 @@ const NAV_GROUPS: { title: string; items: { href: string; label: string; icon: R
     items: [
       { href: "/admin/dashboard", label: "数据看板", icon: LayoutDashboard },
       { href: "/admin/geo-monitor", label: "GEO 监测", icon: Radar },
+      { href: "/admin/geo-events", label: "访问明细", icon: ScrollText },
     ],
   },
   {
