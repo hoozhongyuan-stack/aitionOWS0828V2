@@ -90,7 +90,7 @@ center for text overlay, elegant tech aesthetic, minimal, 16:9, high detail
 
 ## 四、推送流程（用 MCP 工具）
 
-工具位于 `aition-ows` 连接器（MCP）：
+工具位于 `aition-content` 连接器（MCP）：
 
 ```
 1. list_categories                    # 确认投哪个栏目（拿到 categoryId 或名称）
