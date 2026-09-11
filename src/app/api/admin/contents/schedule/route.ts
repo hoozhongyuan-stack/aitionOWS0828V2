@@ -12,7 +12,7 @@ import { updateContentSchedule } from "@/server/content";
  */
 const schema = z.object({
   id: z.number().int().positive(),
-  action: z.enum(["publish", "schedule", "draft"]),
+  action: z.enum(["publish", "schedule", "draft", "offline"]),
   publishAt: z.string().nullable().optional(),
 });
 

@@ -145,6 +145,21 @@ export async function saveNavItem(input: NavItemInput) {
   return item;
 }
 
+/**
+ * V4.4.0 批量用:栏目显隐(只改 visible 一个字段)。
+ * 不走 saveCategory(整体覆盖语义,批量场景拿不到完整字段)。
+ */
+export async function setCategoryVisible(id: number, visible: boolean): Promise<void> {
+  await prisma.category.update({ where: { id }, data: { visible: Boolean(visible) } });
+  await invalidateNavCache();
+}
+
+/** V4.4.0 批量用:导航项显隐(只改 visible) */
+export async function setNavItemVisible(id: number, visible: boolean): Promise<void> {
+  await prisma.navItem.update({ where: { id }, data: { visible: Boolean(visible) } });
+  await invalidateNavCache();
+}
+
 export async function deleteNavItem(id: number) {
   await prisma.navItem.deleteMany({ where: { OR: [{ id }, { parentId: id }] } });
   await invalidateNavCache();
@@ -359,7 +374,7 @@ export async function saveContent(
  */
 export async function updateContentSchedule(input: {
   id: number;
-  action: "publish" | "schedule" | "draft";
+  action: "publish" | "schedule" | "draft" | "offline";
   publishAt?: string | null;
 }) {
   let data: { status: string; publishAt: Date | null };
@@ -367,6 +382,8 @@ export async function updateContentSchedule(input: {
     data = { status: CONTENT_STATUS.PUBLISHED, publishAt: null };
   } else if (input.action === "draft") {
     data = { status: CONTENT_STATUS.DRAFT, publishAt: null };
+  } else if (input.action === "offline") {
+    data = { status: CONTENT_STATUS.OFFLINE, publishAt: null };
   } else {
     if (!input.publishAt) throw new Error("定时发布需要提供发布时间");
     const at = new Date(input.publishAt);
