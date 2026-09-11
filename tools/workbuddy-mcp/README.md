@@ -132,15 +132,45 @@ AITION_API_BASE=https://aition.art AITION_API_TOKEN='<令牌>' node self-check.m
 
 ---
 
-## 七、目录结构
+## 七、安装「官网文章规范」技能（强烈建议）
+
+技能让 AI **写稿时**就遵守官网的格式与配图规范，而不是推上去再返工。规范文件在 `skills/aition-article-spec/SKILL.md`，涵盖：正文格式硬约束（从 `##` 起、禁用内联样式等）、封面图尺寸与视觉风格、SEO/GEO 写法、推送流程。
+
+安装方式任选：
+
+**方式 A：放进技能目录**（推荐，若你的 WorkBuddy 版本支持技能目录）
+
+```bash
+# 按 WorkBuddy 官方文档的技能目录放置，通常形如：
+mkdir -p ~/.workbuddy/skills
+cp -r skills/aition-article-spec ~/.workbuddy/skills/
+```
+
+重启后，让 AI「写一篇官网文章」时它会自动加载这些规范。
+
+**方式 B：对话里教一次**（无需文件）
+
+把 `skills/aition-article-spec/SKILL.md` 的内容贴给 WorkBuddy，说"这是官网文章规范，写官网文章时遵守"。
+
+**方式 C：通过 SkillHub 打包发布**（如需团队共用）
+
+按 WorkBuddy 开放平台的 Skill 规范打包提审。
+
+---
+
+## 八、目录结构
 
 ```
 tools/workbuddy-mcp/
-├── index.js          # MCP server 入口与工具定义
+├── index.js                    # MCP server 入口与工具定义
 ├── src/
-│   ├── api.js        # 官网后台 API 客户端（Bearer 认证）
-│   ├── md-to-html.js # Markdown → 官网白名单 HTML（白名单与前端 src/lib/sanitize.ts 对齐）
-│   └── validate.js   # 硬校验、slug 生成、栏目定位
-├── self-check.mjs    # 连接自检
-└── package.json
+│   ├── api.js                  # 官网后台 API 客户端（Bearer 认证）
+│   ├── md-to-html.js           # Markdown → 官网白名单 HTML（与前端 src/lib/sanitize.ts 对齐）
+│   └── validate.js             # 硬校验、slug 生成、栏目定位
+├── skills/
+│   └── aition-article-spec/
+│       └── SKILL.md            # 「官网文章规范」技能（写作/配图/SEO/推送流程）
+├── self-check.mjs              # 连接自检
+├── package.json
+└── README.md
 ```
