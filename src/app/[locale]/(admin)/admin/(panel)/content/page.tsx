@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { apiGet, apiDelete } from "@/components/admin/api-client";
+import { apiGet, apiDelete, apiPatch } from "@/components/admin/api-client";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { routing } from "@/i18n/routing";
 
@@ -21,7 +23,7 @@ function adminTitle(translations: { locale: string; title: string }[], slug: str
 function adminCatName(translations: { locale: string; name: string }[] | undefined, slug: string) {
   return translations?.find(t => t.locale === DEFAULT_LOCALE)?.name ?? translations?.[0]?.name ?? slug;
 }
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarClock } from "lucide-react";
 
 /**
  * 内容列表(需求 4.4/4.8):筛选、增删改查入口、状态标识。
@@ -64,6 +66,13 @@ const STATUS_LABEL: Record<string, { text: string; variant: "default" | "seconda
   REJECTED: { text: "已驳回", variant: "secondary" },
 };
 
+/** ISO 时间 → datetime-local 输入框所需的本机时区格式（YYYY-MM-DDTHH:mm） */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function ContentAdminPage() {
   const locale = useLocale();
   const [data, setData] = useState<ListData | null>(null);
@@ -105,6 +114,41 @@ export default function ContentAdminPage() {
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "删除失败");
+    }
+  }
+
+  // ── 列表页「定制发布」(V4.3.0)：不进编辑页即可改发布状态与排期 ──
+  const [scheduleRow, setScheduleRow] = useState<ContentRow | null>(null);
+  const [scheduleAction, setScheduleAction] = useState<"publish" | "schedule" | "draft">("publish");
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [scheduling, setScheduling] = useState(false);
+
+  function openSchedule(row: ContentRow) {
+    setScheduleRow(row);
+    setScheduleAction(row.status === "SCHEDULED" ? "schedule" : "publish");
+    setScheduleAt(row.publishAt ? toLocalInput(row.publishAt) : "");
+  }
+
+  async function submitSchedule() {
+    if (!scheduleRow) return;
+    if (scheduleAction === "schedule" && !scheduleAt) {
+      toast.error("请选择定时发布时间");
+      return;
+    }
+    setScheduling(true);
+    try {
+      await apiPatch("/api/admin/contents/schedule", {
+        id: scheduleRow.id,
+        action: scheduleAction,
+        publishAt: scheduleAction === "schedule" ? new Date(scheduleAt).toISOString() : null,
+      });
+      toast.success("发布状态已更新");
+      setScheduleRow(null);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "操作失败");
+    } finally {
+      setScheduling(false);
     }
   }
 
@@ -191,13 +235,14 @@ export default function ContentAdminPage() {
             <TableHead>来源</TableHead>
             <TableHead>阅读/赞/转/藏</TableHead>
             <TableHead>创建时间</TableHead>
+            <TableHead>发布时间</TableHead>
             <TableHead className="text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data?.items.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                 暂无内容
               </TableCell>
             </TableRow>
@@ -227,7 +272,21 @@ export default function ContentAdminPage() {
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(row.createdAt).toLocaleDateString("zh-CN")}
                 </TableCell>
+                <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                  {row.publishAt ? (
+                    <span className={row.status === "SCHEDULED" ? "text-foreground" : ""}>
+                      {new Date(row.publishAt).toLocaleString("zh-CN", { dateStyle: "short", timeStyle: "short" })}
+                    </span>
+                  ) : row.status === "PUBLISHED" ? (
+                    <span className="text-xs">（立即发布）</span>
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
+                  <Button variant="ghost" size="sm" onClick={() => openSchedule(row)} title="定制发布">
+                    <CalendarClock className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/${locale}/admin/content/edit/${row.id}`}>
                       <Pencil className="h-4 w-4" />
@@ -242,6 +301,55 @@ export default function ContentAdminPage() {
           })}
         </TableBody>
       </Table>
+
+      {/* ── 定制发布弹窗(V4.3.0)：立即发布 / 定时发布 / 转回草稿 ── */}
+      <Dialog open={!!scheduleRow} onOpenChange={(o) => !o && setScheduleRow(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>定制发布</DialogTitle>
+            <DialogDescription className="truncate">
+              {scheduleRow ? adminTitle(scheduleRow.translations, scheduleRow.slug) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>发布方式</Label>
+              <Select value={scheduleAction} onValueChange={(v) => setScheduleAction(v as typeof scheduleAction)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="publish">立即发布（对访客与搜索引擎可见）</SelectItem>
+                  <SelectItem value="schedule">定时发布（到点自动上线）</SelectItem>
+                  <SelectItem value="draft">转回草稿（不公开）</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {scheduleAction === "schedule" && (
+              <div className="space-y-2">
+                <Label htmlFor="schedule-at">发布时间</Label>
+                <Input
+                  id="schedule-at"
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={(e) => setScheduleAt(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  到点由官网自动发布，不依赖你的电脑开机；时间需晚于当前。
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleRow(null)} disabled={scheduling}>
+              取消
+            </Button>
+            <Button onClick={submitSchedule} disabled={scheduling}>
+              {scheduling ? "处理中…" : "确定"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {data && totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 text-sm">

@@ -352,6 +352,38 @@ export async function saveContent(
   return content;
 }
 
+/**
+ * 列表页「定制发布」（V4.3.0）：只改 status 与 publishAt 两个字段。
+ * 与 saveContent 的**整体覆盖**语义明确区分——列表页拿不到完整字段，
+ * 若走 PUT 会清空正文与翻译（V4.1.2 价格事故同类风险），故单独开此入口。
+ */
+export async function updateContentSchedule(input: {
+  id: number;
+  action: "publish" | "schedule" | "draft";
+  publishAt?: string | null;
+}) {
+  let data: { status: string; publishAt: Date | null };
+  if (input.action === "publish") {
+    data = { status: CONTENT_STATUS.PUBLISHED, publishAt: null };
+  } else if (input.action === "draft") {
+    data = { status: CONTENT_STATUS.DRAFT, publishAt: null };
+  } else {
+    if (!input.publishAt) throw new Error("定时发布需要提供发布时间");
+    const at = new Date(input.publishAt);
+    if (Number.isNaN(at.getTime())) throw new Error("发布时间不是合法时间");
+    if (at.getTime() <= Date.now()) {
+      throw new Error("定时发布时间必须晚于当前时间（如需立刻上线请用「立即发布」）");
+    }
+    data = { status: CONTENT_STATUS.SCHEDULED, publishAt: at };
+  }
+  const updated = await prisma.content.update({ where: { id: input.id }, data });
+  return {
+    id: updated.id,
+    status: updated.status,
+    publishAt: updated.publishAt ? updated.publishAt.toISOString() : null,
+  };
+}
+
 export async function getContentForEdit(id: number) {
   const content = await prisma.content.findUnique({
     where: { id },
