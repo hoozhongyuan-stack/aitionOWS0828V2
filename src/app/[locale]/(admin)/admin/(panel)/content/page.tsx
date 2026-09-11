@@ -72,11 +72,25 @@ const STATUS_LABEL: Record<string, { text: string; variant: "default" | "seconda
   REJECTED: { text: "已驳回", variant: "secondary" },
 };
 
-/** ISO 时间 → datetime-local 输入框所需的本机时区格式（YYYY-MM-DDTHH:mm） */
-function toLocalInput(iso: string): string {
-  const d = new Date(iso);
+/** Date → date 输入框的 YYYY-MM-DD（本机时区） */
+function toDateInput(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * 定时时间用「日期 + 24 小时制下拉」而非 type="datetime-local"——
+ * 后者的 12/24 小时制式由浏览器 locale 决定（英文环境会出现 AM/PM），拆开后完全可控。
+ */
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "15", "30", "45"];
+
+/** 定时预览文案：2026-09-15（周二）09:00 —— 提交前让用户确认到具体日期与星期 */
+function formatSchedulePreview(date: string, hour: string, minute: string): string {
+  const d = new Date(`${date}T${hour}:${minute}:00`);
+  if (Number.isNaN(d.getTime())) return "（时间无效）";
+  const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][d.getDay()];
+  return `${date}（${weekday}）${hour}:${minute}`;
 }
 
 export default function ContentAdminPage() {
@@ -126,27 +140,49 @@ export default function ContentAdminPage() {
   // ── 列表页「定制发布」(V4.3.0)：不进编辑页即可改发布状态与排期 ──
   const [scheduleRow, setScheduleRow] = useState<ContentRow | null>(null);
   const [scheduleAction, setScheduleAction] = useState<"publish" | "schedule" | "draft">("publish");
-  const [scheduleAt, setScheduleAt] = useState("");
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleHour, setScheduleHour] = useState("09");
+  const [scheduleMinute, setScheduleMinute] = useState("00");
   const [scheduling, setScheduling] = useState(false);
+
+  /** 当前选择的定时时间（日期未选或非法时返回 null） */
+  function pickedScheduleAt(): Date | null {
+    if (!scheduleDate) return null;
+    const d = new Date(`${scheduleDate}T${scheduleHour}:${scheduleMinute}:00`);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
 
   function openSchedule(row: ContentRow) {
     setScheduleRow(row);
     setScheduleAction(row.status === "SCHEDULED" ? "schedule" : "publish");
-    setScheduleAt(row.publishAt ? toLocalInput(row.publishAt) : "");
+    // 回填：已有定时取原值；否则默认「明天此刻」，省去从头选
+    const d = row.publishAt ? new Date(row.publishAt) : new Date(Date.now() + 24 * 3600 * 1000);
+    setScheduleDate(toDateInput(d));
+    setScheduleHour(String(d.getHours()).padStart(2, "0"));
+    setScheduleMinute(String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, "0"));
   }
 
   async function submitSchedule() {
     if (!scheduleRow) return;
-    if (scheduleAction === "schedule" && !scheduleAt) {
-      toast.error("请选择定时发布时间");
-      return;
+    let publishAtIso: string | null = null;
+    if (scheduleAction === "schedule") {
+      const at = pickedScheduleAt();
+      if (!at) {
+        toast.error("请选择发布日期");
+        return;
+      }
+      if (at.getTime() <= Date.now()) {
+        toast.error("发布时间必须晚于当前时间");
+        return;
+      }
+      publishAtIso = at.toISOString();
     }
     setScheduling(true);
     try {
       await apiPatch("/api/admin/contents/schedule", {
         id: scheduleRow.id,
         action: scheduleAction,
-        publishAt: scheduleAction === "schedule" ? new Date(scheduleAt).toISOString() : null,
+        publishAt: publishAtIso,
       });
       toast.success("发布状态已更新");
       setScheduleRow(null);
@@ -341,14 +377,52 @@ export default function ContentAdminPage() {
               </Select>
             </div>
             {scheduleAction === "schedule" && (
-              <div className="space-y-2">
-                <Label htmlFor="schedule-at">发布时间</Label>
-                <Input
-                  id="schedule-at"
-                  type="datetime-local"
-                  value={scheduleAt}
-                  onChange={(e) => setScheduleAt(e.target.value)}
-                />
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-date">发布时间</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="schedule-date"
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Select value={scheduleHour} onValueChange={setScheduleHour}>
+                      <SelectTrigger className="w-24" aria-label="小时">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-64">
+                        {HOURS.map((h) => (
+                          <SelectItem key={h} value={h}>
+                            {h} 时
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
+                      <SelectTrigger className="w-24" aria-label="分钟">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MINUTES.map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {m} 分
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {scheduleDate && (
+                  <p className="rounded-md bg-muted px-3 py-2 text-sm">
+                    将于{" "}
+                    <span className="font-medium">
+                      {formatSchedulePreview(scheduleDate, scheduleHour, scheduleMinute)}
+                    </span>{" "}
+                    自动发布
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   到点由官网自动发布，不依赖你的电脑开机；时间需晚于当前。
                 </p>
