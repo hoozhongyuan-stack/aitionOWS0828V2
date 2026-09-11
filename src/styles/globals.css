@@ -511,3 +511,189 @@
     transform: none !important;
   }
 }
+
+/* ============================================================
+   V4.2.1 第四主题包「窖藏 · Cellar」——酒类审美(白酒方向)
+   朱砂红 + 墨黑 + 宣纸白 + 金饰线;水墨晕底/金线装饰/衬线标题/克制缓慢动效。
+   颜色变量仍由后台调色板注入(选择卡已预填窖藏推荐色);本段只做结构性覆盖
+   与风格效果,组件代码零侵入。prefers-reduced-motion 用户自动降级。
+   与极光(冷色深空/毛玻璃/光效)气质相反:本主题暖调墨色、无发光、重"沉"不重"炫"。
+   ============================================================ */
+
+[data-theme="cellar"] {
+  color-scheme: dark;
+  /* 主题私有变量(非调色板):金饰/暖褐边框/卡片底 */
+  --cellar-gold: #c6a15b;
+  --cellar-gold-soft: rgba(198, 161, 91, 0.14);
+  --cellar-border: #3a3226;
+  --cellar-card: #1c1813;
+}
+
+/* —— 基底:墨黑 + 极淡水墨晕(固定层,不抢内容) —— */
+[data-theme="cellar"] body {
+  background-color: #15120e;
+  background-image:
+    radial-gradient(58rem 40rem at 84% -12%, rgba(198, 161, 91, 0.08), transparent 62%),
+    radial-gradient(46rem 34rem at -10% 16%, rgba(158, 43, 37, 0.07), transparent 60%),
+    linear-gradient(178deg, #15120e 0%, #1a1610 100%);
+  background-attachment: fixed;
+  color: #eae0cf;
+  min-height: 100vh;
+}
+
+/* —— 边框统一:深色主题下全局衍生边框(比背景更暗)几乎不可见,提亮为暖褐 —— */
+[data-theme="cellar"] .border-input,
+[data-theme="cellar"] .border-border {
+  border-color: var(--cellar-border);
+}
+
+/* —— 卡片:墨底暖边 + 近直角 + hover 金色描边浮现(不上浮/不发光——那是极光的语言) —— */
+[data-theme="cellar"] .bg-card,
+[data-theme="cellar"] [data-slot="card"] {
+  background: var(--cellar-card);
+  border-color: var(--cellar-border);
+  border-radius: 0.25rem; /* 卡片用固定 rounded-xl 类,不跟随 --radius,须显式覆盖(近直角是本主题身份) */
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+[data-theme="cellar"] .bg-card:hover,
+[data-theme="cellar"] [data-slot="card"]:hover {
+  border-color: rgba(198, 161, 91, 0.5);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(198, 161, 91, 0.14);
+}
+
+/* —— 按钮:朱砂实心 + hover 微亮 —— */
+[data-theme="cellar"] button[class*="bg-primary"],
+[data-theme="cellar"] a[class*="bg-primary"] {
+  background-color: #9e2b25;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+[data-theme="cellar"] button[class*="bg-primary"]:hover:not(:disabled),
+[data-theme="cellar"] a[class*="bg-primary"]:hover {
+  background-color: #b3352d;
+  box-shadow: 0 4px 18px rgba(158, 43, 37, 0.42);
+}
+
+/* —— 标题:衬线 + 字距;区块标题右侧 1px 金线(inline-block 不换行,不破坏卡片内标题) —— */
+[data-theme="cellar"] h1,
+[data-theme="cellar"] h2 {
+  font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+  color: #eae0cf;
+  letter-spacing: 0.02em;
+}
+[data-theme="cellar"] h2::after {
+  content: "";
+  display: inline-block;
+  width: 30px;
+  height: 1px;
+  margin-left: 0.7rem;
+  vertical-align: middle;
+  background: linear-gradient(90deg, var(--cellar-gold), transparent);
+}
+
+/* —— Hero 区:墨底 + 金色/朱砂极淡光晕缓漂(比禾野更慢更暗:沉稳不喧哗) —— */
+[data-theme="cellar"] .aurora-hero {
+  position: relative;
+  overflow: hidden;
+}
+[data-theme="cellar"] .aurora-hero::before,
+[data-theme="cellar"] .aurora-hero::after {
+  content: "";
+  position: absolute;
+  width: 46vw;
+  height: 46vw;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+  pointer-events: none;
+  will-change: transform;
+}
+[data-theme="cellar"] .aurora-hero::before {
+  background: radial-gradient(circle, rgba(198, 161, 91, 0.2), transparent 64%);
+  top: -20%;
+  right: -10%;
+  animation: cellar-drift-a 34s ease-in-out infinite alternate;
+}
+[data-theme="cellar"] .aurora-hero::after {
+  background: radial-gradient(circle, rgba(158, 43, 37, 0.18), transparent 64%);
+  bottom: -26%;
+  left: -12%;
+  animation: cellar-drift-b 40s ease-in-out infinite alternate;
+}
+[data-theme="cellar"] .aurora-hero .aurora-parallax {
+  position: relative;
+  z-index: 1;
+}
+/* —— Hero 蒙层:有背景图时压向墨暖调(中性黑会把暖色主题的 Banner 拽冷,与朱砂金冲突) —— */
+[data-theme="cellar"] .hero-scrim {
+  background: linear-gradient(180deg, rgba(21, 18, 14, 0.5) 0%, rgba(21, 18, 14, 0.8) 100%);
+}
+@keyframes cellar-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-5vw, 3vh, 0) scale(1.08); }
+}
+@keyframes cellar-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to { transform: translate3d(4vw, -3vh, 0) scale(0.97); }
+}
+
+/* —— 入场编排:缓慢淡入(0.9s,比禾野更缓——酒要沉得住) —— */
+[data-theme="cellar"] .aurora-rise {
+  animation: cellar-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+[data-theme="cellar"] .aurora-rise:nth-child(2),
+[data-theme="cellar"] .aurora-rise.aurora-delay-1 { animation-delay: 0.12s; }
+[data-theme="cellar"] .aurora-rise:nth-child(3),
+[data-theme="cellar"] .aurora-rise.aurora-delay-2 { animation-delay: 0.24s; }
+[data-theme="cellar"] .aurora-rise.aurora-delay-3 { animation-delay: 0.36s; }
+@keyframes cellar-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* —— 滚动显现(复用 Reveal 组件;同结构更缓曲线) —— */
+[data-theme="cellar"] .aurora-reveal {
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* —— 页头/页脚:墨色融合 + 暖金边 —— */
+[data-theme="cellar"] header {
+  background: rgba(21, 18, 14, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--cellar-border);
+}
+[data-theme="cellar"] footer {
+  border-top: 1px solid var(--cellar-border);
+  background: rgba(28, 24, 19, 0.72);
+}
+
+/* —— 表单控件:墨色融合 + 暖褐边框 —— */
+[data-theme="cellar"] input,
+[data-theme="cellar"] textarea,
+[data-theme="cellar"] select {
+  background: #1c1813;
+  color: #eae0cf;
+  border-color: var(--cellar-border);
+}
+[data-theme="cellar"] input::placeholder,
+[data-theme="cellar"] textarea::placeholder {
+  color: #8a7a66;
+}
+
+/* —— 强调文字:朱砂提亮(primary 在墨底上偏暗,提亮保可读;对比度 ≈4.7:1) —— */
+[data-theme="cellar"] .text-primary {
+  color: #cc5f55;
+}
+
+/* —— 降级:偏好减弱动效的用户直接呈现终态 —— */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="cellar"] .aurora-hero::before,
+  [data-theme="cellar"] .aurora-hero::after,
+  [data-theme="cellar"] .aurora-rise,
+  .aurora-reveal {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
