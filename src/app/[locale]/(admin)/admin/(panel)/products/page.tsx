@@ -7,14 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiGet } from "@/components/admin/api-client";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { formatMoney } from "@/lib/utils";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, List, LayoutGrid } from "lucide-react";
 
 /**
  * 商品管理(V4.2,交易模块入口):数据为 Content(product 栏目),本页为专属管理视图;
  * 编辑复用内容编辑器(零重复链路)。
+ * V4.4.0:新增「列表视图」并设为默认——网格一排 3 个一屏只能看 3~6 条,
+ * 而管理场景(找/改/核对)更需要信息密度;偏好记在本地,用户切回网格也会被记住。
  */
 interface ProductRow {
   id: number;
@@ -27,6 +30,7 @@ interface ProductRow {
   categoryId: number;
   title: string;
   categoryName: string;
+  updatedAt: string; // V4.4.0
 }
 interface ListData {
   total: number;
@@ -50,12 +54,35 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: "待审核",
 };
 
+/** V4.4.0 视图模式;默认列表(信息密度是一排 3 个网格的 3~5 倍) */
+type ViewMode = "list" | "grid";
+const VIEW_KEY = "aition_admin_product_view";
+
+/** 本地时间 YYYY-MM-DD HH:mm(不涉 Intl,无 locale 风险) */
+function fmtTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export default function ProductsPage() {
   const [data, setData] = useState<ListData | null>(null);
   const [keyword, setKeyword] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // 偏好记忆:挂载后再读 localStorage(SSR 期无 window,不能放 useState 初始化里)
+  useEffect(() => {
+    const saved = window.localStorage.getItem(VIEW_KEY);
+    if (saved === "list" || saved === "grid") setViewMode(saved);
+  }, []);
+  const switchView = (v: ViewMode) => {
+    setViewMode(v);
+    window.localStorage.setItem(VIEW_KEY, v);
+  };
 
   const load = useCallback(() => {
     const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
@@ -69,6 +96,18 @@ export default function ProductsPage() {
 
   const catName = (c: { translations: { locale: string; name: string }[] }) =>
     (c.translations.find((t) => t.locale === "zh-CN") ?? c.translations[0])?.name ?? "-";
+
+  /** 价格单元格(网格与列表共用同一显示规则:无价 = 仅询盘) */
+  const priceCell = (p: ProductRow, size: "sm" | "md") =>
+    p.priceCents != null ? (
+      <span className={(size === "sm" ? "text-sm " : "") + "font-heading font-bold text-primary"}>
+        {formatMoney(p.priceCents, p.currency || "USD", "zh-CN")}
+      </span>
+    ) : (
+      <span className="text-xs text-muted-foreground">仅询盘</span>
+    );
+
+  const items = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -113,48 +152,123 @@ export default function ProductsPage() {
         <Button size="sm" variant="outline" onClick={() => setPage(1)}>
           查询
         </Button>
+
+        {/* V4.4.0 视图切换(默认列表,偏好本地记忆) */}
+        <div className="ml-auto flex items-center gap-0.5 rounded-md border p-0.5">
+          <Button
+            size="sm"
+            variant={viewMode === "list" ? "secondary" : "ghost"}
+            className="h-7 px-2"
+            onClick={() => switchView("list")}
+            title="列表视图（信息密度高）"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant={viewMode === "grid" ? "secondary" : "ghost"}
+            className="h-7 px-2"
+            onClick={() => switchView("grid")}
+            title="网格视图（大图浏览）"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {(data?.items ?? []).map((p) => (
-          <Card key={p.id} className="overflow-hidden">
-            <div className="aspect-[16/9] w-full bg-muted">
-              {p.coverUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.coverUrl} alt={p.title} className="h-full w-full object-cover" />
-              ) : null}
-            </div>
-            <CardContent className="space-y-2 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{p.title}</p>
-                  <p className="text-xs text-muted-foreground">{p.categoryName} · {p.slug}</p>
+      {viewMode === "list" ? (
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-14" />
+                <TableHead>名称</TableHead>
+                <TableHead className="w-28">栏目</TableHead>
+                <TableHead className="w-32">价格</TableHead>
+                <TableHead className="w-32">SPU</TableHead>
+                <TableHead className="w-20">状态</TableHead>
+                <TableHead className="w-32">更新时间</TableHead>
+                <TableHead className="w-16 text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="py-2">
+                    <div className="h-10 w-10 overflow-hidden rounded bg-muted">
+                      {p.coverUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.coverUrl} alt="" className="h-full w-full object-cover" />
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-2">
+                    <div className="max-w-72 truncate font-medium" title={p.title}>
+                      {p.title}
+                    </div>
+                    <div className="max-w-72 truncate font-mono text-xs text-muted-foreground">{p.slug}</div>
+                  </TableCell>
+                  <TableCell className="py-2 text-sm text-muted-foreground">{p.categoryName}</TableCell>
+                  <TableCell className="py-2">{priceCell(p, "sm")}</TableCell>
+                  <TableCell className="py-2 font-mono text-xs text-muted-foreground">{p.spu ?? "—"}</TableCell>
+                  <TableCell className="py-2">
+                    <Badge className={STATUS_BADGE[p.status] ?? ""}>
+                      {STATUS_LABEL[p.status] ?? p.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-2 text-xs text-muted-foreground">{fmtTime(p.updatedAt)}</TableCell>
+                  <TableCell className="py-2 text-right">
+                    <Button asChild size="sm" variant="ghost" title="编辑">
+                      <Link href={`/zh-CN/admin/content/edit/${p.id}`}>
+                        <Pencil className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((p) => (
+            <Card key={p.id} className="overflow-hidden">
+              <div className="aspect-[16/9] w-full bg-muted">
+                {p.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.coverUrl} alt={p.title} className="h-full w-full object-cover" />
+                ) : null}
+              </div>
+              <CardContent className="space-y-2 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{p.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.categoryName} · {p.slug}
+                    </p>
+                  </div>
+                  <Badge className={STATUS_BADGE[p.status] ?? ""}>
+                    {STATUS_LABEL[p.status] ?? p.status}
+                  </Badge>
                 </div>
-                <Badge className={STATUS_BADGE[p.status] ?? ""}>{STATUS_LABEL[p.status] ?? p.status}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                {p.priceCents != null ? (
-                  <span className="font-heading font-bold text-primary">
-                    {formatMoney(p.priceCents, p.currency || "USD", "zh-CN")}
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">仅询盘</span>
-                )}
-                {p.spu && <span className="font-mono text-xs text-muted-foreground">SPU: {p.spu}</span>}
-              </div>
-              <div className="flex justify-end pt-1">
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/zh-CN/admin/content/edit/${p.id}`}>
-                    <Pencil className="mr-1 h-3.5 w-3.5" />
-                    编辑
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      {(data?.items?.length ?? 0) === 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  {priceCell(p, "md")}
+                  {p.spu && <span className="font-mono text-xs text-muted-foreground">SPU: {p.spu}</span>}
+                </div>
+                <div className="flex justify-end pt-1">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/zh-CN/admin/content/edit/${p.id}`}>
+                      <Pencil className="mr-1 h-3.5 w-3.5" />
+                      编辑
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      {items.length === 0 && (
         <div className="rounded-lg border border-dashed p-12 text-center text-sm text-muted-foreground">
           暂无商品;点击右上角「新建商品」并选择商品类栏目
         </div>

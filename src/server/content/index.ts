@@ -712,6 +712,7 @@ export async function listProductsAdmin(q: { keyword?: string; categoryId?: numb
         currency: true,
         spu: true,
         categoryId: true,
+        updatedAt: true, // V4.4.0:商品列表视图的「更新时间」列需要
         translations: { select: { locale: true, title: true } },
         category: { select: { translations: { select: { locale: true, name: true } } } },
       },
@@ -732,6 +733,7 @@ export async function listProductsAdmin(q: { keyword?: string; categoryId?: numb
       currency: c.currency,
       spu: c.spu,
       categoryId: c.categoryId,
+      updatedAt: c.updatedAt.toISOString(),
       title: nameOf(c.translations as never, c.slug),
       categoryName: nameOf(c.category.translations as never, "-"),
     })),
