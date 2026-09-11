@@ -135,6 +135,8 @@ function buildServerBlock() {
     },
     runtime: { type: "node", version: `>=${nodeMajor}` },
     timeout: 60000,
+    // 平台下发的连接器都显式带该字段；不写可能被当作"未启用"而不加载
+    disabled: false,
   };
 }
 
@@ -150,9 +152,39 @@ if (!DRY) {
     say(`  ✓ 原配置已备份 → ${bak}`);
   }
   writeFileSync(WB_MCP, JSON.stringify(cfg, null, 2) + "\n");
-  say(`  ✓ 已写入 ${WB_MCP}`);
+  say(`  ✓ 已写入用户级 → ${WB_MCP}`);
 } else {
   say("  （dry-run：跳过写入）");
+}
+
+// 项目级副本：WorkBuddy 以该项目为「工作区」时读取（实测用户级不总能被加载，两处都写最稳）
+const PROJECT_MCP = join(PROJECT_ROOT, ".workbuddy", "mcp.json");
+let projCfg = { mcpServers: {} };
+const projExisted = existsSync(PROJECT_MCP);
+if (projExisted) {
+  try {
+    projCfg = JSON.parse(readFileSync(PROJECT_MCP, "utf8"));
+    if (!projCfg || typeof projCfg !== "object") throw new Error("顶层不是对象");
+    if (!projCfg.mcpServers || typeof projCfg.mcpServers !== "object") projCfg.mcpServers = {};
+  } catch (e) {
+    console.error(`  ⚠ 项目级配置不是合法 JSON，跳过：${PROJECT_MCP}（${e.message}）`);
+    projCfg = null;
+  }
+}
+if (projCfg) {
+  projCfg.mcpServers[NAME] = buildServerBlock();
+  if (DRY) {
+    say(`  （dry-run：将写入项目级 → ${PROJECT_MCP}）`);
+  } else {
+    mkdirSync(dirname(PROJECT_MCP), { recursive: true });
+    if (projExisted) {
+      const bak = `${PROJECT_MCP}.bak-${Date.now()}`;
+      renameSync(PROJECT_MCP, bak);
+      say(`  ✓ 项目级原配置已备份 → ${bak}`);
+    }
+    writeFileSync(PROJECT_MCP, JSON.stringify(projCfg, null, 2) + "\n");
+    say(`  ✓ 已写入项目级 → ${PROJECT_MCP}`);
+  }
 }
 
 // ── ④ 安装技能 ────────────────────────────────────────
@@ -177,8 +209,11 @@ if (DRY) {
 } else {
   say("✅ 接入完成，接下来：");
   say("   1. 重启 WorkBuddy（让配置与技能生效）");
-  say("   2. 首次连接会弹「是否信任该 MCP」，点确认");
-  say("   3. 在对话里问「你有哪些可用的工具？」验证能看到 aition-content 的 5 个工具");
+  say("   2. 【关键】在 WorkBuddy 里把这个项目目录作为「工作区」打开：");
+  say(`      ${PROJECT_ROOT}`);
+  say("      WorkBuddy 的工作区 = 你打开的那个文件夹；项目级 MCP 与技能只在该工作区内加载。");
+  say("   3. 首次连接会弹「是否信任该 MCP」，点确认");
+  say("   4. 在对话里问「你有哪些可用的工具？」验证能看到 aition-content 的 5 个工具");
   if (isLocal) {
     say("\n注意：当前指向本地 http://localhost:3000 —— 使用前需先跑 npm run dev；");
     say("      部署生产后重跑本脚本并传 --base https://aition.art --token <生产令牌> 即可切换。");
