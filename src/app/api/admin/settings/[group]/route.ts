@@ -64,6 +64,10 @@ const themeSchema = z
     navFontSize: z.string().regex(PX).max(10),
     navBold: z.boolean(),
     preset: z.enum(THEME_PRESETS_ALLOWED), // 主题风格包白名单(单一来源见 lib/config;V3.1.1 起,V4.3 +禾野,V4.2.1 +窖藏)
+    // V4.4.0 前台透明感(可选;缺省=不启用)
+    cardAlpha: z.number().min(0.6).max(1).optional(), // 卡片不透明度;下限 0.6 保可读性
+    cardBlur: z.boolean().optional(), // 卡片背景模糊(毛玻璃)
+    headerGlass: z.boolean().optional(), // 前台页头通透
   })
   .partial()
   .passthrough(); // passthrough:保留未知键入库;CSS 注入面只消费上面已校验的字段

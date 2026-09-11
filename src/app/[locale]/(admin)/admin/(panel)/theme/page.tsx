@@ -32,13 +32,17 @@ interface ThemeValues {
   logoHeight: string;
   navFontSize: string;
   navBold: boolean;
+  // V4.4.0 前台透明感
+  cardAlpha: number; // 卡片不透明度 0.6–1.0
+  cardBlur: boolean; // 卡片背景模糊(毛玻璃)
+  headerGlass: boolean; // 前台页头通透
 }
 
 /**
  * 预设可预填的字段:配色 + 圆角(排除页头字号等场景字段)。
  * fontHeading 可选——大多数主题跟随正文字体,只有需要衬线气质的主题(如窖藏)推荐显式设置。
  */
-type PresetValues = Omit<ThemeValues, "fontSans" | "fontHeading" | "fontSize" | "lineHeight" | "logoHeight" | "navFontSize" | "navBold"> & {
+type PresetValues = Omit<ThemeValues, "fontSans" | "fontHeading" | "fontSize" | "lineHeight" | "logoHeight" | "navFontSize" | "navBold" | "cardAlpha" | "cardBlur" | "headerGlass"> & {
   fontHeading?: string;
 };
 
@@ -149,6 +153,9 @@ export default function ThemePage() {
           logoHeight: v.logoHeight ?? "40px",
           navFontSize: v.navFontSize ?? "15px",
           navBold: v.navBold ?? false,
+          cardAlpha: typeof v.cardAlpha === "number" ? v.cardAlpha : 1,
+          cardBlur: v.cardBlur ?? false,
+          headerGlass: v.headerGlass ?? false,
         })
       )
       .catch((e) => toast.error(e.message));
@@ -170,7 +177,7 @@ export default function ThemePage() {
 
   if (!values) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
-  const set = (k: keyof ThemeValues, v: string | boolean) => setValues({ ...values, [k]: v });
+  const set = (k: keyof ThemeValues, v: string | boolean | number) => setValues({ ...values, [k]: v });
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -388,6 +395,55 @@ export default function ThemePage() {
             <div className="flex h-9 items-center gap-2">
               <Switch checked={values.navBold} onCheckedChange={(c) => set("navBold", c)} />
               <span className="text-sm text-muted-foreground">{values.navBold ? "加粗" : "常规"}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* V4.4.0 前台透明感 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>前台透明感(V4.4.0)</CardTitle>
+          <CardDescription>
+            让前台卡片与页头呈现通透质感。默认不启用——不调整时外观与之前完全一致；仅作用于前台，后台不受影响。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="card-alpha">卡片通透度</Label>
+              <span className="text-sm text-muted-foreground">
+                {values.cardAlpha >= 1 ? "不透明（默认）" : `${Math.round((1 - values.cardAlpha) * 100)}% 通透`}
+              </span>
+            </div>
+            <input
+              id="card-alpha"
+              type="range"
+              min={0.6}
+              max={1}
+              step={0.02}
+              value={values.cardAlpha}
+              onChange={(e) => set("cardAlpha", Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <p className="text-xs text-muted-foreground">
+              范围 60%–100%；下限 60% 是为保证文字对比度。与下方「背景模糊」搭配效果最佳。
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-lg border p-3">
+            <Switch id="card-blur" checked={values.cardBlur} onCheckedChange={(c) => set("cardBlur", c)} />
+            <div className="flex-1">
+              <Label htmlFor="card-blur">卡片背景模糊（毛玻璃）</Label>
+              <p className="text-xs text-muted-foreground">卡片背景做模糊处理，透出后方内容，质感更像玻璃</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-lg border p-3">
+            <Switch id="header-glass" checked={values.headerGlass} onCheckedChange={(c) => set("headerGlass", c)} />
+            <div className="flex-1">
+              <Label htmlFor="header-glass">页头通透</Label>
+              <p className="text-xs text-muted-foreground">页头半透明并模糊，滚动时内容从底下透出</p>
             </div>
           </div>
         </CardContent>

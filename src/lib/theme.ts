@@ -101,6 +101,10 @@ export function buildThemeCss(theme: ThemeConfig): string {
     `--radius:${safeUnit(theme.radius, "0.5rem", UNIT_OK)}`,
     `--font-sans:${safeUnit(theme.fontSans, "system-ui, sans-serif", FONT_OK_FONT)}`,
     `--font-heading:${safeUnit(theme.fontHeading, "var(--font-sans)", FONT_OK_FONT)}`,
+    // V4.4.0 前台透明感:变量始终注入,但是否生效由前台容器的 data-glass / data-glass-header 决定
+    // (这样"未配置"时各主题保持自身观感——极光的毛玻璃、其他主题的实心卡片——即零变化)
+    `--surface-alpha:${clampAlpha(theme.cardAlpha)}`,
+    `--surface-blur:${theme.cardBlur ? 14 : 0}px`,
   ].join(";");
 
   return `:root{${vars}}html{font-size:${safeUnit(theme.fontSize, "16px", PX_OK)}}body{line-height:${safeUnit(theme.lineHeight, "1.6", NUMBER_OK)}}`;
@@ -108,3 +112,10 @@ export function buildThemeCss(theme: ThemeConfig): string {
 
 // 字体栈与颜色/长度走不同校验:允许逗号、引号、百分号,只挡危险字符
 const FONT_OK_FONT = /^[^<>{};\\`]{0,200}$/;
+
+/** V4.4.0 卡片不透明度:硬限制在 0.6–1.0(低于 0.6 无法保证文字对比度),非法值回退 1(不透明) */
+function clampAlpha(v: unknown): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(1, Math.max(0.6, n));
+}

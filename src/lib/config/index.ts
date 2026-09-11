@@ -23,6 +23,10 @@ export interface ThemeConfig {
   navFontSize: string; // 顶部导航字号(如 15px)
   navBold: boolean; // 顶部导航是否加粗
   preset: string; // 主题风格包:classic=经典(默认) | aurora=极光(深色炫酷) | harvest=禾野(农业暖色,V4.3) | cellar=窖藏(酒类,深色墨金,V4.2.1)
+  // —— V4.4.0 前台透明感(全部可选;缺省=不启用,各主题保持自身观感,存量站点零变化) ——
+  cardAlpha?: number; // 卡片不透明度 0.6–1.0(硬下限 0.6 保可读);1.0=完全不透明
+  cardBlur?: boolean; // 卡片背景模糊(毛玻璃)
+  headerGlass?: boolean; // 前台页头半透明 + 模糊(滚动时内容从底下透出)
 }
 const THEME_DEFAULTS: ThemeConfig = {
   primary: "#0f172a",
@@ -39,6 +43,9 @@ const THEME_DEFAULTS: ThemeConfig = {
   navFontSize: "15px",
   navBold: false,
   preset: "classic",
+  cardAlpha: 1,
+  cardBlur: false,
+  headerGlass: false,
 };
 
 /**

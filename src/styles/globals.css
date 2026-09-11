@@ -744,3 +744,39 @@ html body [data-admin] {
      只重置变量不够——body 的 color 来自主题,会一路继承进来 */
   color: hsl(var(--foreground));
 }
+
+
+/* ============================================================
+   V4.4.0 前台透明感
+   仅当用户主动配置了通透度(<1)或开启模糊时,前台容器才带 data-glass /
+   data-glass-header 属性;未配置时不产生任何样式,各主题保持自身观感(零变化)。
+   卡片底色统一取 hsl(var(--card) / alpha):主题段用的是各自私有卡片色,
+   故用更高特异性的选择器覆盖(html [data-glass] ... = 0,2,1 > [data-theme=x] ... = 0,2,0)。
+   ============================================================ */
+html [data-glass] .bg-card,
+html [data-glass] [data-slot="card"] {
+  background-color: hsl(var(--card) / var(--surface-alpha, 1));
+  backdrop-filter: blur(var(--surface-blur, 0px));
+  -webkit-backdrop-filter: blur(var(--surface-blur, 0px));
+}
+
+html [data-glass-header] header {
+  background-color: hsl(var(--background) / 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 降级:系统偏好减少透明度时一律回到不透明(可读性优先) */
+@media (prefers-reduced-transparency: reduce) {
+  html [data-glass] .bg-card,
+  html [data-glass] [data-slot="card"] {
+    background-color: hsl(var(--card));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  html [data-glass-header] header {
+    background-color: hsl(var(--background));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
