@@ -3,6 +3,7 @@ import { logAdmin } from "@/server/admin";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/session";
 import { THEME_PRESETS_ALLOWED } from "@/lib/config";
+import { HOME_PRESETS_ALLOWED, CATEGORY_PRESETS_ALLOWED } from "@/server/layout";
 import { getSettingGroup, saveSettingGroup } from "@/server/setting";
 
 /**
@@ -69,7 +70,8 @@ const themeSchema = z
 
 const layoutSchema = z
   .object({
-    preset: z.enum(["grid", "hero-list", "split", "list", "magazine"]),
+    // 首页与栏目页共用 preset 字段,白名单取两组常量之并(单一来源见 server/layout)
+    preset: z.enum([...HOME_PRESETS_ALLOWED, ...CATEGORY_PRESETS_ALLOWED]),
     sections: z
       .object({
         banners: z.boolean().optional(),

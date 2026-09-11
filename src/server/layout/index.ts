@@ -8,8 +8,17 @@ import { listPublishedByCategory } from "@/server/content";
  * 校验在 settings API 边界(zod),本模块做类型化读取与合并。
  */
 
-export type HomePreset = "grid" | "hero-list" | "split";
-export type CategoryPreset = "list" | "magazine";
+/**
+ * 布局预设白名单(单一事实来源)。
+ * 新增预设要三处齐备:此处 + 后台 layout/page.tsx 的选项数组 + page.tsx 渲染分支;
+ * settings API 的 zod 校验由本常量派生——避免"双白名单"不同步
+ * (读取侧静默回退默认、写入侧报 Invalid enum value,两边表现不一致最难排查)。
+ */
+export const HOME_PRESETS_ALLOWED = ["grid", "hero-list", "split", "spotlight"] as const;
+export const CATEGORY_PRESETS_ALLOWED = ["list", "magazine"] as const;
+
+export type HomePreset = (typeof HOME_PRESETS_ALLOWED)[number];
+export type CategoryPreset = (typeof CATEGORY_PRESETS_ALLOWED)[number];
 /** 首页楼层样式(V3.3 D):grid3 三列卡片 / list 紧凑列表 / feature 首条大图特写+其余双列 */
 export type FloorStyle = "grid3" | "list" | "feature";
 
@@ -32,8 +41,8 @@ export interface HomeFloor {
 const HOME_DEFAULT: HomeLayoutConfig = { preset: "grid", sections: { banners: true, latest: true } };
 const CATEGORY_DEFAULT: CategoryLayoutConfig = { preset: "list", sections: { header: true } };
 
-const HOME_PRESETS = new Set(["grid", "hero-list", "split"]);
-const CATEGORY_PRESETS = new Set(["list", "magazine"]);
+const HOME_PRESETS = new Set<string>(HOME_PRESETS_ALLOWED);
+const CATEGORY_PRESETS = new Set<string>(CATEGORY_PRESETS_ALLOWED);
 const FLOOR_STYLES = new Set<string>(["grid3", "list", "feature"]);
 export const FLOOR_MAX = 8;
 export const FLOOR_LIMIT_DEFAULT = 6;

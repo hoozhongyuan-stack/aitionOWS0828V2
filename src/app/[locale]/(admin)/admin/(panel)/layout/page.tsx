@@ -35,6 +35,7 @@ const HOME_PRESETS = [
   { key: "grid", label: "网格(默认)", desc: "轮播 Hero + 最新动态网格,现状布局" },
   { key: "hero-list", label: "大图列表", desc: "全宽 Hero + 最新动态列表条目 + CTA 横幅" },
   { key: "split", label: "分屏", desc: "左右分屏 Hero + 最新动态网格" },
+  { key: "spotlight", label: "全幅聚焦", desc: "V4.2.1 新增:全幅首屏(撑满一屏)+ 超大标题 + 双按钮,品牌形象站推荐" },
 ];
 const CATEGORY_PRESETS = [
   { key: "list", label: "网格(默认)", desc: "头图 + 卡片网格 + 分页,现状布局" },

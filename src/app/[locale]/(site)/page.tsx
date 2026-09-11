@@ -12,13 +12,14 @@ import { Parallax, Reveal } from "@/components/site/aurora-motion";
 import { ListItemRow } from "@/components/site/layout-presets";
 import { HeroCarousel } from "@/components/site/hero-carousel";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 
 /**
- * 前台首页(SSR · V3.2 布局预设 · V3.3 楼层):
+ * 前台首页(SSR · V3.2 布局预设 · V3.3 楼层 · V4.2.1 spotlight):
  * - preset=grid(现状默认):轮播 Hero → 最新动态网格
  * - preset=hero-list:全宽 Hero → 最新动态列表条目 → CTA 横幅
  * - preset=split:左右分屏 Hero → 最新动态网格
+ * - preset=spotlight(V4.2.1):全幅首屏(撑满一屏,扣除 sticky 页头) → 超大标题 + 双 CTA + 滚动提示
  * - 楼层(V3.3 D):最新动态之后按后台配置逐层渲染(绑定栏目,grid3/list/feature 三样式);
  *   未配置楼层=现状布局零变化;楼层引用已删栏目或栏目无内容时该层自然跳过
  * - 布局由后台「站点配置 → 页面布局」选择(Setting group=layout);缺省 grid,升级零变化
@@ -226,6 +227,92 @@ export default async function HomePage({
             </div>
           </section>
           {showLatest && latestGrid}
+          {floorBlocks}
+        </>
+      )}
+
+      {preset === "spotlight" && (
+        <>
+          {/* spotlight(V4.2.1):全幅首屏——撑满一屏(扣除 sticky 页头 h-16=4rem) + 超大标题 + 双 CTA + 滚动提示 */}
+          <section
+            className={
+              "aurora-hero relative flex min-h-[calc(100svh_-_4rem)] items-center overflow-hidden border-b" +
+              (hasBanners ? "" : " bg-gradient-to-b from-secondary/60 to-background")
+            }
+          >
+            {hasBanners && (
+              <HeroCarousel banners={banners.map((b) => ({ imageUrl: b.imageUrl, linkUrl: b.linkUrl }))} />
+            )}
+            <Parallax speed={0.2} className="w-full">
+              <div
+                className={
+                  hasBanners
+                    ? "container pointer-events-none relative z-10 flex flex-col items-center gap-6 py-20 text-center text-white"
+                    : "container relative z-10 flex flex-col items-center gap-6 py-20 text-center"
+                }
+              >
+                <h1
+                  className={
+                    "aurora-rise max-w-4xl font-heading text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl" +
+                    (hasBanners ? " drop-shadow-md" : "")
+                  }
+                >
+                  {t("heroTitle")}
+                </h1>
+                <p
+                  className={
+                    "aurora-rise max-w-2xl text-lg sm:text-xl" +
+                    (hasBanners ? " text-white/90 drop-shadow-md" : " text-muted-foreground")
+                  }
+                >
+                  {t("heroSubtitle")}
+                </p>
+                <div className="flex flex-col items-center gap-3 sm:flex-row">
+                  <Button
+                    asChild
+                    size="lg"
+                    variant={hasBanners ? "secondary" : "default"}
+                    className={hasBanners ? "pointer-events-auto aurora-rise aurora-delay-2" : "aurora-rise aurora-delay-2"}
+                  >
+                    <Link href={`/${locale}/contact`}>
+                      {t("heroCta")}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className={
+                      (hasBanners
+                        ? "pointer-events-auto border-white/60 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                        : "") + " aurora-rise aurora-delay-2"
+                    }
+                  >
+                    <a href="#latest">
+                      {t("heroCtaSecondary")}
+                      <ChevronDown className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </Parallax>
+            {/* 滚动提示(无最新动态区块时无锚点可去,隐藏);bottom-10 让开轮播圆点(bottom-4) */}
+            {showLatest && latest.length > 0 && (
+              <a
+                href="#latest"
+                aria-label={t("heroCtaSecondary")}
+                className={
+                  "absolute bottom-10 left-1/2 z-10 -translate-x-1/2 transition-colors " +
+                  (hasBanners ? "text-white/75 hover:text-white" : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                <ChevronDown className="h-6 w-6 motion-safe:animate-bounce" />
+              </a>
+            )}
+          </section>
+
+          {showLatest && <div id="latest">{latestGrid}</div>}
           {floorBlocks}
         </>
       )}
