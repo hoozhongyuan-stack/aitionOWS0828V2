@@ -35,10 +35,16 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   const c = await cookies();
   let token: string | undefined = c.get(ADMIN_COOKIE)?.value;
   if (!token) {
-    // cookie 缺失时回退到 Bearer(仅服务端可用 headers())
-    const h = await headers();
-    const auth = h.get("authorization");
-    if (auth?.startsWith("Bearer ")) token = auth.slice(7).trim() || undefined;
+    // cookie 缺失时回退到 Bearer。
+    // 用 try 包住:headers() 在"非请求上下文"(脚本/部分测试/静态渲染)不可用,
+    // 此时视为无 Bearer,而不是让整个会话读取抛错。
+    try {
+      const h = await headers();
+      const auth = h.get("authorization");
+      if (auth?.startsWith("Bearer ")) token = auth.slice(7).trim() || undefined;
+    } catch {
+      /* 非请求上下文:无 Authorization 可读 */
+    }
   }
   if (!token) return null;
   const p = await verifyToken(token);
