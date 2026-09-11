@@ -55,3 +55,6 @@ tsconfig.tsbuildinfo
 
 # MCP 工具依赖（独立 package.json，不入库）
 /tools/*/node_modules/
+
+# WorkBuddy 项目级 MCP 配置(含令牌,严禁入库)
+/.mcp.json

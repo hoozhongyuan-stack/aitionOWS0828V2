@@ -157,8 +157,9 @@ if (!DRY) {
   say("  （dry-run：跳过写入）");
 }
 
-// 项目级副本：WorkBuddy 以该项目为「工作区」时读取（实测用户级不总能被加载，两处都写最稳）
-const PROJECT_MCP = join(PROJECT_ROOT, ".workbuddy", "mcp.json");
+// 项目级副本：MCP 生态标准路径 <项目>/.mcp.json（WorkBuddy 应用代码中亦有读取该路径）
+// 注：含令牌，已在 .gitignore 忽略，不会入库
+const PROJECT_MCP = join(PROJECT_ROOT, ".mcp.json");
 let projCfg = { mcpServers: {} };
 const projExisted = existsSync(PROJECT_MCP);
 if (projExisted) {
