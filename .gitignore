@@ -52,3 +52,6 @@ tsconfig.tsbuildinfo
 .next-test-og-tags
 .next-test-product
 .next-test-qa
+
+# MCP 工具依赖（独立 package.json，不入库）
+/tools/*/node_modules/
