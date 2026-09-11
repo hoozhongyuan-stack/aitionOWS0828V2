@@ -81,13 +81,19 @@ export function resolveContentDetailPath(
  *   (与文章详情「渲染关联表单不校验 enabled」为有意差异,见 REQ-002)
  * - 单页 TDK 沿用 ContentTranslation(seoTitle/seoKeywords/seoDesc)
  */
-export async function getProductDetail(slug: string, locale: string) {
+export async function getProductDetail(
+  slug: string,
+  locale: string,
+  opts?: { allowUnpublished?: boolean }
+) {
   await promoteScheduled();
   const content = await prisma.content.findUnique({
     where: { slug },
     include: { translations: true, category: { include: { translations: true } } },
   });
-  if (!content || content.status !== CONTENT_STATUS.PUBLISHED) return null;
+  if (!content) return null;
+  // V4.3.0 前台预览：放行未发布内容——调用方必须先完成管理员鉴权（见商品详情页）
+  if (content.status !== CONTENT_STATUS.PUBLISHED && !opts?.allowUnpublished) return null;
 
   const t = content.translations.find((x) => x.locale === locale) ?? content.translations[0];
   if (!t) return null;

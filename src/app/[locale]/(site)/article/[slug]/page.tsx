@@ -8,7 +8,7 @@ import { buildOpenGraph } from "@/lib/seo/open-graph";
 import { getForm } from "@/server/form";
 import { getFeatureFlags } from "@/lib/config";
 import { hasFavorited } from "@/server/ugc";
-import { getActiveUserSession } from "@/lib/auth/session";
+import { getActiveUserSession, getGuardedAdmin } from "@/lib/auth/session";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { safeDateLocale } from "@/lib/utils";
 import { InteractionBar } from "@/components/site/interaction-bar";
@@ -29,11 +29,19 @@ import { Eye, UserRound } from "lucide-react";
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
+  /** V4.3.0 前台预览：?preview=1 时对已登录管理员放行未发布内容 */
+  searchParams: Promise<{ preview?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+/** 预览鉴权：仅已登录且状态正常的管理员（未登录/账号被禁用一律 false） */
+async function canPreview(): Promise<boolean> {
+  return Boolean(await getGuardedAdmin());
+}
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const content = await getPublishedBySlug(slug, locale);
+  const preview = (await searchParams)?.preview === "1" ? await canPreview() : false;
+  const content = await getPublishedBySlug(slug, locale, { allowUnpublished: preview });
   if (!content) return {};
   const title = content.seoTitle || content.title;
   const description = content.seoDesc || content.summary || undefined;
@@ -42,6 +50,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: await buildAlternates(`/article/${slug}`, locale),
     description,
     keywords: content.seoKeywords || undefined,
+    // V4.3.0 预览页不得被搜索引擎/AI 引擎收录（草稿内容不对外）
+    ...(preview ? { robots: { index: false, follow: false } } : {}),
     // V3.1 REQ-004:OG 语义不变,统一走 buildOpenGraph 绝对化;无封面兜底 LOGO
     openGraph: {
       ...(await buildOpenGraph({ title, description, imagePath: content.coverUrl, locale })),
@@ -50,12 +60,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ArticlePage({ params }: Props) {
+export default async function ArticlePage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
+  const previewAllowed = (await searchParams)?.preview === "1" ? await canPreview() : false;
 
   const [content, features, t, user] = await Promise.all([
-    getPublishedBySlug(slug, locale),
+    getPublishedBySlug(slug, locale, { allowUnpublished: previewAllowed }),
     getFeatureFlags(),
     getTranslations("interaction"),
     // 与页头/写接口同口径:被禁用账号即使持有效 JWT 也按未登录对待
@@ -81,6 +92,12 @@ export default async function ArticlePage({ params }: Props) {
 
   return (
     <main className="container max-w-3xl py-10">
+      {/* V4.3.0 预览提示：明确告知内容未发布、不对外可见 */}
+      {previewAllowed && (
+        <div className="mb-6 rounded-lg border border-dashed border-amber-500/60 bg-amber-500/10 px-4 py-2 text-sm">
+          预览模式：此内容尚未发布，仅管理员可见（不会被搜索引擎或 AI 引擎收录）
+        </div>
+      )}
       {/* 阅读量埋点(客户端一次性触发,防重复) */}
       <ViewTracker contentId={content.id} />
       {/* 结构化数据:文章(需求 4.1) */}

@@ -566,14 +566,23 @@ export async function listPublishedByCategory(
   };
 }
 
-/** 详情页(仅已发布可见) */
-export async function getPublishedBySlug(slug: string, locale: string) {
+/**
+ * 详情页(仅已发布可见)。
+ * V4.3.0 前台预览:`allowUnpublished` 放行未发布内容(DRAFT/SCHEDULED/OFFLINE)——
+ * **调用方必须先完成管理员鉴权**(见详情页的 getGuardedAdmin 检查),本函数不做鉴权。
+ */
+export async function getPublishedBySlug(
+  slug: string,
+  locale: string,
+  opts?: { allowUnpublished?: boolean }
+) {
   await promoteScheduled();
   const content = await prisma.content.findUnique({
     where: { slug },
     include: { translations: true, category: { include: { translations: true } } },
   });
-  if (!content || content.status !== CONTENT_STATUS.PUBLISHED) return null;
+  if (!content) return null;
+  if (content.status !== CONTENT_STATUS.PUBLISHED && !opts?.allowUnpublished) return null;
 
   const t = content.translations.find((x) => x.locale === locale) ?? content.translations[0];
   if (!t) return null;

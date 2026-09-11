@@ -4,7 +4,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getProductDetail } from "@/server/content";
 import { hasFavorited } from "@/server/ugc";
-import { getActiveUserSession } from "@/lib/auth/session";
+import { getActiveUserSession, getGuardedAdmin } from "@/lib/auth/session";
 import { buildAlternates } from "@/lib/seo/alternates";
 import { buildOpenGraph } from "@/lib/seo/open-graph";
 import { getBrandConfig, getFeatureFlags } from "@/lib/config";
@@ -31,11 +31,19 @@ import { Eye, UserRound } from "lucide-react";
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
+  /** V4.3.0 前台预览：?preview=1 时对已登录管理员放行未发布内容 */
+  searchParams: Promise<{ preview?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+/** 预览鉴权：仅已登录且状态正常的管理员（未登录/账号被禁用一律 false） */
+async function canPreview(): Promise<boolean> {
+  return Boolean(await getGuardedAdmin());
+}
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const content = await getProductDetail(slug, locale);
+  const preview = (await searchParams)?.preview === "1" ? await canPreview() : false;
+  const content = await getProductDetail(slug, locale, { allowUnpublished: preview });
   if (!content) return {};
   const title = content.seoTitle || content.title;
   const description = content.seoDesc || content.summary || undefined;
@@ -46,6 +54,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: await buildAlternates(`/product/${slug}`, locale),
     description,
     keywords: content.seoKeywords || undefined,
+    // V4.3.0 预览页不得被搜索引擎/AI 引擎收录（草稿内容不对外）
+    ...(preview ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       ...(await buildOpenGraph({ title, description, imagePath: ogImage, locale })),
       type: "website",
@@ -53,12 +63,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
+  const previewAllowed = (await searchParams)?.preview === "1" ? await canPreview() : false;
 
   const [content, features, brand, t, tInter, user] = await Promise.all([
-    getProductDetail(slug, locale),
+    getProductDetail(slug, locale, { allowUnpublished: previewAllowed }),
     getFeatureFlags(),
     getBrandConfig(),
     getTranslations("product"),
@@ -74,6 +85,12 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <main className="container max-w-5xl py-10">
+      {/* V4.3.0 预览提示：明确告知内容未发布、不对外可见 */}
+      {previewAllowed && (
+        <div className="mb-6 rounded-lg border border-dashed border-amber-500/60 bg-amber-500/10 px-4 py-2 text-sm">
+          预览模式：此内容尚未发布，仅管理员可见（不会被搜索引擎或 AI 引擎收录）
+        </div>
+      )}
       {/* 阅读量埋点(客户端一次性触发,防重复) */}
       <ViewTracker contentId={content.id} />
       {/* 结构化数据:商品(REQ-004;brand=品牌站点名,specs 含「型号」时输出 sku) */}

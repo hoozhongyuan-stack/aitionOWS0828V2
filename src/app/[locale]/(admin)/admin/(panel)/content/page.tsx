@@ -23,7 +23,7 @@ function adminTitle(translations: { locale: string; title: string }[], slug: str
 function adminCatName(translations: { locale: string; name: string }[] | undefined, slug: string) {
   return translations?.find(t => t.locale === DEFAULT_LOCALE)?.name ?? translations?.[0]?.name ?? slug;
 }
-import { Plus, Pencil, Trash2, CalendarClock } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarClock, ExternalLink } from "lucide-react";
 
 /**
  * 内容列表(需求 4.4/4.8):筛选、增删改查入口、状态标识。
@@ -44,7 +44,13 @@ interface ContentRow {
   publishAt: string | null;
   createdAt: string;
   translations: { locale: string; title: string }[];
-  category: { id: number; slug: string; translations: { locale: string; name: string }[] };
+  category: {
+    id: number;
+    slug: string;
+    translations: { locale: string; name: string }[];
+    /** 列表接口实际返回（预览链接需要它区分 /article 与 /product 前缀） */
+    moduleType?: string;
+  };
 }
 interface ListData {
   total: number;
@@ -286,6 +292,15 @@ export default function ContentAdminPage() {
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => openSchedule(row)} title="定制发布">
                     <CalendarClock className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild title="前台预览">
+                    <a
+                      href={`/${locale}/${row.category.moduleType === "product" ? "product" : "article"}/${row.slug}?preview=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
                   </Button>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/${locale}/admin/content/edit/${row.id}`}>
