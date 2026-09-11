@@ -48,7 +48,23 @@ npm install
 
 ---
 
-## 三、配置 MCP 客户端
+## ⚡ 一键接入（推荐）
+
+装依赖、配 MCP、装技能三步可以合并成一条命令：
+
+```bash
+cd tools/workbuddy-mcp
+node install.mjs                                            # 本地联调（自动签发本地令牌）
+node install.mjs --base https://aition.art --token eyJ...   # 生产（令牌自己签发后传入）
+node install.mjs --dry-run                                  # 先预览会做什么，不落盘
+node install.mjs --name aition-site                         # 自定义连接器名
+```
+
+脚本依次完成：环境检查 → 令牌准备 → **写入/合并** `~/.workbuddy/mcp.json`（原文件自动备份，**不覆盖**你的其他连接器）→ 复制「官网文章规范」技能到 `~/.workbuddy/skills/`。
+
+跑完**重启 WorkBuddy**，首次连接点「信任」即可。下面的手动步骤用脚本可跳过。
+
+## 三、配置 MCP 客户端（手动方式）
 
 把下面这段加入 WorkBuddy 的 MCP 配置（用户级 `~/.workbuddy/mcp.json`，或项目级 `<项目>/.workbuddy/mcp.json`）：
 
