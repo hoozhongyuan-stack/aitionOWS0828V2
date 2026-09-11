@@ -61,3 +61,7 @@ tsconfig.tsbuildinfo
 
 # WorkBuddy 桌面端项目数据(会话记忆等,非本项目代码)
 /.workbuddy/
+
+# WorkBuddy 配置及其备份(含令牌,严禁入库)
+.mcp.json.bak-*
+/.mcp.json.*

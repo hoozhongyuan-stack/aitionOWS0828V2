@@ -47,8 +47,13 @@ export default async function SiteLayout({
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+  // V4.4.0:主题作用域(data-theme)挂在前台容器上(原挂在 <html>),
+  // 这样后台不受主题 CSS 段影响——无论前台切什么主题,后台都保持统一的中性外观
   return (
-    <div className="flex min-h-screen flex-col">
+    <div
+      className="flex min-h-screen flex-col"
+      data-theme={theme.preset !== "classic" ? theme.preset : undefined}
+    >
       <Toaster richColors position="top-center" />
       <PageTracker />
       <OrganizationJsonLd

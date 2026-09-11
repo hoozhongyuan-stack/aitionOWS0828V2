@@ -7,7 +7,12 @@
  * 这里是"默认值兜底";运行时后台配置会在根布局注入 :root 内联样式覆盖,
  * 实现"后台改主题 → 立即生效、无需重编译/重启"。
  */
+/* V4.4.0:body 仅作兜底底色(根级 404 等无前台容器的页面);前台完整主题基底由容器提供 */
 @layer base {
+  body {
+    background-color: hsl(var(--background));
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -172,7 +177,8 @@
 }
 
 /* —— 基底:深空渐变 + 极光光晕(固定层) —— */
-[data-theme="aurora"] body {
+[data-theme="aurora"] {
+  /* V4.4.0:原作用于 body,后台解耦后 data-theme 挂在前台容器上,故作用于容器本身 */
   background:
     radial-gradient(60rem 40rem at 15% -10%, rgba(34, 211, 238, 0.14), transparent 60%),
     radial-gradient(50rem 36rem at 110% 15%, rgba(167, 139, 250, 0.16), transparent 60%),
@@ -343,7 +349,8 @@
 }
 
 /* —— 基底:暖米白 + 极淡编织纸纹 + 阳光光斑固定层 —— */
-[data-theme="harvest"] body {
+[data-theme="harvest"] {
+  /* V4.4.0:原作用于 body,同上 */
   background-color: #faf7f0;
   background-image:
     repeating-linear-gradient(0deg, rgba(139, 111, 78, 0.025) 0 1px, transparent 1px 3px),
@@ -530,7 +537,8 @@
 }
 
 /* —— 基底:墨黑 + 极淡水墨晕(固定层,不抢内容) —— */
-[data-theme="cellar"] body {
+[data-theme="cellar"] {
+  /* V4.4.0:原作用于 body,同上 */
   background-color: #15120e;
   background-image:
     radial-gradient(58rem 40rem at 84% -12%, rgba(198, 161, 91, 0.08), transparent 62%),
@@ -696,4 +704,43 @@
     opacity: 1 !important;
     transform: none !important;
   }
+}
+
+/* ============================================================
+   V4.4.0 后台主题解耦
+   后台容器(管理面板与登录页的 [data-admin])显式重置为 shadcn 中性默认值。
+   为什么需要这一段:主题的**颜色变量**由根布局按 `:root` 注入(全站生效),
+   仅把 data-theme 移出 <html> 只能屏蔽"主题样式段",屏蔽不了变量;
+   这里用更高特异性的选择器(html body [data-admin] = 0,1,2 > :root = 0,1,0)局部覆盖。
+   效果:无论前台切经典/极光/禾野/窖藏,后台外观完全一致且保持最简洁。
+   ============================================================ */
+html body [data-admin] {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+  --font-sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-heading: var(--font-sans);
+  /* 深色主题(极光/窖藏)会设 dark;不重置会让后台表单控件与滚动条仍是深色 */
+  color-scheme: light;
+  /* 自带不透明底色:body 用的是主题底色(深色主题下可能是墨黑),
+     而后台容器的 bg-muted/30 是半透明的——不铺底会透出深色 */
+  background-color: hsl(var(--background));
+  /* 必须显式设 color:标题等元素是靠"继承 body 颜色"取色的,
+     只重置变量不够——body 的 color 来自主题,会一路继承进来 */
+  color: hsl(var(--foreground));
 }

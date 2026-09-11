@@ -29,8 +29,10 @@ export default async function AdminPanelLayout({
 
   const [brand, security] = await Promise.all([getBrandConfig(), getSecurityConfig()]);
 
+  // V4.4.0:后台显式重置为主题无关的中性配色(见 globals.css 的 [data-admin] 段)——
+  // 主题变量经 :root 全局注入,仅把 data-theme 移出 <html> 不足以让后台摆脱主题
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="flex min-h-screen bg-muted/30" data-admin>
       <Toaster richColors position="top-center" />
       <AdminSidebar
         siteName={brand.siteName}

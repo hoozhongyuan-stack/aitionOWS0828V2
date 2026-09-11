@@ -4,5 +4,6 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function AdminLoginLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  // V4.4.0:登录页同属后台,包裹 data-admin 使其重置为中性配色(与前台主题无关)
+  return <div data-admin>{children}</div>;
 }
