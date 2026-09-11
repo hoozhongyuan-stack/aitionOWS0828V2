@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiGet } from "@/components/admin/api-client";
 import { TablePagination } from "@/components/admin/table-pagination";
+import { useBatchSelection } from "@/components/admin/use-batch-selection";
+import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { formatMoney } from "@/lib/utils";
 
 /**
@@ -58,7 +60,12 @@ export default function OrdersPage() {
   const [pageSize, setPageSize] = useState(10); // V4.0.2:默认 10,可 50/100
   const [data, setData] = useState<{ total: number; page: number; pageSize: number; items: OrderRow[] } | null>(null);
 
+  // V4.4.2 批量流转(仅正向动作;见 doBatch 的说明)
+  const batch = useBatchSelection<OrderRow>();
+  const clearBatch = batch.clear;
+
   const load = useCallback(async () => {
+    clearBatch(); // 翻页/筛选切换时清空选择,避免"选中了看不见的项"
     try {
       const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (status === "__refundPending") params.set("refundPending", "1");
@@ -73,11 +80,27 @@ export default function OrdersPage() {
     } catch {
       toast.error("订单加载失败");
     }
-  }, [status, q, from, to, page, pageSize]);
+  }, [status, q, from, to, page, pageSize, clearBatch]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  /**
+   * V4.4.2 批量流转:只做三个正向动作(确认收款/标记发货/标记完成)。
+   * 有意不支持的两个:取消订单(破坏性)、退款(涉及金额核定,必须单个走审批)。
+   * 状态机自身会拦下非法流转(如对未付款订单"发货"),这些项由服务端计入 skipped 并回报原因。
+   */
+  async function doBatch(action: "confirm" | "ship" | "complete") {
+    try {
+      const summary = await runBatchAction("/api/admin/orders/batch", Array.from(batch.selected), action);
+      toast.success(summary);
+      clearBatch();
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
+    }
+  }
 
   function resetFilters() {
     setQ("");
@@ -134,11 +157,35 @@ export default function OrdersPage() {
       </div>
 
       {/* 列表 */}
+      <BatchActionBar count={batch.count} onClear={batch.clear}>
+        <Button size="sm" variant="outline" onClick={() => doBatch("confirm")}>
+          批量确认收款
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("ship")}>
+          批量标记发货
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("complete")}>
+          批量标记完成
+        </Button>
+      </BatchActionBar>
+
       <Card>
         <CardContent className="pt-6">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
+                <th className="w-10 py-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary align-middle"
+                    checked={batch.allSelected(data?.items ?? [])}
+                    ref={(el) => {
+                      if (el) el.indeterminate = batch.someSelected(data?.items ?? []);
+                    }}
+                    onChange={() => batch.toggleAll(data?.items ?? [])}
+                    aria-label="全选本页"
+                  />
+                </th>
                 <th className="py-2">订单号</th>
                 <th className="py-2">买家</th>
                 <th className="py-2">金额</th>
@@ -150,6 +197,15 @@ export default function OrdersPage() {
             <tbody>
               {(data?.items ?? []).map((o) => (
                 <tr key={o.id} className="border-b">
+                  <td className="w-10 py-2.5">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary align-middle"
+                      checked={batch.selected.has(o.id)}
+                      onChange={() => batch.toggle(o.id)}
+                      aria-label="选择此订单"
+                    />
+                  </td>
                   <td className="py-2.5 font-mono text-xs">{o.no}</td>
                   <td className="py-2.5">
                     <div className="font-medium">{o.name}</div>
@@ -179,7 +235,7 @@ export default function OrdersPage() {
               ))}
               {(data?.items?.length ?? 0) === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="py-8 text-center text-muted-foreground">
                     暂无订单
                   </td>
                 </tr>

@@ -13,6 +13,8 @@ import { apiGet, apiDelete, apiPatch } from "@/components/admin/api-client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { TablePagination } from "@/components/admin/table-pagination";
+import { useBatchSelection } from "@/components/admin/use-batch-selection";
+import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { routing } from "@/i18n/routing";
 
 /** 后台列表显示:优先站点默认语言,缺失回退首条翻译 */
@@ -107,7 +109,12 @@ export default function ContentAdminPage() {
     pageSize: 10, // V4.0.2:默认 10,可 50/100
   });
 
+  // V4.4.0 批量操作(内容与商品同源,复用内容批量端点)
+  const batch = useBatchSelection<ContentRow>();
+  const clearBatch = batch.clear;
+
   const load = useCallback(() => {
+    clearBatch(); // 翻页/筛选/搜索变化时清空选择,避免"选中了看不见的项"后误删
     const q = new URLSearchParams();
     q.set("page", String(filter.page));
     q.set("pageSize", String(filter.pageSize));
@@ -119,7 +126,7 @@ export default function ContentAdminPage() {
     apiGet<ListData>(`/api/admin/contents?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [filter]);
+  }, [filter, clearBatch]);
 
   useEffect(load, [load]);
   useEffect(() => {
@@ -191,6 +198,19 @@ export default function ContentAdminPage() {
       toast.error(e instanceof Error ? e.message : "操作失败");
     } finally {
       setScheduling(false);
+    }
+  }
+
+  /** V4.4.0 批量动作:发布/下架/转草稿/删除(删除前二次确认) */
+  async function doBatch(action: string) {
+    if (action === "delete" && !window.confirm(`确认删除选中的 ${batch.count} 项?此操作不可恢复`)) return;
+    try {
+      const summary = await runBatchAction("/api/admin/contents/batch", Array.from(batch.selected), action);
+      toast.success(summary);
+      clearBatch();
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
     }
   }
 
@@ -267,9 +287,36 @@ export default function ContentAdminPage() {
         </div>
       </div>
 
+      <BatchActionBar count={batch.count} onClear={batch.clear}>
+        <Button size="sm" variant="outline" onClick={() => doBatch("publish")}>
+          批量发布
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("offline")}>
+          批量下架
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("draft")}>
+          批量转草稿
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("delete")}>
+          批量删除
+        </Button>
+      </BatchActionBar>
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary align-middle"
+                checked={batch.allSelected(data?.items ?? [])}
+                ref={(el) => {
+                  if (el) el.indeterminate = batch.someSelected(data?.items ?? []);
+                }}
+                onChange={() => batch.toggleAll(data?.items ?? [])}
+                aria-label="全选本页"
+              />
+            </TableHead>
             <TableHead>标题</TableHead>
             <TableHead>栏目</TableHead>
             <TableHead>作者</TableHead>
@@ -284,7 +331,7 @@ export default function ContentAdminPage() {
         <TableBody>
           {data?.items.length === 0 && (
             <TableRow>
-              <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
                 暂无内容
               </TableCell>
             </TableRow>
@@ -293,6 +340,15 @@ export default function ContentAdminPage() {
             const st = STATUS_LABEL[row.status] ?? { text: row.status, variant: "outline" as const };
             return (
               <TableRow key={row.id}>
+                <TableCell className="w-10">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary align-middle"
+                    checked={batch.selected.has(row.id)}
+                    onChange={() => batch.toggle(row.id)}
+                    aria-label="选择此项"
+                  />
+                </TableCell>
                 <TableCell className="max-w-64">
                   <div className="truncate font-medium">{adminTitle(row.translations, row.slug)}</div>
                   <div className="truncate font-mono text-xs text-muted-foreground">{row.slug}</div>
