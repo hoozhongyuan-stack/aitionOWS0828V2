@@ -22,7 +22,7 @@ export interface ThemeConfig {
   logoHeight: string; // 页头 LOGO 高度(如 40px)
   navFontSize: string; // 顶部导航字号(如 15px)
   navBold: boolean; // 顶部导航是否加粗
-  preset: string; // 主题风格包:classic=经典(默认) | aurora=极光(深色炫酷) | harvest=禾野(农业暖色,V4.3)
+  preset: string; // 主题风格包:classic=经典(默认) | aurora=极光(深色炫酷) | harvest=禾野(农业暖色,V4.3) | cellar=窖藏(酒类,深色墨金,V4.2.1)
 }
 const THEME_DEFAULTS: ThemeConfig = {
   primary: "#0f172a",
@@ -40,6 +40,14 @@ const THEME_DEFAULTS: ThemeConfig = {
   navBold: false,
   preset: "classic",
 };
+
+/**
+ * 已上线主题风格包白名单(单一事实来源)。
+ * 新增主题要三处齐备:此处 + theme/page.tsx 的 THEME_PRESETS(后台卡片与推荐配色)
+ * + globals.css 的 [data-theme="xxx"] 视觉段。
+ * 根布局的 data-theme 输出与 settings API 的 preset 校验均从本常量派生,不必各自维护。
+ */
+export const THEME_PRESETS_ALLOWED = ["classic", "aurora", "harvest", "cellar"] as const;
 
 // —— 品牌 ——
 export interface BrandConfig {

@@ -34,8 +34,16 @@ interface ThemeValues {
   navBold: boolean;
 }
 
-/** V3.1.1 主题风格包:两套推荐调色板(切换预设即填入下方字段,仍可微调) */
-const THEME_PRESETS: Record<string, { label: string; desc: string; values: Omit<ThemeValues, "fontSans" | "fontHeading" | "fontSize" | "lineHeight" | "logoHeight" | "navFontSize" | "navBold"> }> = {
+/**
+ * 预设可预填的字段:配色 + 圆角(排除页头字号等场景字段)。
+ * fontHeading 可选——大多数主题跟随正文字体,只有需要衬线气质的主题(如窖藏)推荐显式设置。
+ */
+type PresetValues = Omit<ThemeValues, "fontSans" | "fontHeading" | "fontSize" | "lineHeight" | "logoHeight" | "navFontSize" | "navBold"> & {
+  fontHeading?: string;
+};
+
+/** V3.1.1 主题风格包:推荐调色板(切换预设即填入下方字段,仍可微调);V4.2.1 +窖藏 */
+const THEME_PRESETS: Record<string, { label: string; desc: string; values: PresetValues }> = {
   classic: {
     label: "经典",
     desc: "明快清爽的浅色官网风格(默认)",
@@ -73,6 +81,20 @@ const THEME_PRESETS: Record<string, { label: string; desc: string; values: Omit<
       foreground: "#2c3327",
       mutedTextColor: "#8b6f4e",
       radius: "1.1rem",
+    },
+  },
+  cellar: {
+    label: "窖藏",
+    desc: "酒类行业审美·朱砂红墨金·金线点缀·近直角·衬线标题,白酒/酒类品牌官网推荐",
+    values: {
+      preset: "cellar",
+      primary: "#9E2B25",
+      secondary: "#26221C",
+      background: "#15120E",
+      foreground: "#EAE0CF",
+      mutedTextColor: "#9C8E78",
+      radius: "0.125rem",
+      fontHeading: "Georgia, 'Times New Roman', 'Songti SC', SimSun, serif",
     },
   },
 };

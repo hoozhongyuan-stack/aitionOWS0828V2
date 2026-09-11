@@ -2,6 +2,7 @@ import { z } from "zod";
 import { logAdmin } from "@/server/admin";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/session";
+import { THEME_PRESETS_ALLOWED } from "@/lib/config";
 import { getSettingGroup, saveSettingGroup } from "@/server/setting";
 
 /**
@@ -61,7 +62,7 @@ const themeSchema = z
     logoHeight: z.string().regex(PX).max(10),
     navFontSize: z.string().regex(PX).max(10),
     navBold: z.boolean(),
-    preset: z.enum(["classic", "aurora", "harvest"]), // V3.1.1 主题风格包;V4.3 +禾野
+    preset: z.enum(THEME_PRESETS_ALLOWED), // 主题风格包白名单(单一来源见 lib/config;V3.1.1 起,V4.3 +禾野,V4.2.1 +窖藏)
   })
   .partial()
   .passthrough(); // passthrough:保留未知键入库;CSS 注入面只消费上面已校验的字段

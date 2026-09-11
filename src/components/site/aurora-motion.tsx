@@ -10,9 +10,10 @@ import { useEffect, useRef, type ReactNode } from "react";
  */
 
 function auroraActive(): boolean {
-  // V4.3:禾野(harvest)复用动效层(显现/视差),动画风格由各主题 CSS 段各自定义
+  // V4.3:禾野(harvest)复用动效层(显现/视差);V4.2.1:窖藏(cellar)同此。
+  // 动画风格由各主题 CSS 段各自定义(本层只管"是否启用动效")
   const t = typeof document !== "undefined" ? document.documentElement.dataset.theme : undefined;
-  return t === "aurora" || t === "harvest";
+  return t === "aurora" || t === "harvest" || t === "cellar";
 }
 
 function reducedMotion(): boolean {

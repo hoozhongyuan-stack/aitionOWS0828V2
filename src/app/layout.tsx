@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { routing } from "@/i18n/routing";
-import { getThemeConfig } from "@/lib/config";
+import { getThemeConfig, THEME_PRESETS_ALLOWED } from "@/lib/config";
 import { buildThemeCss } from "@/lib/theme";
 import "@/styles/globals.css";
 
@@ -21,12 +21,19 @@ function localeFromPath(path: string | null): string {
   return seg && (routing.locales as readonly string[]).includes(seg) ? seg : routing.defaultLocale;
 }
 
+/**
+ * 需在 <html> 上输出 data-theme 的风格包(有专属 CSS 段与动效的主题)。
+ * classic 为默认主题无属性故排除;白名单自 THEME_PRESETS_ALLOWED 派生,
+ * 新增主题只需改 lib/config 一处 + 后台预设卡片 + globals.css 视觉段。
+ */
+const THEMED_PRESETS = new Set<string>(THEME_PRESETS_ALLOWED.filter((p) => p !== "classic"));
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [h, theme] = await Promise.all([headers(), getThemeConfig()]);
   const lang = localeFromPath(h.get("x-geo-path"));
 
   return (
-    <html lang={lang} suppressHydrationWarning data-theme={theme.preset === "aurora" || theme.preset === "harvest" ? theme.preset : undefined}>
+    <html lang={lang} suppressHydrationWarning data-theme={THEMED_PRESETS.has(theme.preset) ? theme.preset : undefined}>
       <head>
         {/* 运行时主题变量:覆盖 globals.css 默认值 */}
         <style id="theme-vars" dangerouslySetInnerHTML={{ __html: buildThemeCss(theme) }} />
