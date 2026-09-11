@@ -58,3 +58,6 @@ tsconfig.tsbuildinfo
 
 # WorkBuddy 项目级 MCP 配置(含令牌,严禁入库)
 /.mcp.json
+
+# WorkBuddy 桌面端项目数据(会话记忆等,非本项目代码)
+/.workbuddy/
