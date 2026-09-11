@@ -18,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiGet, apiPut, apiDelete } from "@/components/admin/api-client";
+import { useBatchSelection } from "@/components/admin/use-batch-selection";
+import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { routing } from "@/i18n/routing";
 
 /** 后台列表显示名:优先站点默认语言(zh-CN),缺失回退首条翻译(修复后台显示英文) */
@@ -77,11 +79,18 @@ export default function CategoriesAdminPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
+  /** 批量选择:选中项以栏目 id 为单位 */
+  const batch = useBatchSelection<Category>();
+  // clear 由 hook 内 useCallback 固定,单独取出来做依赖以保持 load 稳定
+  const { clear: clearBatch } = batch;
+
+  /** 加载列表:顺带清空批量选择,避免残留已刷新/已不存在的选中项 */
   const load = useCallback(() => {
+    clearBatch();
     apiGet<Category[]>("/api/admin/categories")
       .then(setCats)
       .catch((e) => toast.error(e.message));
-  }, []);
+  }, [clearBatch]);
 
   useEffect(() => {
     load();
@@ -150,6 +159,19 @@ export default function CategoriesAdminPage() {
     }
   }
 
+  /** 批量显示/隐藏/删除;删除前二次确认,结果摘要由服务端给出 */
+  async function doBatch(action: string) {
+    if (action === "delete" && !window.confirm(`确认删除选中的 ${batch.count} 项?此操作不可恢复`)) return;
+    try {
+      const summary = await runBatchAction("/api/admin/categories/batch", Array.from(batch.selected), action);
+      toast.success(summary);
+      batch.clear();
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
+    }
+  }
+
   if (!cats) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
   const roots = cats.filter((c) => !c.parentId);
@@ -159,6 +181,8 @@ export default function CategoriesAdminPage() {
     rows.push({ cat: r, depth: 0 });
     for (const c of childrenOf(r.id)) rows.push({ cat: c, depth: 1 });
   }
+  /** 表格渲染的是 { cat, depth } 包装行,批量选择取其中的栏目本身 */
+  const selectable = rows.map((r) => r.cat);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -172,9 +196,33 @@ export default function CategoriesAdminPage() {
         </Button>
       </div>
 
+      <BatchActionBar count={batch.count} onClear={batch.clear}>
+        <Button size="sm" variant="outline" onClick={() => doBatch("show")}>
+          批量显示
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("hide")}>
+          批量隐藏
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("delete")}>
+          批量删除
+        </Button>
+      </BatchActionBar>
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary align-middle"
+                checked={batch.allSelected(selectable)}
+                ref={(el) => {
+                  if (el) el.indeterminate = batch.someSelected(selectable);
+                }}
+                onChange={() => batch.toggleAll(selectable)}
+                aria-label="全选本页"
+              />
+            </TableHead>
             <TableHead>栏目名</TableHead>
             <TableHead>标识</TableHead>
             <TableHead>类型</TableHead>
@@ -187,13 +235,22 @@ export default function CategoriesAdminPage() {
         <TableBody>
           {rows.length === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                 还没有栏目,点击「新建栏目」开始
               </TableCell>
             </TableRow>
           )}
           {rows.map(({ cat, depth }) => (
             <TableRow key={cat.id}>
+              <TableCell className="w-10">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary align-middle"
+                  checked={batch.selected.has(cat.id)}
+                  onChange={() => batch.toggle(cat.id)}
+                  aria-label="选择此项"
+                />
+              </TableCell>
               <TableCell>
                 <span className="flex items-center gap-1">
                   {depth > 0 && <CornerDownRight className="h-3 w-3 text-muted-foreground" />}

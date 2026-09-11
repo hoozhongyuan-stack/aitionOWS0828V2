@@ -18,12 +18,16 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiGet, apiPost } from "@/components/admin/api-client";
+import { useBatchSelection } from "@/components/admin/use-batch-selection";
+import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { Ban, CheckCircle2, Pencil } from "lucide-react";
 
 /**
  * 注册用户管理(需求 4.6 / V3.0 REQ-009):
  * - 查看/搜索(邮箱/昵称 + 公司名称模糊搜索)/禁用/启用
  * - 「编辑资料」弹窗:公司名称/国家/省/市,全可选自由文本,PATCH 保存后刷新回显
+ * - 批量启用/禁用(V4.4.0):POST /api/admin/users/batch。**有意不提供批量删除** ——
+ *   用户连带订单/评论/收藏/投稿数据,删除保持单个操作 + 二次确认。
  */
 
 interface UserRow {
@@ -80,15 +84,19 @@ export default function UsersAdminPage() {
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [profile, setProfile] = useState<ProfileForm>(EMPTY_PROFILE);
   const [saving, setSaving] = useState(false);
+  // 批量选择(V4.4.0):翻页/改搜索词都会重新 load,load 内统一清空,避免"选中了看不见的项"
+  const batch = useBatchSelection<UserRow>();
+  const clearBatch = batch.clear; // 引用稳定(内部 useCallback),可安全放进 load 依赖
 
   const load = useCallback(() => {
+    clearBatch();
     const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (keyword) q.set("keyword", keyword);
     if (appliedCompany) q.set("q", appliedCompany);
     apiGet<ListData>(`/api/admin/users?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [page, pageSize, keyword, appliedCompany]);
+  }, [page, pageSize, keyword, appliedCompany, clearBatch]);
 
   useEffect(load, [load]);
 
@@ -102,6 +110,20 @@ export default function UsersAdminPage() {
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "操作失败");
+    }
+  }
+
+  /** 批量启用/禁用:结果摘要由服务端算好,失败项原因在 summary 里 */
+  async function doBatch(action: "enable" | "disable") {
+    // 批量禁用影响面大(一次最多 100 个账号,且禁用后对方立即无法登录),与单个禁用一样先确认
+    if (action === "disable" && !window.confirm(`确认禁用选中的 ${batch.count} 位用户?禁用后他们将无法登录`)) return;
+    try {
+      const summary = await runBatchAction("/api/admin/users/batch", Array.from(batch.selected), action);
+      toast.success(summary);
+      batch.clear();
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
     }
   }
 
@@ -189,9 +211,30 @@ export default function UsersAdminPage() {
         </form>
       </div>
 
+      <BatchActionBar count={batch.count} onClear={batch.clear}>
+        <Button size="sm" variant="outline" onClick={() => doBatch("enable")}>
+          批量启用
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("disable")}>
+          批量禁用
+        </Button>
+      </BatchActionBar>
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary align-middle"
+                checked={batch.allSelected(data?.items ?? [])}
+                ref={(el) => {
+                  if (el) el.indeterminate = batch.someSelected(data?.items ?? []);
+                }}
+                onChange={() => batch.toggleAll(data?.items ?? [])}
+                aria-label="全选本页"
+              />
+            </TableHead>
             <TableHead>用户</TableHead>
             <TableHead>登录方式</TableHead>
             <TableHead>公司名称</TableHead>
@@ -205,13 +248,22 @@ export default function UsersAdminPage() {
         <TableBody>
           {data?.items.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                 暂无注册用户
               </TableCell>
             </TableRow>
           )}
           {data?.items.map((u) => (
             <TableRow key={u.id}>
+              <TableCell className="w-10">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary align-middle"
+                  checked={batch.selected.has(u.id)}
+                  onChange={() => batch.toggle(u.id)}
+                  aria-label="选择此项"
+                />
+              </TableCell>
               <TableCell>
                 <div className="font-medium">{u.nickname || "-"}</div>
                 <div className="text-xs text-muted-foreground">{u.email || "-"}</div>

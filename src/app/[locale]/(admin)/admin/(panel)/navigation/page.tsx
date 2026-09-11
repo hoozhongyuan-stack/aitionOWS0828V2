@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiGet, apiPut, apiDelete } from "@/components/admin/api-client";
+import { useBatchSelection } from "@/components/admin/use-batch-selection";
+import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { Plus, Pencil, Trash2, CornerDownRight, EyeOff } from "lucide-react";
 
 /**
@@ -55,11 +57,18 @@ export default function NavigationAdminPage() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
 
+  /** 批量选择:选中项以导航项 id 为单位 */
+  const batch = useBatchSelection<NavItem>();
+  // clear 由 hook 内 useCallback 固定,单独取出来做依赖以保持 load 稳定
+  const { clear: clearBatch } = batch;
+
+  /** 加载列表:顺带清空批量选择,避免残留已刷新/已不存在的选中项 */
   const load = useCallback(() => {
+    clearBatch();
     apiGet<NavItem[]>("/api/admin/nav")
       .then(setItems)
       .catch((e) => toast.error(e.message));
-  }, []);
+  }, [clearBatch]);
 
   useEffect(() => {
     load();
@@ -136,6 +145,19 @@ export default function NavigationAdminPage() {
     }
   }
 
+  /** 批量显示/隐藏/删除;删除前二次确认,结果摘要由服务端给出 */
+  async function doBatch(action: string) {
+    if (action === "delete" && !window.confirm(`确认删除选中的 ${batch.count} 项?此操作不可恢复`)) return;
+    try {
+      const summary = await runBatchAction("/api/admin/nav/batch", Array.from(batch.selected), action);
+      toast.success(summary);
+      batch.clear();
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
+    }
+  }
+
   if (!items) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
   const roots = items.filter((i) => !i.parentId);
@@ -144,6 +166,8 @@ export default function NavigationAdminPage() {
     rows.push({ item: r, depth: 0 });
     for (const c of items.filter((i) => i.parentId === r.id)) rows.push({ item: c, depth: 1 });
   }
+  /** 表格渲染的是 { item, depth } 包装行,批量选择取其中的导航项本身 */
+  const selectable = rows.map((r) => r.item);
   const catName = (id: number | null) =>
     id == null ? "-" : (cats.find((c) => c.id === id)?.translations[0]?.name ?? `#${id}`);
 
@@ -159,9 +183,33 @@ export default function NavigationAdminPage() {
         </Button>
       </div>
 
+      <BatchActionBar count={batch.count} onClear={batch.clear}>
+        <Button size="sm" variant="outline" onClick={() => doBatch("show")}>
+          批量显示
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("hide")}>
+          批量隐藏
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("delete")}>
+          批量删除
+        </Button>
+      </BatchActionBar>
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary align-middle"
+                checked={batch.allSelected(selectable)}
+                ref={(el) => {
+                  if (el) el.indeterminate = batch.someSelected(selectable);
+                }}
+                onChange={() => batch.toggleAll(selectable)}
+                aria-label="全选本页"
+              />
+            </TableHead>
             <TableHead>文案</TableHead>
             <TableHead>指向</TableHead>
             <TableHead>排序</TableHead>
@@ -172,13 +220,22 @@ export default function NavigationAdminPage() {
         <TableBody>
           {rows.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                 还没有导航项;不配置时前台仅展示 LOGO
               </TableCell>
             </TableRow>
           )}
           {rows.map(({ item, depth }) => (
             <TableRow key={item.id}>
+              <TableCell className="w-10">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary align-middle"
+                  checked={batch.selected.has(item.id)}
+                  onChange={() => batch.toggle(item.id)}
+                  aria-label="选择此项"
+                />
+              </TableCell>
               <TableCell>
                 <span className="flex items-center gap-1">
                   {depth > 0 && <CornerDownRight className="h-3 w-3 text-muted-foreground" />}

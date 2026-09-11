@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiGet } from "@/components/admin/api-client";
+import { useBatchSelection } from "@/components/admin/use-batch-selection";
+import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { formatMoney } from "@/lib/utils";
 import { Pencil, Plus, List, LayoutGrid } from "lucide-react";
@@ -73,6 +75,8 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  // V4.4.0 批量操作(商品即内容:数据同源,复用内容批量端点)
+  const batch = useBatchSelection<ProductRow>();
 
   // 偏好记忆:挂载后再读 localStorage(SSR 期无 window,不能放 useState 初始化里)
   useEffect(() => {
@@ -96,6 +100,19 @@ export default function ProductsPage() {
 
   const catName = (c: { translations: { locale: string; name: string }[] }) =>
     (c.translations.find((t) => t.locale === "zh-CN") ?? c.translations[0])?.name ?? "-";
+
+  /** V4.4.0 批量动作:商品是 Content(product 栏目),后端复用内容批量端点 */
+  async function doBatch(action: string) {
+    if (action === "delete" && !window.confirm(`确认删除选中的 ${batch.count} 件商品?此操作不可恢复`)) return;
+    try {
+      const summary = await runBatchAction("/api/admin/contents/batch", Array.from(batch.selected), action);
+      toast.success(summary);
+      batch.clear(); // 操作完成后清空选择(避免残留旧选中,误伤下一批)
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
+    }
+  }
 
   /** 价格单元格(网格与列表共用同一显示规则:无价 = 仅询盘) */
   const priceCell = (p: ProductRow, size: "sm" | "md") =>
@@ -131,6 +148,7 @@ export default function ProductsPage() {
           className="rounded-md border bg-background px-2 py-1.5 text-sm"
           value={categoryId}
           onChange={(e) => {
+            batch.clear();
             setCategoryId(e.target.value);
             setPage(1);
           }}
@@ -146,10 +164,20 @@ export default function ProductsPage() {
           className="w-56"
           placeholder="搜索商品标题…"
           value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          onChange={(e) => {
+            batch.clear();
+            setKeyword(e.target.value);
+          }}
           onKeyDown={(e) => e.key === "Enter" && setPage(1)}
         />
-        <Button size="sm" variant="outline" onClick={() => setPage(1)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            batch.clear();
+            setPage(1);
+          }}
+        >
           查询
         </Button>
 
@@ -176,11 +204,38 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      <BatchActionBar count={batch.count} onClear={batch.clear}>
+        <Button size="sm" variant="outline" onClick={() => doBatch("publish")}>
+          批量发布
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("offline")}>
+          批量下架
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("draft")}>
+          批量转草稿
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("delete")}>
+          批量删除
+        </Button>
+      </BatchActionBar>
+
       {viewMode === "list" ? (
         <div className="overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary align-middle"
+                    checked={batch.allSelected(items)}
+                    ref={(el) => {
+                      if (el) el.indeterminate = batch.someSelected(items);
+                    }}
+                    onChange={() => batch.toggleAll(items)}
+                    aria-label="全选本页"
+                  />
+                </TableHead>
                 <TableHead className="w-14" />
                 <TableHead>名称</TableHead>
                 <TableHead className="w-28">栏目</TableHead>
@@ -194,6 +249,15 @@ export default function ProductsPage() {
             <TableBody>
               {items.map((p) => (
                 <TableRow key={p.id}>
+                  <TableCell className="w-10 py-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary align-middle"
+                      checked={batch.selected.has(p.id)}
+                      onChange={() => batch.toggle(p.id)}
+                      aria-label="选择此商品"
+                    />
+                  </TableCell>
                   <TableCell className="py-2">
                     <div className="h-10 w-10 overflow-hidden rounded bg-muted">
                       {p.coverUrl ? (
@@ -233,11 +297,23 @@ export default function ProductsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((p) => (
             <Card key={p.id} className="overflow-hidden">
-              <div className="aspect-[16/9] w-full bg-muted">
-                {p.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.coverUrl} alt={p.title} className="h-full w-full object-cover" />
-                ) : null}
+              <div className="relative">
+                <div className="aspect-[16/9] w-full bg-muted">
+                  {p.coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.coverUrl} alt={p.title} className="h-full w-full object-cover" />
+                  ) : null}
+                </div>
+                {/* V4.4.0 批量选择:卡片左上角(半透明底,任何封面图上都可见) */}
+                <label className="absolute left-2 top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded bg-background/85 shadow-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary"
+                    checked={batch.selected.has(p.id)}
+                    onChange={() => batch.toggle(p.id)}
+                    aria-label="选择此商品"
+                  />
+                </label>
               </div>
               <CardContent className="space-y-2 p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -278,8 +354,12 @@ export default function ProductsPage() {
         total={data?.total ?? 0}
         page={page}
         pageSize={pageSize}
-        onPage={(p) => setPage(p)}
+        onPage={(p) => {
+          batch.clear();
+          setPage(p);
+        }}
         onPageSize={(n) => {
+          batch.clear();
           setPageSize(n);
           setPage(1);
         }}

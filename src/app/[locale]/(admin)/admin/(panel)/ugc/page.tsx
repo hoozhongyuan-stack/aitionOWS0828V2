@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiGet, apiPost, apiDelete } from "@/components/admin/api-client";
 import { TablePagination } from "@/components/admin/table-pagination";
+import { useBatchSelection } from "@/components/admin/use-batch-selection";
+import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { Check, X, Trash2, Eye, Plus } from "lucide-react";
 
@@ -19,6 +21,10 @@ import { Check, X, Trash2, Eye, Plus } from "lucide-react";
  * 互动审核中心(需求 4.8):
  * 评论审核(通过/驳回/删除)、投稿审核(预览/通过即发布/驳回)、敏感词库。
  * 审核红线:未通过内容永不出现在前台。
+ *
+ * 批量审核(V4.4.0):评论 /api/admin/ugc/comments/batch(通过/驳回/删除),
+ * 投稿 /api/admin/ugc/submissions/batch(仅通过/驳回 —— 投稿本质是内容,删除属内容管理职责)。
+ * 评论与投稿各用一个独立的选择状态,两个 Tab 互不串味。
  */
 
 const STATUS_BADGE: Record<string, { text: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -48,8 +54,12 @@ function CommentsTab() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10); // V4.0.2
   const [data, setData] = useState<{ total: number; items: CommentRow[] } | null>(null);
+  // 评论 Tab 专属的批量选择:与投稿 Tab 各一份,切换筛选/翻页时在 load 里统一清空
+  const commentBatch = useBatchSelection<CommentRow>();
+  const clearCommentBatch = commentBatch.clear; // 引用稳定(内部 useCallback),可安全放进 load 依赖
 
   const load = useCallback(() => {
+    clearCommentBatch();
     const q = new URLSearchParams();
     q.set("status", status === "ALL" ? "" : status);
     q.set("page", String(page));
@@ -59,7 +69,7 @@ function CommentsTab() {
     apiGet<{ total: number; items: CommentRow[] }>(`/api/admin/ugc/comments?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [status, dateFrom, dateTo, page, pageSize]);
+  }, [status, dateFrom, dateTo, page, pageSize, clearCommentBatch]);
   useEffect(load, [load]);
 
   async function review(id: number, s: "APPROVED" | "REJECTED") {
@@ -79,6 +89,23 @@ function CommentsTab() {
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "删除失败");
+    }
+  }
+
+  /** 批量审核/删除:删除不可恢复,先二次确认;结果摘要由服务端算好 */
+  async function doCommentBatch(action: "approve" | "reject" | "delete") {
+    if (action === "delete" && !window.confirm(`确认删除选中的 ${commentBatch.count} 条评论?此操作不可恢复`)) return;
+    try {
+      const summary = await runBatchAction(
+        "/api/admin/ugc/comments/batch",
+        Array.from(commentBatch.selected),
+        action
+      );
+      toast.success(summary);
+      commentBatch.clear();
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
     }
   }
 
@@ -117,70 +144,104 @@ function CommentsTab() {
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>评论内容</TableHead>
-              <TableHead>评论者</TableHead>
-              <TableHead>所在内容</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.items.length === 0 && (
+        <div className="space-y-3">
+          <BatchActionBar count={commentBatch.count} onClear={commentBatch.clear}>
+            <Button size="sm" variant="outline" onClick={() => doCommentBatch("approve")}>
+              批量通过
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => doCommentBatch("reject")}>
+              批量驳回
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => doCommentBatch("delete")}>
+              批量删除
+            </Button>
+          </BatchActionBar>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                  暂无{status === "PENDING" ? "待审核" : ""}评论
-                </TableCell>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary align-middle"
+                    checked={commentBatch.allSelected(data?.items ?? [])}
+                    ref={(el) => {
+                      if (el) el.indeterminate = commentBatch.someSelected(data?.items ?? []);
+                    }}
+                    onChange={() => commentBatch.toggleAll(data?.items ?? [])}
+                    aria-label="全选本页"
+                  />
+                </TableHead>
+                <TableHead>评论内容</TableHead>
+                <TableHead>评论者</TableHead>
+                <TableHead>所在内容</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
-            )}
-            {data?.items.map((c) => {
-              const st = STATUS_BADGE[c.status] ?? { text: c.status, variant: "outline" as const };
-              return (
-                <TableRow key={c.id}>
-                  <TableCell className="max-w-72">
-                    <p className="line-clamp-2 whitespace-pre-wrap text-sm">{c.body}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(c.createdAt).toLocaleString("zh-CN")} · {c.ip ?? "-"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {c.user ? (c.user.nickname || c.user.email) : `${c.guestName || "游客"}(游客)`}
-                  </TableCell>
-                  <TableCell className="max-w-40 truncate text-sm">
-                    <a
-                      href={`/zh-CN/article/${c.content.slug}`}
-                      target="_blank"
-                      className="text-primary hover:underline"
-                      rel="noreferrer"
-                    >
-                      {c.content.translations[0]?.title ?? c.content.slug}
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={st.variant}>{st.text}</Badge>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-right">
-                    {c.status !== "APPROVED" && (
-                      <Button variant="ghost" size="sm" onClick={() => review(c.id, "APPROVED")} title="通过">
-                        <Check className="h-4 w-4 text-green-600" />
-                      </Button>
-                    )}
-                    {c.status !== "REJECTED" && (
-                      <Button variant="ghost" size="sm" onClick={() => review(c.id, "REJECTED")} title="驳回">
-                        <X className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={() => remove(c.id)} title="删除">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {data?.items.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    暂无{status === "PENDING" ? "待审核" : ""}评论
                   </TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              )}
+              {data?.items.map((c) => {
+                const st = STATUS_BADGE[c.status] ?? { text: c.status, variant: "outline" as const };
+                return (
+                  <TableRow key={c.id}>
+                    <TableCell className="w-10">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary align-middle"
+                        checked={commentBatch.selected.has(c.id)}
+                        onChange={() => commentBatch.toggle(c.id)}
+                        aria-label="选择此项"
+                      />
+                    </TableCell>
+                    <TableCell className="max-w-72">
+                      <p className="line-clamp-2 whitespace-pre-wrap text-sm">{c.body}</p>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(c.createdAt).toLocaleString("zh-CN")} · {c.ip ?? "-"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {c.user ? (c.user.nickname || c.user.email) : `${c.guestName || "游客"}(游客)`}
+                    </TableCell>
+                    <TableCell className="max-w-40 truncate text-sm">
+                      <a
+                        href={`/zh-CN/article/${c.content.slug}`}
+                        target="_blank"
+                        className="text-primary hover:underline"
+                        rel="noreferrer"
+                      >
+                        {c.content.translations[0]?.title ?? c.content.slug}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={st.variant}>{st.text}</Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-right">
+                      {c.status !== "APPROVED" && (
+                        <Button variant="ghost" size="sm" onClick={() => review(c.id, "APPROVED")} title="通过">
+                          <Check className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
+                      {c.status !== "REJECTED" && (
+                        <Button variant="ghost" size="sm" onClick={() => review(c.id, "REJECTED")} title="驳回">
+                          <X className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" onClick={() => remove(c.id)} title="删除">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
@@ -207,8 +268,12 @@ function SubmissionsTab() {
   const [pageSize, setPageSize] = useState(10); // V4.0.2
   const [data, setData] = useState<{ total: number; items: SubmissionRow[] } | null>(null);
   const [preview, setPreview] = useState<SubmissionRow | null>(null);
+  // 投稿 Tab 专属的批量选择(与评论 Tab 相互独立):翻页/改筛选在 load 里统一清空
+  const submissionBatch = useBatchSelection<SubmissionRow>();
+  const clearSubmissionBatch = submissionBatch.clear; // 引用稳定(内部 useCallback),可安全放进 load 依赖
 
   const load = useCallback(() => {
+    clearSubmissionBatch();
     const q = new URLSearchParams();
     q.set("status", status === "ALL" ? "" : status);
     q.set("page", String(page));
@@ -218,7 +283,7 @@ function SubmissionsTab() {
     apiGet<{ total: number; items: SubmissionRow[] }>(`/api/admin/ugc/submissions?${q}`)
       .then(setData)
       .catch((e) => toast.error(e.message));
-  }, [status, dateFrom, dateTo, page, pageSize]);
+  }, [status, dateFrom, dateTo, page, pageSize, clearSubmissionBatch]);
   useEffect(load, [load]);
 
   async function review(id: number, approve: boolean) {
@@ -229,6 +294,22 @@ function SubmissionsTab() {
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "操作失败");
+    }
+  }
+
+  /** 批量通过/驳回:不提供批量删除(投稿是内容,删除属内容管理职责) */
+  async function doSubmissionBatch(action: "approve" | "reject") {
+    try {
+      const summary = await runBatchAction(
+        "/api/admin/ugc/submissions/batch",
+        Array.from(submissionBatch.selected),
+        action
+      );
+      toast.success(summary);
+      submissionBatch.clear();
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "批量操作失败");
     }
   }
 
@@ -267,60 +348,91 @@ function SubmissionsTab() {
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>标题</TableHead>
-              <TableHead>投稿人</TableHead>
-              <TableHead>栏目</TableHead>
-              <TableHead>提交时间</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.items.length === 0 && (
+        <div className="space-y-3">
+          <BatchActionBar count={submissionBatch.count} onClear={submissionBatch.clear}>
+            <Button size="sm" variant="outline" onClick={() => doSubmissionBatch("approve")}>
+              批量通过
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => doSubmissionBatch("reject")}>
+              批量驳回
+            </Button>
+          </BatchActionBar>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                  暂无投稿
-                </TableCell>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary align-middle"
+                    checked={submissionBatch.allSelected(data?.items ?? [])}
+                    ref={(el) => {
+                      if (el) el.indeterminate = submissionBatch.someSelected(data?.items ?? []);
+                    }}
+                    onChange={() => submissionBatch.toggleAll(data?.items ?? [])}
+                    aria-label="全选本页"
+                  />
+                </TableHead>
+                <TableHead>标题</TableHead>
+                <TableHead>投稿人</TableHead>
+                <TableHead>栏目</TableHead>
+                <TableHead>提交时间</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
-            )}
-            {data?.items.map((s) => {
-              const st = STATUS_BADGE[s.status] ?? { text: s.status, variant: "outline" as const };
-              return (
-                <TableRow key={s.id}>
-                  <TableCell className="max-w-64 truncate font-medium">
-                    {s.translations[0]?.title ?? s.slug}
-                  </TableCell>
-                  <TableCell>{s.authorName}</TableCell>
-                  <TableCell>{s.category.translations[0]?.name ?? s.category.slug}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(s.createdAt).toLocaleDateString("zh-CN")}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={st.variant}>{st.text}</Badge>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setPreview(s)} title="预览">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {s.status === "PENDING" && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => review(s.id, true)} title="通过并发布">
-                          <Check className="h-4 w-4 text-green-600" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => review(s.id, false)} title="驳回">
-                          <X className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </>
-                    )}
+            </TableHeader>
+            <TableBody>
+              {data?.items.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                    暂无投稿
                   </TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              )}
+              {data?.items.map((s) => {
+                const st = STATUS_BADGE[s.status] ?? { text: s.status, variant: "outline" as const };
+                return (
+                  <TableRow key={s.id}>
+                    <TableCell className="w-10">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary align-middle"
+                        checked={submissionBatch.selected.has(s.id)}
+                        onChange={() => submissionBatch.toggle(s.id)}
+                        aria-label="选择此项"
+                      />
+                    </TableCell>
+                    <TableCell className="max-w-64 truncate font-medium">
+                      {s.translations[0]?.title ?? s.slug}
+                    </TableCell>
+                    <TableCell>{s.authorName}</TableCell>
+                    <TableCell>{s.category.translations[0]?.name ?? s.category.slug}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(s.createdAt).toLocaleDateString("zh-CN")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={st.variant}>{st.text}</Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-right">
+                      <Button variant="ghost" size="sm" onClick={() => setPreview(s)} title="预览">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {s.status === "PENDING" && (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => review(s.id, true)} title="通过并发布">
+                            <Check className="h-4 w-4 text-green-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => review(s.id, false)} title="驳回">
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
