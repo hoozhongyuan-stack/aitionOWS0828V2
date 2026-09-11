@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { verifyToken, isInsecureSecret } from "./jwt";
 import { prisma } from "@/lib/db";
 import { USER_STATUS } from "@/types/domain";
@@ -22,10 +22,24 @@ export interface UserSession {
   name: string;
 }
 
-/** 读取管理员会话;未登录返回 null */
+/**
+ * 读取管理员会话;未登录返回 null。
+ * 令牌两条来源(V4.3.0 程序化访问支持):
+ *  ① 浏览器会话 cookie(后台 UI 常规路径,登录时签发 7 天);
+ *  ② `Authorization: Bearer <token>`(MCP / 自动化工具调用,
+ *     令牌由 `scripts/issue-admin-token.ts` 签发,有效期可控)。
+ * 两者走**同一套 JWT 校验与 requirePerm 权限守卫**,安全边界完全一致;
+ * 子账号(STAFT)令牌同样只拥有其被勾选的权限组。
+ */
 export async function getAdminSession(): Promise<AdminSession | null> {
   const c = await cookies();
-  const token = c.get(ADMIN_COOKIE)?.value;
+  let token: string | undefined = c.get(ADMIN_COOKIE)?.value;
+  if (!token) {
+    // cookie 缺失时回退到 Bearer(仅服务端可用 headers())
+    const h = await headers();
+    const auth = h.get("authorization");
+    if (auth?.startsWith("Bearer ")) token = auth.slice(7).trim() || undefined;
+  }
   if (!token) return null;
   const p = await verifyToken(token);
   if (!p || p.typ !== "admin") return null;
