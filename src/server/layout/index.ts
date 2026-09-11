@@ -59,12 +59,23 @@ async function readGroup(key: string): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * 读取区块开关:兼容现行嵌套 `{preset, sections:{...}}` 与历史扁平 `{banners, latest}` 两种形态。
+ * V4.2.1 修复:此前直接读 raw.banners —— 而写入是嵌套结构,导致后台的区块开关
+ * (轮播/最新动态/栏目标题)在前台恒为 true、配置不生效。
+ */
+function readSections(raw: Record<string, unknown>): Record<string, unknown> {
+  const nested = raw.sections;
+  return typeof nested === "object" && nested !== null ? (nested as Record<string, unknown>) : raw;
+}
+
 export async function getHomeLayout(): Promise<HomeLayoutConfig> {
   const raw = await readGroup("home");
   const preset = HOME_PRESETS.has(String(raw.preset)) ? (raw.preset as HomePreset) : HOME_DEFAULT.preset;
+  const s = readSections(raw);
   const sections = {
-    banners: raw.banners !== false,
-    latest: raw.latest !== false,
+    banners: s.banners !== false,
+    latest: s.latest !== false,
   };
   return { preset, sections };
 }
@@ -72,7 +83,8 @@ export async function getHomeLayout(): Promise<HomeLayoutConfig> {
 export async function getCategoryLayout(): Promise<CategoryLayoutConfig> {
   const raw = await readGroup("category");
   const preset = CATEGORY_PRESETS.has(String(raw.preset)) ? (raw.preset as CategoryPreset) : CATEGORY_DEFAULT.preset;
-  const sections = { header: raw.header !== false };
+  const s = readSections(raw);
+  const sections = { header: s.header !== false };
   return { preset, sections };
 }
 
