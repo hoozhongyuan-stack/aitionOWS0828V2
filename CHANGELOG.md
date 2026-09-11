@@ -1,5 +1,19 @@
 # Changelog
 
+## 4.3.0 (2026-09-11)
+
+WorkBuddy 内容对接（本地 MCP 通道）+ 三项后台/前台能力（**纯增量**）:
+
+- **程序化访问**:管理员会话支持 `Authorization: Bearer <token>`(与 cookie 走**同一套 JWT 校验与 requirePerm 权限守卫**);新增 `scripts/issue-admin-token.ts` 签发长期令牌(含账号状态校验、有效期自检与 OWNER 权限告警);6 个边界回归锁用例(cookie 优先不静默提权/用户令牌不得越权/非法令牌拒绝)
+- **列表页「定制发布」**:新增"发布时间"列 + 一键弹窗(立即发布/定时发布/转回草稿);新端点 `PATCH /api/admin/contents/schedule` **只改 status 与 publishAt** —— 避开整体覆盖语义的 PUT 清空正文/翻译(V4.1.2 价格事故同类风险);操作写审计日志
+- **前台预览**:`?preview=1` 供**已登录管理员**查看未发布内容(DRAFT/SCHEDULED/OFFLINE),页首带预览横幅;**noindex/nofollow + sitemap/llms.txt 双重隔离**(草稿不被搜索引擎或 AI 引擎收录);后台列表页加预览入口
+- **MCP Server**(`tools/workbuddy-mcp/`):本地 stdio 连接器,5 个工具(`list_categories`/`list_articles`/`get_article`/`push_article`/`upload_image`);Markdown → 官网白名单 HTML 自动转换(与 `src/lib/sanitize.ts` 口径一致,H1 自动降级为 H2);推送前硬校验(栏目/双语/定时时间合法性),**不合格直接拒绝不写库**;封面图自动上传;连接自检脚本与完整 README
+- **「官网文章规范」技能**:写作格式硬约束 / 配图尺寸与视觉风格(含实测的裁剪比例与上传上限) / SEO-GEO 写法 / 推送流程,供 WorkBuddy 等 MCP 客户端加载
+
+质量:
+- tsc/ESLint 清零;测试 **206 例全绿**(34 文件,含新增 6 个 Bearer 用例);生产构建通过
+- 端到端实测:令牌签发 → Bearer 调后台 API(200/401/伪造令牌边界)→ MCP 真实推送(含缺栏目/缺正文的拒绝用例)→ 列表页定制发布(定时/过去时间拒绝/转草稿)→ 前台预览(未登录 404、管理员 200 + noindex、sitemap 不含草稿)
+
 ## 4.2.1 (2026-09-11)
 
 酒行业主题包「窖藏」+ 全幅首屏布局预设（**纯前端增量**，现有三套主题与三套布局预设零改动）:
