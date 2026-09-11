@@ -53,7 +53,8 @@ function handleError(e) {
   return fail(`✗ 意外错误：${e instanceof Error ? e.message : String(e)}`);
 }
 
-const server = new McpServer({ name: "aition-ows", version: "1.0.0" });
+// 协议层显示的 server 名（MCP 客户端会展示它）；mcp.json 里的键名可另取，见 README
+const server = new McpServer({ name: "aition-content", version: "1.0.0" });
 
 /** API 客户端（配置缺失时明确退出并说明怎么修；stderr 会进 MCP 客户端日志） */
 const api = (() => {

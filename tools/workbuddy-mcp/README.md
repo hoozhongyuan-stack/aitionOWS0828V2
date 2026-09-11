@@ -55,18 +55,23 @@ npm install
 ```json
 {
   "mcpServers": {
-    "aition-ows": {
+    "aition-content": {
+      "type": "stdio",
       "command": "node",
       "args": ["/绝对路径/AitionOWS/tools/workbuddy-mcp/index.js"],
       "env": {
         "AITION_API_BASE": "https://aition.art",
         "AITION_API_TOKEN": "<上一步签发的令牌>",
         "AITION_AUTHOR": "编辑部"
-      }
+      },
+      "runtime": { "type": "node", "version": ">=20" },
+      "timeout": 60000
     }
   }
 }
 ```
+
+> **名字说明**：`aition-content` 是配置里的键名，也是你在 WorkBuddy 连接器列表里看到的名字——**可以随意改成你好记的**（如 `aition-site`、`aishen`），只要这个键名与 `command`/`env` 的层级关系不变，功能不受影响。
 
 - `AITION_API_BASE`：官网地址（本地调试填 `http://localhost:3000`）
 - `AITION_AUTHOR`：可选，缺省作者名（不填为「编辑部」）
@@ -125,7 +130,7 @@ AITION_API_BASE=https://aition.art AITION_API_TOKEN='<令牌>' node self-check.m
 |---|---|
 | `✗ 令牌无效或已过期` | 用第一节的命令重新签发，更新 MCP 配置里的 `AITION_API_TOKEN`，重启 WorkBuddy |
 | `✗ 无法连接官网` | 检查 `AITION_API_BASE` 是否可达（浏览器能打开官网首页）；公司网络/代理是否放行 |
-| 工具里看不到 `aition-ows` | MCP 配置路径或 JSON 格式有误；改完要重启 WorkBuddy；确认 `npm install` 已执行 |
+| 工具里看不到 `aition-content` | MCP 配置路径或 JSON 格式有误；改完要重启 WorkBuddy；确认 `npm install` 已执行 |
 | `✗ 未找到名为「X」的栏目` | 栏目名称要精确匹配中英文名或 slug；先 `list_categories` 看准确名称 |
 | 推上去排版不对 | 看工具回执里的「格式提醒」，通常是用了内联样式或 `h4`+；改用 Markdown 语义 |
 | 想撤销推送 | 在官网后台把该内容删除或下架（工具不提供删除能力——删除是不可逆动作，保留在人工侧） |
