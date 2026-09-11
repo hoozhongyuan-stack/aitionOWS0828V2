@@ -26,6 +26,9 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // 下单开关兜底(V4.3):关闭时接口层拒绝(防绕过前端直接调用)
+  const shopCfg = await getShopConfig();
+  if (!shopCfg.orderingEnabled) return jsonErr("本站当前未开放在线下单", 403);
   const parsed = await parseBody(req, createSchema);
   if (parsed.error) return parsed.error;
   const d = parsed.data;

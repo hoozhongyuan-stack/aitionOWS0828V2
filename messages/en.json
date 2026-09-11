@@ -197,6 +197,8 @@
     "refundRejected": "Refund rejected",
     "refundAmount": "Refund amount",
     "refundNote": "Review note",
-    "refundSubmitted": "Refund request submitted"
+    "refundSubmitted": "Refund request submitted",
+    "orderingClosedTitle": "Online ordering is not available",
+    "orderingClosedDesc": "This site currently supports browsing and inquiries only. Please contact us for purchase requests."
   }
 }

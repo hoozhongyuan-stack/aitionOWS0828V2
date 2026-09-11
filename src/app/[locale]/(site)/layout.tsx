@@ -5,6 +5,7 @@ import { getBrandConfig, getSeoConfig, getFeatureFlags, getThemeConfig } from "@
 import { getEnabledLocales } from "@/server/i18n";
 import { getVisibleNav } from "@/server/content/nav";
 import { getActiveUserSession } from "@/lib/auth/session";
+import { getShopConfig } from "@/server/shop";
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
 import { CookieConsent } from "@/components/site/cookie-consent";
@@ -32,7 +33,7 @@ export default async function SiteLayout({
     notFound();
   }
 
-  const [brand, seo, features, theme, nav, user, tAuth, tFooter, tSubmission] = await Promise.all([
+  const [brand, seo, features, theme, nav, user, tAuth, tFooter, tSubmission, shop] = await Promise.all([
     getBrandConfig(),
     getSeoConfig(),
     getFeatureFlags(),
@@ -43,6 +44,7 @@ export default async function SiteLayout({
     getTranslations("auth"),
     getTranslations("footer"),
     getTranslations("submission"),
+    getShopConfig(), // V4.3:下单开关下发页头
   ]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -75,6 +77,7 @@ export default async function SiteLayout({
         nav={nav}
         locales={enabledLocales.map((l) => ({ code: l.code, name: l.name }))}
         currentLocale={locale}
+        orderingEnabled={shop.orderingEnabled}
         user={user ? { name: user.name } : null}
         loginLabel={tAuth("login")}
         logoutLabel={tAuth("logout")}

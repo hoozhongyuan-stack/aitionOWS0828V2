@@ -338,3 +338,46 @@ describe("V4.2 售后(仅退款,一单一次)", () => {
     await expect(orderMod.applyRefund({ orderNo: r.no, email: order!.email, reason: "x" })).rejects.toThrow(/不支持/);
   });
 });
+
+describe("V4.3 下单开关(orderingEnabled)", () => {
+  it("缺省开启;显式 false 才关闭(脏值/未配置按开启,存量零变化)", async () => {
+    const shopMod = await import("@/server/shop");
+    // 清空 shop 组 → 缺省 true
+    const { prisma } = await import("@/lib/db");
+    await prisma.setting.deleteMany({ where: { group: "shop" } });
+    const { invalidateSettingCache } = await import("@/server/setting");
+    invalidateSettingCache("shop");
+    expect((await shopMod.getShopConfig()).orderingEnabled).toBe(true);
+    // 显式关闭
+    await shopMod.saveShopConfig({ orderingEnabled: false });
+    expect((await shopMod.getShopConfig()).orderingEnabled).toBe(false);
+    // 再开启
+    await shopMod.saveShopConfig({ orderingEnabled: true });
+    expect((await shopMod.getShopConfig()).orderingEnabled).toBe(true);
+    // 脏值(raw 非布尔)→ 按开启兜底
+    await prisma.setting.upsert({
+      where: { group_key: { group: "shop", key: "orderingEnabled" } },
+      update: { value: '"junk"' },
+      create: { group: "shop", key: "orderingEnabled", value: '"junk"' },
+    });
+    invalidateSettingCache("shop");
+    expect((await shopMod.getShopConfig()).orderingEnabled).toBe(true);
+    await prisma.setting.deleteMany({ where: { group: "shop" } });
+    invalidateSettingCache("shop");
+  });
+
+  it("POST /api/order:开关关闭时 403 拒绝", async () => {
+    const shopMod = await import("@/server/shop");
+    const route = await import("@/app/api/order/route");
+    await shopMod.saveShopConfig({ orderingEnabled: false });
+    const res = await route.POST(
+      new Request("http://localhost/api/order", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lines: [{ contentId: 1, qty: 1 }], email: "x@y.com", name: "x", country: "US", address: "a", city: "b" }),
+      })
+    );
+    expect(res.status).toBe(403);
+    await shopMod.saveShopConfig({ orderingEnabled: true });
+  });
+});

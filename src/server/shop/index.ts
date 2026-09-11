@@ -16,6 +16,8 @@ export interface ShopConfig {
   shippingFeeCents: number;
   /** 满额免运费门槛(整数分);null=不启用满额免邮 */
   freeShippingOverCents: number | null;
+  /** 是否开启在线下单(V4.3):关闭时前台隐藏购物车/加购/结算入口,商品页与询盘不受限 */
+  orderingEnabled: boolean;
 }
 
 const DEFAULTS: ShopConfig = {
@@ -23,6 +25,7 @@ const DEFAULTS: ShopConfig = {
   paymentInfo: "",
   shippingFeeCents: 0,
   freeShippingOverCents: null,
+  orderingEnabled: true, // 缺省开启(存量站点升级零变化)
 };
 
 const ISO_CURRENCY = /^[A-Z]{3}$/;
@@ -39,6 +42,8 @@ export async function getShopConfig(): Promise<ShopConfig> {
     paymentInfo: typeof raw.paymentInfo === "string" ? raw.paymentInfo.slice(0, 2000) : DEFAULTS.paymentInfo,
     shippingFeeCents: toCents(raw.shippingFeeCents, DEFAULTS.shippingFeeCents) ?? 0,
     freeShippingOverCents: toCents(raw.freeShippingOverCents, DEFAULTS.freeShippingOverCents),
+    // 布尔:显式 false 才关闭;未配置/null/脏值一律按开启(true)——存量零变化
+    orderingEnabled: raw.orderingEnabled !== false,
   };
 }
 
@@ -53,6 +58,7 @@ export async function saveShopConfig(input: Partial<ShopConfig>): Promise<void> 
       input.freeShippingOverCents == null
         ? null
         : Math.max(0, Math.floor(Number(input.freeShippingOverCents))) || null,
+    orderingEnabled: input.orderingEnabled !== false,
   });
 }
 

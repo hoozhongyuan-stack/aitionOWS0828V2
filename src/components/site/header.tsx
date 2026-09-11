@@ -32,6 +32,7 @@ export function SiteHeader({
   logoutLabel,
   showSubmissions = false,
   mySubmissionsLabel,
+  orderingEnabled = true,
   logoHeight = "40px",
   navFontSize = "15px",
   navBold = false,
@@ -47,6 +48,8 @@ export function SiteHeader({
   /** 投稿功能总开关(需求 4.8):关闭时不展示"我的投稿"入口 */
   showSubmissions?: boolean;
   mySubmissionsLabel?: string;
+  /** 在线下单开关(V4.3):关闭时隐藏购物车入口 */
+  orderingEnabled?: boolean;
   /** 页头外观(主题外观配置):LOGO 高度 / 导航字号 / 导航加粗 */
   logoHeight?: string;
   navFontSize?: string;
@@ -149,14 +152,16 @@ export function SiteHeader({
             </div>
           )}
 
-          {/* 购物车(V4.0):语言之后;文字+图标+角标 */}
-          <Button variant="ghost" size="sm" asChild className="relative hidden md:inline-flex">
-            <Link href={`/${currentLocale}/cart`}>
-              <ShoppingCart className="h-4 w-4" />
-              <span className="hidden lg:inline">{tShop("cart")}</span>
-              <CartBadge />
-            </Link>
-          </Button>
+          {/* 购物车(V4.0;V4.3 受下单开关控制) */}
+          {orderingEnabled && (
+            <Button variant="ghost" size="sm" asChild className="relative hidden md:inline-flex">
+              <Link href={`/${currentLocale}/cart`}>
+                <ShoppingCart className="h-4 w-4" />
+                <span className="hidden lg:inline">{tShop("cart")}</span>
+                <CartBadge />
+              </Link>
+            </Button>
+          )}
 
           {/* 登录态(V4.0.1):用户菜单——头像+用户名一键入口,下拉含订单/投稿/退出 */}
           {user ? (
@@ -232,14 +237,16 @@ export function SiteHeader({
       {open && (
         <div className="border-t bg-background md:hidden">
           <nav className="container flex flex-col py-2" aria-label="移动端导航">
-            {/* 购物车入口(V4.0) */}
-            <Link
-              href={`/${currentLocale}/cart`}
-              onClick={() => setOpen(false)}
-              className="block rounded px-2 py-2.5 text-sm hover:bg-accent"
-            >
-              {tShop("cart")}
-            </Link>
+            {/* 购物车入口(V4.0;V4.3 受下单开关控制) */}
+            {orderingEnabled && (
+              <Link
+                href={`/${currentLocale}/cart`}
+                onClick={() => setOpen(false)}
+                className="block rounded px-2 py-2.5 text-sm hover:bg-accent"
+              >
+                {tShop("cart")}
+              </Link>
+            )}
             {nav.map((item) => (
               <div key={item.id}>
                 <Link

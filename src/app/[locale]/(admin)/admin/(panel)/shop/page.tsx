@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { apiGet, apiPut } from "@/components/admin/api-client";
 import { CURRENCIES } from "@/lib/utils";
 import {
@@ -25,6 +26,7 @@ interface ShopValues {
   paymentInfo: string;
   shippingFee: string; // 元(展示层),提交时换算分
   freeShippingOver: string; // 元;空=不启用
+  orderingEnabled: boolean; // V4.3 在线下单开关
 }
 
 export default function ShopSettingsPage() {
@@ -35,12 +37,13 @@ export default function ShopSettingsPage() {
     apiGet<{ currency?: string; paymentInfo?: string; shippingFeeCents?: number; freeShippingOverCents?: number | null }>(
       "/api/admin/settings/shop"
     )
-      .then((v) =>
+      .then((v: { currency?: string; paymentInfo?: string; shippingFeeCents?: number; freeShippingOverCents?: number | null; orderingEnabled?: boolean }) =>
         setValues({
           currency: v.currency ?? "USD",
           paymentInfo: v.paymentInfo ?? "",
           shippingFee: v.shippingFeeCents != null ? String(v.shippingFeeCents / 100) : "0",
           freeShippingOver: v.freeShippingOverCents != null ? String(v.freeShippingOverCents / 100) : "",
+          orderingEnabled: v.orderingEnabled !== false, // 缺省开启
         })
       )
       .catch(() => toast.error("商店设置加载失败"));
@@ -59,6 +62,7 @@ export default function ShopSettingsPage() {
           paymentInfo: values.paymentInfo,
           shippingFeeCents: cents(values.shippingFee) ?? 0,
           freeShippingOverCents: cents(values.freeShippingOver),
+          orderingEnabled: values.orderingEnabled,
         },
       });
       toast.success("已保存,商店设置立即生效");
@@ -77,6 +81,30 @@ export default function ShopSettingsPage() {
           币种、线下付款指引与运费策略(V4.0);保存后前台立即生效。
         </p>
       </div>
+
+      {/* 在线下单开关(V4.3) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>在线下单</CardTitle>
+          <CardDescription>
+            关闭后前台隐藏购物车、加入购物车与结算入口,下单接口同步拒绝;商品浏览与询盘表单不受影响
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <div className="font-medium">开放在线下单</div>
+              <p className="text-xs text-muted-foreground">
+                {values.orderingEnabled ? "已开启:商品可加购、可下单" : "已关闭:仅展示商品与询盘(购物车/结算入口隐藏)"}
+              </p>
+            </div>
+            <Switch
+              checked={values.orderingEnabled}
+              onCheckedChange={(v) => setValues({ ...values, orderingEnabled: v })}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

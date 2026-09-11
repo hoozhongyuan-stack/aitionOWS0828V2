@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRuntimeFlags } from "@/server/setting";
+import { getShopConfig } from "@/server/shop";
 import { getDefaultLocale } from "@/server/i18n";
 import { routing } from "@/i18n/routing";
 
@@ -14,9 +15,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const [flags, defaultLocale] = await Promise.all([getRuntimeFlags(), getDefaultLocale()]);
+    const [flags, defaultLocale, shop] = await Promise.all([getRuntimeFlags(), getDefaultLocale(), getShopConfig()]);
     return NextResponse.json(
-      { maintenance: flags.maintenance, forceLogin: flags.forceLogin, defaultLocale },
+      { maintenance: flags.maintenance, forceLogin: flags.forceLogin, defaultLocale, orderingEnabled: shop.orderingEnabled },
       { headers: { "cache-control": "no-store" } }
     );
   } catch {

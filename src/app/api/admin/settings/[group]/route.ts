@@ -107,6 +107,7 @@ const shopSchema = z
     paymentInfo: z.string().max(2000).optional(),
     shippingFeeCents: z.number().int().min(0).optional(),
     freeShippingOverCents: z.number().int().min(0).nullable().optional(),
+    orderingEnabled: z.boolean().optional(), // V4.3 下单开关
   })
   .partial();
 

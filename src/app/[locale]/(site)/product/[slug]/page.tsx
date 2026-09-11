@@ -3,6 +3,7 @@ import Link from "next/link";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getProductDetail } from "@/server/content";
+import { getShopConfig } from "@/server/shop";
 import { hasFavorited } from "@/server/ugc";
 import { getActiveUserSession, getGuardedAdmin } from "@/lib/auth/session";
 import { buildAlternates } from "@/lib/seo/alternates";
@@ -68,11 +69,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
   setRequestLocale(locale);
   const previewAllowed = (await searchParams)?.preview === "1" ? await canPreview() : false;
 
-  const [content, features, brand, t, tInter, user] = await Promise.all([
+  const [content, features, brand, t, shop, tInter, user] = await Promise.all([
     getProductDetail(slug, locale, { allowUnpublished: previewAllowed }),
     getFeatureFlags(),
     getBrandConfig(),
     getTranslations("product"),
+    getShopConfig(), // V4.3:下单开关(关闭时隐藏加购,价格仍展示)
     getTranslations("interaction"),
     getActiveUserSession(),
   ]);
@@ -150,15 +152,21 @@ export default async function ProductPage({ params, searchParams }: Props) {
               <span className="font-heading text-3xl font-bold text-primary">
                 {formatMoney(content.priceCents, content.currency || "USD", locale)}
               </span>
-              <AddToCartButton
-                locale={locale}
-                contentId={content.id}
-                slug={content.slug}
-                title={content.title}
-                priceCents={content.priceCents}
-                currency={content.currency || "USD"}
-                coverUrl={content.coverUrl}
-              />
+              {shop.orderingEnabled ? (
+                <AddToCartButton
+                  locale={locale}
+                  contentId={content.id}
+                  slug={content.slug}
+                  title={content.title}
+                  priceCents={content.priceCents}
+                  currency={content.currency || "USD"}
+                  coverUrl={content.coverUrl}
+                />
+              ) : (
+                <span className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
+                  {t("inquiry")}
+                </span>
+              )}
             </div>
           )}
 

@@ -197,6 +197,8 @@
     "refundRejected": "售后未通过",
     "refundAmount": "退款金额",
     "refundNote": "审核备注",
-    "refundSubmitted": "售后申请已提交,请等待审核"
+    "refundSubmitted": "售后申请已提交,请等待审核",
+    "orderingClosedTitle": "未开放在线下单",
+    "orderingClosedDesc": "本站当前仅支持商品浏览与询盘,如有采购需求请通过「联系我们」页留言。"
   }
 }
