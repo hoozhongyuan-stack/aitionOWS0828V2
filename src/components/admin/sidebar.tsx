@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { canSeeMenu } from "@/server/admin/permissions";
 import { toast } from "sonner";
 import { apiPost } from "@/components/admin/api-client";
+import { APP_VERSION, buildTimeLabel } from "@/lib/version";
 
 /**
  * 后台侧边导航。
@@ -181,6 +182,13 @@ export function AdminSidebar({
           <LogOut className="h-4 w-4" />
           退出登录
         </button>
+        {/* V4.4.0:版本号(悬停可见构建时间) */}
+        <div
+          className="px-2 pt-1 text-[11px] text-muted-foreground/70"
+          title={buildTimeLabel() ? `构建于 ${buildTimeLabel()}` : undefined}
+        >
+          v{APP_VERSION}
+        </div>
       </div>
     </aside>
   );

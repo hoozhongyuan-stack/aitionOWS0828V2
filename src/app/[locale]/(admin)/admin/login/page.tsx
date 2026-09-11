@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { apiPost } from "@/components/admin/api-client";
 import { LoginParticles } from "@/components/admin/login-particles";
+import { versionLine } from "@/lib/version";
 
 /**
  * 后台登录页。
@@ -89,7 +90,11 @@ export default function AdminLoginPage() {
           </form>
         </CardContent>
         <CardFooter className="justify-center pb-5">
-          <span className="text-xs text-muted-foreground">客服邮箱:leooohu@outlook.com</span>
+          <div className="space-y-1 text-center">
+            <div className="text-xs text-muted-foreground">客服邮箱:leooohu@outlook.com</div>
+            {/* V4.4.0:版本信息——排查问题时第一眼确认"生产跑的是哪个版本" */}
+            <div className="text-[11px] text-muted-foreground/70">{versionLine()}</div>
+          </div>
         </CardFooter>
       </Card>
     </main>

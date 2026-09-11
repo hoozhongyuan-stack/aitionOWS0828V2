@@ -1,10 +1,18 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import pkg from "./package.json";
 
 // next-intl 插件:指向多语言请求配置文件
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // V4.4.0:版本信息注入(后台登录页与侧边栏展示)
+  // - 版本号读 package.json:发版流程本就会改它,天然同步;
+  // - 构建时间取构建那一刻:每次 docker build 自动更新,等于"这个包什么时候上线"。
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+  },
   // 构建产物目录:默认 .next;集成测试并发 spawn 多个 next dev 时经环境变量
   // 隔离各自的构建目录,避免共用 .next 的读写竞争导致渲染 500
   // (仅测试进程注入 NEXT_TEST_DIST_DIR,生产/常规开发不设置,行为不变)。
