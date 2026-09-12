@@ -27,7 +27,8 @@ const OPTIONS: sanitizeHtml.IOptions = {
     video: ["src", "controls", "preload"],
     th: ["colspan", "rowspan"],
     td: ["colspan", "rowspan"],
-    span: [],
+    // V4.6.3:span 必须放行 style,否则 allowedStyles 无从生效(白名单先于样式校验过滤属性)
+    span: ["style"],
   },
   // 显式禁掉 javascript:/vbscript: 等危险协议;相对路径(/uploads/...)天然放行
   allowedSchemes: ["http", "https", "mailto"],

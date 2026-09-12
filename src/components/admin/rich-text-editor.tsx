@@ -5,8 +5,7 @@ import { promptDialog } from "@/components/admin/dialogs";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
-import TextStyle from "@tiptap/extension-text-style";
-import { FontSize } from "@/components/admin/font-size";
+import { TextStyleExt, EDITOR_COLORS, EDITOR_FONT_SIZES } from "@/components/admin/font-size";
 import Link from "@tiptap/extension-link";
 import { MediaPicker } from "@/components/admin/media-picker";
 import {
@@ -84,8 +83,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Image.configure({ HTMLAttributes: { loading: "lazy" } }),
-      TextStyle,
-      FontSize,
+      TextStyleExt,
       Link.configure({ openOnClick: false, autolink: true }),
     ],
     content: value || "",
@@ -188,6 +186,44 @@ export function RichTextEditor({
         <ToolbarButton title="分割线" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
           <Minus className="h-4 w-4" />
         </ToolbarButton>
+        <span className="mx-1 h-5 w-px bg-border" />
+        {/* 字号 / 文字颜色(V4.6.2):档位与品牌色板,选中文字后应用 */}
+        <select
+          className="h-8 rounded border bg-background px-1 text-xs"
+          value={(editor.getAttributes("textStyle").fontSize as string) ?? ""}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (!v) editor.chain().focus().unsetFontSize().run();
+            else editor.chain().focus().setFontSize(v).run();
+          }}
+          aria-label="字号"
+          title="字号"
+        >
+          <option value="">字号</option>
+          {EDITOR_FONT_SIZES.map((n) => (
+            <option key={n} value={n}>
+              {n}px
+            </option>
+          ))}
+        </select>
+        <select
+          className="h-8 rounded border bg-background px-1 text-xs"
+          value={(editor.getAttributes("textStyle").color as string) ?? ""}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (!v) editor.chain().focus().unsetColor().run();
+            else editor.chain().focus().setColor(v).run();
+          }}
+          aria-label="文字颜色"
+          title="文字颜色"
+        >
+          <option value="">颜色</option>
+          {EDITOR_COLORS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
         <span className="mx-1 h-5 w-px bg-border" />
         <ToolbarButton title="插入/编辑链接" active={editor.isActive("link")} onClick={setLink}>
           <LinkIcon className="h-4 w-4" />

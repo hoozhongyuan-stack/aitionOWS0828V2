@@ -206,3 +206,37 @@ describe("V4.1.2 修复:price/spu 字段过 zod 校验(生产事故回归锁)", 
     await prisma.content.delete({ where: { id: content.id } });
   });
 });
+
+describe("V4.6.3 富文本字号/颜色消毒白名单(定向放行)", () => {
+  it("color/font-size 保留(hex 与 rgb 两种格式)", async () => {
+    const { sanitizeRichHtml } = await import("@/lib/sanitize");
+    const out = sanitizeRichHtml(
+      '<p><span style="color: rgb(142, 28, 46); font-size: 20px;">A</span><span style="color: #c6a15b;">B</span></p>'
+    );
+    const flat = out.replace(/\s+/g, "");
+    expect(flat).toContain("color:rgb(142,28,46)");
+    expect(flat).toContain("font-size:20px");
+    expect(flat).toContain("color:#c6a15b");
+  });
+
+  it("其它 CSS 声明被剥离(注入面仍封死)", async () => {
+    const { sanitizeRichHtml } = await import("@/lib/sanitize");
+    const out = sanitizeRichHtml(
+      '<p><span style="position: fixed; top: 0; color: #8e1c2e; background: url(javascript:alert(1)); z-index: 9999;">X</span></p>'
+    );
+    expect(out.replace(/\s+/g, "")).toContain("color:#8e1c2e");
+    expect(out).not.toContain("position");
+    expect(out).not.toContain("javascript:");
+    expect(out).not.toContain("z-index");
+    expect(out).not.toContain("background");
+  });
+
+  it("非法值被剥离(超范围字号/非颜色值/表达式)", async () => {
+    const { sanitizeRichHtml } = await import("@/lib/sanitize");
+    const out = sanitizeRichHtml(
+      '<p><span style="font-size: expression(alert(1)); color: url(x);">Y</span></p>'
+    );
+    expect(out).not.toContain("expression");
+    expect(out).not.toContain("url(");
+  });
+});
