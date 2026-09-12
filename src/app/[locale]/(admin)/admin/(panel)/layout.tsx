@@ -5,6 +5,7 @@ import { getGuardedAdmin } from "@/lib/auth/session";
 import { getBrandConfig, getSecurityConfig } from "@/lib/config";
 import { isInsecureSecret } from "@/lib/auth/jwt";
 import { AdminSidebar } from "@/components/admin/sidebar";
+import { AdminDialogHost } from "@/components/admin/dialogs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
@@ -34,6 +35,7 @@ export default async function AdminPanelLayout({
   return (
     <div className="flex min-h-screen bg-muted/30" data-admin>
       <Toaster richColors position="top-center" />
+      <AdminDialogHost />
       <AdminSidebar
         siteName={brand.siteName}
         adminRole={admin.role}

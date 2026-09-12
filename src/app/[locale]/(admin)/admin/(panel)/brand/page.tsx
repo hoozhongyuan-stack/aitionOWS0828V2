@@ -26,6 +26,7 @@ interface Social {
 interface BrandValues {
   siteName: string;
   logoUrl: string;
+  footerLogoUrl: string;
   faviconUrl: string;
   icp: string;
   copyright: string;
@@ -48,6 +49,7 @@ export default function BrandPage() {
         setV({
           siteName: d.siteName ?? "",
           logoUrl: d.logoUrl ?? "",
+          footerLogoUrl: d.footerLogoUrl ?? "",
           faviconUrl: d.faviconUrl ?? "",
           icp: d.icp ?? "",
           copyright: d.copyright ?? "",
@@ -98,12 +100,21 @@ export default function BrandPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>站点 LOGO</Label>
+              <Label>站点 LOGO(页头,浅底)</Label>
               <UploadField
                 value={v.logoUrl}
                 onChange={(url) => setV({ ...v, logoUrl: url })}
                 label="LOGO"
                 hint="建议尺寸 200×60px 左右(横向,透明背景 PNG/SVG),≤2MB"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>页脚 LOGO(深底用,选填)</Label>
+              <UploadField
+                value={v.footerLogoUrl}
+                onChange={(url) => setV({ ...v, footerLogoUrl: url })}
+                label="页脚 LOGO"
+                hint="白色/金色字标,用于深色页脚;未配置时页脚沿用站点 LOGO"
               />
             </div>
             <div className="space-y-2">

@@ -88,6 +88,7 @@ export interface UgcPendingNotifyOptions {
 const FALLBACK_BRAND: BrandConfig = {
   siteName: "AitionOWS",
   logoUrl: "",
+  footerLogoUrl: "",
   faviconUrl: "",
   icp: "",
   copyright: `© ${new Date().getFullYear()} AitionOWS. All rights reserved.`,

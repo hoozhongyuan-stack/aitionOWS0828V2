@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,7 +150,7 @@ export default function CategoriesAdminPage() {
   }
 
   async function remove(cat: Category) {
-    if (!window.confirm(`确认删除栏目「${adminDisplayName(cat.translations, cat.slug)}」?`)) return;
+    if (!await confirmDialog({ title: `确认删除栏目「${adminDisplayName(cat.translations, cat.slug)}」?`, destructive: true })) return;
     try {
       await apiDelete(`/api/admin/categories?id=${cat.id}`);
       toast.success("已删除");
@@ -161,7 +162,7 @@ export default function CategoriesAdminPage() {
 
   /** 批量显示/隐藏/删除;删除前二次确认,结果摘要由服务端给出 */
   async function doBatch(action: string) {
-    if (action === "delete" && !window.confirm(`确认删除选中的 ${batch.count} 项?此操作不可恢复`)) return;
+    if (action === "delete" && !await confirmDialog({ title: `确认删除选中的 ${batch.count} 项?此操作不可恢复`, destructive: true })) return;
     try {
       const summary = await runBatchAction("/api/admin/categories/batch", Array.from(batch.selected), action);
       toast.success(summary);

@@ -60,6 +60,7 @@ export const THEME_PRESETS_ALLOWED = ["classic", "aurora", "harvest", "cellar", 
 export interface BrandConfig {
   siteName: string;
   logoUrl: string;
+  footerLogoUrl: string; // 页脚 LOGO(深底用,V4.6.2);空=回落 logoUrl
   faviconUrl: string;
   icp: string; // 备案号
   copyright: string;
@@ -73,6 +74,7 @@ export interface BrandConfig {
 const BRAND_DEFAULTS: BrandConfig = {
   siteName: "AitionOWS",
   logoUrl: "",
+  footerLogoUrl: "",
   faviconUrl: "",
   icp: "",
   copyright: `© ${new Date().getFullYear()} AitionOWS. All rights reserved.`,

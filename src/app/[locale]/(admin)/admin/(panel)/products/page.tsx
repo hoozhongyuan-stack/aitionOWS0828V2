@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -103,7 +104,7 @@ export default function ProductsPage() {
 
   /** V4.4.0 批量动作:商品是 Content(product 栏目),后端复用内容批量端点 */
   async function doBatch(action: string) {
-    if (action === "delete" && !window.confirm(`确认删除选中的 ${batch.count} 件商品?此操作不可恢复`)) return;
+    if (action === "delete" && !await confirmDialog({ title: `确认删除选中的 ${batch.count} 件商品?此操作不可恢复`, destructive: true })) return;
     try {
       const summary = await runBatchAction("/api/admin/contents/batch", Array.from(batch.selected), action);
       toast.success(summary);

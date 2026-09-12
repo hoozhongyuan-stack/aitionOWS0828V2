@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +53,7 @@ export default function BackupAdminPage() {
   }
 
   async function remove(row: BackupRow) {
-    if (!window.confirm(`确认删除备份「${row.path}」?`)) return;
+    if (!await confirmDialog({ title: `确认删除备份「${row.path}」?`, destructive: true })) return;
     try {
       await apiDelete(`/api/admin/backup?id=${row.id}`);
       toast.success("已删除");

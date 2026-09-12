@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -96,7 +97,7 @@ export default function AdminUsersPage() {
   }
 
   async function toggleStatus(r: StaffRow) {
-    if (!window.confirm(`确认${r.status === "ACTIVE" ? "禁用" : "启用"}「${r.username}」?禁用后立即无法登录`)) return;
+    if (!await confirmDialog({ title: `确认${r.status === "ACTIVE" ? "禁用" : "启用"}「${r.username}」?禁用后立即无法登录`, destructive: true })) return;
     try {
       await apiPatch("/api/admin/admin-users", { id: r.id, status: r.status === "ACTIVE" ? "DISABLED" : "ACTIVE" });
       toast.success("已更新");
@@ -107,7 +108,7 @@ export default function AdminUsersPage() {
   }
 
   async function remove(r: StaffRow) {
-    if (!window.confirm(`确认删除子账号「${r.username}」?该操作不可恢复(操作日志保留其姓名快照)`)) return;
+    if (!await confirmDialog({ title: `确认删除子账号「${r.username}」?该操作不可恢复(操作日志保留其姓名快照)`, destructive: true })) return;
     try {
       await apiDelete(`/api/admin/admin-users?id=${r.id}`);
       toast.success("已删除");

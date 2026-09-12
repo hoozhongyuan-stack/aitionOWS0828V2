@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,7 +95,7 @@ export default function FormDataPage() {
   useEffect(load, [load]);
 
   async function remove(rowId: number) {
-    if (!window.confirm("确认删除这条提交数据?此操作不可恢复")) return;
+    if (!await confirmDialog({ title: "确认删除这条提交数据?此操作不可恢复", destructive: true })) return;
     try {
       await apiDelete(`/api/admin/forms/submissions?id=${rowId}`);
       toast.success("已删除");

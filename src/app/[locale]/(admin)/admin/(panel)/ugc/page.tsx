@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -82,7 +83,7 @@ function CommentsTab() {
     }
   }
   async function remove(id: number) {
-    if (!window.confirm("确认删除该评论?")) return;
+    if (!await confirmDialog({ title: "确认删除该评论?", destructive: true })) return;
     try {
       await apiDelete(`/api/admin/ugc/comments?id=${id}`);
       toast.success("已删除");
@@ -94,7 +95,7 @@ function CommentsTab() {
 
   /** 批量审核/删除:删除不可恢复,先二次确认;结果摘要由服务端算好 */
   async function doCommentBatch(action: "approve" | "reject" | "delete") {
-    if (action === "delete" && !window.confirm(`确认删除选中的 ${commentBatch.count} 条评论?此操作不可恢复`)) return;
+    if (action === "delete" && !await confirmDialog({ title: `确认删除选中的 ${commentBatch.count} 条评论?此操作不可恢复`, destructive: true })) return;
     try {
       const summary = await runBatchAction(
         "/api/admin/ugc/comments/batch",

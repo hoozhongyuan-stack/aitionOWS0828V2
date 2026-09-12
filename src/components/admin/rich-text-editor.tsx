@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { promptDialog } from "@/components/admin/dialogs";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import TextStyle from "@tiptap/extension-text-style";
+import { FontSize } from "@/components/admin/font-size";
 import Link from "@tiptap/extension-link";
 import { MediaPicker } from "@/components/admin/media-picker";
 import {
@@ -81,6 +84,8 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Image.configure({ HTMLAttributes: { loading: "lazy" } }),
+      TextStyle,
+      FontSize,
       Link.configure({ openOnClick: false, autolink: true }),
     ],
     content: value || "",
@@ -115,10 +120,10 @@ export function RichTextEditor({
 
 
 
-  function setLink() {
+  async function setLink() {
     if (!editor) return;
     const prev = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("链接地址(留空移除链接)", prev ?? "https://");
+    const url = await promptDialog({ title: "链接地址(留空移除链接)", defaultValue: prev ?? "https://" });
     if (url === null) return;
     if (url === "") {
       editor.chain().focus().unsetLink().run();

@@ -32,8 +32,14 @@ const OPTIONS: sanitizeHtml.IOptions = {
   // 显式禁掉 javascript:/vbscript: 等危险协议;相对路径(/uploads/...)天然放行
   allowedSchemes: ["http", "https", "mailto"],
   allowedSchemesByTag: { a: ["http", "https", "mailto"], img: ["http", "https"], video: ["http", "https"] },
-  // 内联 style 是 CSS 注入载体(定位覆盖钓鱼等);视觉尺寸已由 .rich-content 样式接管,统一剥离
-  allowedStyles: {},
+  // 内联 style 是 CSS 注入载体:统一剥离,唯一定向放行富文本编辑器(V4.6.2)的
+  // color/font-size 两个声明(编辑器字号/颜色功能依赖 span style);正则锁定值格式
+  allowedStyles: {
+    "*": {
+      color: [/^(#[0-9a-fA-F]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|[a-zA-Z]+)$/],
+      "font-size": [/^\d+(\.\d+)?(px|pt|em|rem)%?$/],
+    },
+  },
   transformTags: {
     // 外链加 rel 兜底(target=_blank 打开者上下文安全)
     a: (tagName, attribs) => ({

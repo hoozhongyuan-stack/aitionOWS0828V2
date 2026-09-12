@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { apiGet, apiPost } from "@/components/admin/api-client";
+import { confirmDialog, promptDialog } from "@/components/admin/dialogs";
 import { cn } from "@/lib/utils";
 import { FolderPlus, Search, Upload } from "lucide-react";
 
@@ -183,7 +184,7 @@ export function MediaPicker({
               variant="ghost"
               className="w-full justify-start text-xs"
               onClick={async () => {
-                const name = window.prompt("新建文件夹名称(当前为一级;在二级文件夹内则为其次级)");
+                const name = await promptDialog({ title: "新建文件夹名称" });
                 if (!name?.trim()) return;
                 const parentId = current === "" || current === "unassigned" ? null : Number(current);
                 await folderAction(
@@ -202,7 +203,7 @@ export function MediaPicker({
                   variant="ghost"
                   className="w-full justify-start text-xs"
                   onClick={async () => {
-                    const name = window.prompt("重命名文件夹");
+                    const name = await promptDialog({ title: "重命名文件夹", defaultValue: folders.flatMap((x) => [x, ...x.children]).find((x) => String(x.id) === current)?.name ?? "" });
                     if (!name?.trim()) return;
                     await folderAction({ action: "renameFolder", id: Number(current), name: name.trim() }, "已重命名");
                   }}
@@ -214,7 +215,7 @@ export function MediaPicker({
                   variant="ghost"
                   className="w-full justify-start text-xs text-destructive"
                   onClick={async () => {
-                    if (!window.confirm("删除空文件夹?")) return;
+                    if (!(await confirmDialog({ title: "删除空文件夹?", destructive: true }))) return;
                     await folderAction({ action: "deleteFolder", id: Number(current) }, "已删除");
                     setCurrent("");
                   }}

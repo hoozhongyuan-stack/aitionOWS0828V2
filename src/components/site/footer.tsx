@@ -23,9 +23,9 @@ export function SiteFooter({
       {/* 品牌行:独占一行,左上对齐 */}
       <div className="container pt-10">
         <div className="flex items-center gap-2">
-          {brand.logoUrl ? (
+          {(brand.footerLogoUrl || brand.logoUrl) ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={brand.logoUrl} alt={`${brand.siteName} LOGO`} className="h-7 w-auto" />
+            <img src={brand.footerLogoUrl || brand.logoUrl} alt={`${brand.siteName} LOGO`} className="h-7 w-auto" />
           ) : null}
           <span className="font-heading font-semibold">{brand.siteName}</span>
         </div>

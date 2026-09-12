@@ -66,11 +66,13 @@ export function SiteHeader({
   const accountLabel = tAccount("menu");
   const ordersLabel = tAccount("tabOrders");
 
-  /** 切换语言:替换路径中的语言段,保持当前页面 */
+  /** 切换语言:替换路径中的语言段,保持当前页面;预览模式保留 preview 参数(V4.6.2) */
   function localeHref(code: string): string {
     const parts = pathname.split("/");
     parts[1] = code;
-    return parts.join("/") || `/${code}`;
+    const path = parts.join("/") || `/${code}`;
+    const isPreview = typeof window !== "undefined" && window.location.search.includes("preview=1");
+    return isPreview ? `${path}?preview=1` : path;
   }
 
   async function logout() {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -119,11 +120,7 @@ export default function OrderDetailPage() {
       refundApprove: "通过售后退款",
       refundReject: "拒绝售后",
     };
-    if (
-      !window.confirm(
-        `确定「${labels[action]}」?${action === "cancel" ? "将通知买家订单已取消。" : action.startsWith("refund") ? "将邮件通知买家审核结果。" : ""}`
-      )
-    )
+    if (!(await confirmDialog({ title: `确定「${labels[action]}」?${action === "cancel" ? "将通知买家订单已取消。" : action.startsWith("refund") ? "将邮件通知买家审核结果。" : ""}`, destructive: action === "cancel" })))
       return;
     setBusy(true);
     try {

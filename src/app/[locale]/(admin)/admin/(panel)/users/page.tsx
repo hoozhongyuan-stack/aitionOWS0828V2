@@ -4,6 +4,7 @@ import { TablePagination } from "@/components/admin/table-pagination";
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,7 +103,7 @@ export default function UsersAdminPage() {
 
   async function toggle(user: UserRow) {
     const next = user.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
-    if (next === "DISABLED" && !window.confirm(`确认禁用用户「${user.nickname || user.email}」?禁用后立即无法登录`))
+    if (next === "DISABLED" && !await confirmDialog({ title: `确认禁用用户「${user.nickname || user.email}」?禁用后立即无法登录`, destructive: true }))
       return;
     try {
       await apiPost("/api/admin/users", { id: user.id, status: next });
@@ -116,7 +117,7 @@ export default function UsersAdminPage() {
   /** 批量启用/禁用:结果摘要由服务端算好,失败项原因在 summary 里 */
   async function doBatch(action: "enable" | "disable") {
     // 批量禁用影响面大(一次最多 100 个账号,且禁用后对方立即无法登录),与单个禁用一样先确认
-    if (action === "disable" && !window.confirm(`确认禁用选中的 ${batch.count} 位用户?禁用后他们将无法登录`)) return;
+    if (action === "disable" && !await confirmDialog({ title: `确认禁用选中的 ${batch.count} 位用户?禁用后他们将无法登录`, destructive: true })) return;
     try {
       const summary = await runBatchAction("/api/admin/users/batch", Array.from(batch.selected), action);
       toast.success(summary);

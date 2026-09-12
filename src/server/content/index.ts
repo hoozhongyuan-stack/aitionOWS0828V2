@@ -295,8 +295,19 @@ export async function saveContent(
     if (!publishAt) throw new Error("定时发布需要设置发布时间");
     if (publishAt <= new Date()) {
       status = CONTENT_STATUS.PUBLISHED;
-      publishAt = null;
+      publishAt = new Date(); // V4.6.2:定时到期转立即发布,落真实面世时刻
     }
+  }
+  // V4.6.2 发布时间语义:PUBLISHED 且未显式给定时时间 → 保留既有发布时间
+  // (编辑保存不再清空);既有也为空(首次立即发布/历史数据)则落当前时刻
+  if (status === CONTENT_STATUS.PUBLISHED && !publishAt && input.id) {
+    const existing = await prisma.content.findUnique({
+      where: { id: input.id },
+      select: { publishAt: true },
+    });
+    publishAt = existing?.publishAt ?? new Date();
+  } else if (status === CONTENT_STATUS.PUBLISHED && !publishAt && !input.id) {
+    publishAt = new Date();
   }
 
   const galleryJson = serializeGallery(input.gallery);
@@ -379,7 +390,8 @@ export async function updateContentSchedule(input: {
 }) {
   let data: { status: string; publishAt: Date | null };
   if (input.action === "publish") {
-    data = { status: CONTENT_STATUS.PUBLISHED, publishAt: null };
+    // V4.6.2:立即发布写入真实面世时刻(此前为 null → 列表显示「(立即发布)」且前台回退创建时间)
+    data = { status: CONTENT_STATUS.PUBLISHED, publishAt: new Date() };
   } else if (input.action === "draft") {
     data = { status: CONTENT_STATUS.DRAFT, publishAt: null };
   } else if (input.action === "offline") {

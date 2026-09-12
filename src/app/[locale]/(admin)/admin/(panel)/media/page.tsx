@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiGet, apiPost, apiDelete } from "@/components/admin/api-client";
+import { confirmDialog, promptDialog } from "@/components/admin/dialogs";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { Check, FolderPlus, Upload, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -111,7 +112,7 @@ export default function MediaPage() {
   }
 
   async function renameFile(row: MediaRow) {
-    const name = window.prompt("修改文件名(展示名)", row.filename);
+    const name = await promptDialog({ title: "修改文件名(展示名)", defaultValue: row.filename });
     if (!name?.trim()) return;
     try {
       await apiPost("/api/admin/media", { id: row.id, alt: name.trim() });
@@ -121,17 +122,30 @@ export default function MediaPage() {
     }
   }
 
-  async function moveOne(row: MediaRow) {
-    const fid = window.prompt("目标文件夹 ID(空=未分类)", row.folderId ? String(row.folderId) : "");
-    if (fid === null) return;
-    const n = fid.trim() === "" ? null : Number(fid);
-    if (n !== null && !Number.isInteger(n)) {
-      toast.error("文件夹 ID 非法");
-      return;
+  /** 文件夹下拉选项(含未分类;V4.6.2 替代输 ID) */
+  function folderOptions(): { value: string; label: string }[] {
+    const opts: { value: string; label: string }[] = [{ value: "", label: "未分类" }];
+    for (const f of data?.folders ?? []) {
+      opts.push({ value: String(f.id), label: f.name });
+      for (const c of f.children) opts.push({ value: String(c.id), label: `└ ${c.name}` });
     }
+    return opts;
+  }
+
+  async function moveOne(row: MediaRow) {
+    const fid = await promptDialog({
+      title: "修改分组",
+      label: `移动「${row.filename}」到`,
+      defaultValue: row.folderId ? String(row.folderId) : "",
+      select: folderOptions(),
+    });
+    if (fid === null) return;
+    const n = fid === "" ? null : Number(fid);
     try {
       await apiPost("/api/admin/media", { action: "moveAssets", ids: [row.id], folderId: n });
       toast.success("已修改分组");
+      setFolder(fid);
+      setPage(1);
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "失败");
@@ -139,7 +153,7 @@ export default function MediaPage() {
   }
 
   async function deleteFiles(ids: number[]) {
-    if (!window.confirm(`确认删除 ${ids.length} 个文件?该操作不可恢复`)) return;
+    if (!(await confirmDialog({ title: `确认删除 ${ids.length} 个文件?该操作不可恢复`, destructive: true }))) return;
     for (const id of ids) {
       try {
         await apiDelete(`/api/admin/media?id=${id}`);
@@ -153,17 +167,19 @@ export default function MediaPage() {
   }
 
   async function moveMany(ids: number[]) {
-    const fid = window.prompt(`批量移动 ${ids.length} 个文件,目标文件夹 ID(空=未分类)`);
+    const fid = await promptDialog({
+      title: "修改分组",
+      label: `批量移动 ${ids.length} 个文件到`,
+      select: folderOptions(),
+    });
     if (fid === null) return;
-    const n = fid.trim() === "" ? null : Number(fid);
-    if (n !== null && !Number.isInteger(n)) {
-      toast.error("文件夹 ID 非法");
-      return;
-    }
+    const n = fid === "" ? null : Number(fid);
     try {
       await apiPost("/api/admin/media", { action: "moveAssets", ids, folderId: n });
       toast.success("已修改分组");
       setSelected(new Set());
+      setFolder(fid);
+      setPage(1);
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "失败");
@@ -258,7 +274,7 @@ export default function MediaPage() {
             variant="ghost"
             className="mt-2 w-full justify-start text-xs"
             onClick={async () => {
-              const name = window.prompt("新建文件夹名称(一级)");
+              const name = await promptDialog({ title: "新建文件夹名称(一级)" });
               if (!name?.trim()) return;
               await folderAction({ action: "createFolder", name: name.trim(), parentId: null }, "已创建");
             }}
@@ -272,7 +288,7 @@ export default function MediaPage() {
               variant="ghost"
               className="w-full justify-start text-xs"
               onClick={async () => {
-                const name = window.prompt("子文件夹名称(二级)");
+                const name = await promptDialog({ title: "子文件夹名称(二级)" });
                 if (!name?.trim()) return;
                 await folderAction({ action: "createFolder", name: name.trim(), parentId: Number(folder) }, "已创建");
               }}

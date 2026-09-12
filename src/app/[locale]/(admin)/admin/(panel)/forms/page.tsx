@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,11 +44,7 @@ export default function FormsAdminPage() {
   useEffect(load, [load]);
 
   async function remove(row: FormRow) {
-    if (
-      !window.confirm(
-        `确认删除表单「${row.name}」?其 ${row._count.submissions} 条提交数据将一并删除`
-      )
-    )
+    if (!(await confirmDialog({ title: `确认删除表单「${row.name}」?其 ${row._count.submissions} 条提交数据将一并删除`, destructive: true })))
       return;
     try {
       await apiDelete(`/api/admin/forms?id=${row.id}`);

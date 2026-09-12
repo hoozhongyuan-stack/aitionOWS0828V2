@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -134,7 +135,7 @@ export default function ContentAdminPage() {
   }, []);
 
   async function remove(row: ContentRow) {
-    if (!window.confirm(`确认删除「${adminTitle(row.translations, row.slug)}」?此操作不可恢复`)) return;
+    if (!(await confirmDialog({ title: `确认删除「${adminTitle(row.translations, row.slug)}」?此操作不可恢复`, destructive: true }))) return;
     try {
       await apiDelete(`/api/admin/contents?id=${row.id}`);
       toast.success("已删除");
@@ -203,7 +204,7 @@ export default function ContentAdminPage() {
 
   /** V4.4.0 批量动作:发布/下架/转草稿/删除(删除前二次确认) */
   async function doBatch(action: string) {
-    if (action === "delete" && !window.confirm(`确认删除选中的 ${batch.count} 项?此操作不可恢复`)) return;
+    if (action === "delete" && !(await confirmDialog({ title: `确认删除选中的 ${batch.count} 项?此操作不可恢复`, destructive: true }))) return;
     try {
       const summary = await runBatchAction("/api/admin/contents/batch", Array.from(batch.selected), action);
       toast.success(summary);
@@ -436,14 +437,15 @@ export default function ContentAdminPage() {
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="schedule-date">发布时间</Label>
+                  {/* V4.6.2:日期独占一行、时/分并排一行——修复窄弹窗下三元素挤压重叠 */}
+                  <Input
+                    id="schedule-date"
+                    type="date"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    className="w-full"
+                  />
                   <div className="flex gap-2">
-                    <Input
-                      id="schedule-date"
-                      type="date"
-                      value={scheduleDate}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                      className="flex-1"
-                    />
                     <Select value={scheduleHour} onValueChange={setScheduleHour}>
                       <SelectTrigger className="w-24" aria-label="小时">
                         <SelectValue />
