@@ -1,6 +1,6 @@
 {
   "name": "aition-ows",
-  "version": "4.6.1",
+  "version": "4.6.2",
   "private": true,
   "description": "AitionOWS 企业官网模板系统 - Next.js 全栈单体 + shadcn/ui + Prisma + SQLite",
   "scripts": {
