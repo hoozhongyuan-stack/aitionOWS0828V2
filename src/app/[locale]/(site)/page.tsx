@@ -9,6 +9,7 @@ import { getBrandConfig } from "@/lib/config";
 import { buildOpenGraph, resolveMetadataTitle } from "@/lib/seo/open-graph";
 import { ContentCard } from "@/components/site/content-card";
 import { Parallax, Reveal } from "@/components/site/aurora-motion";
+import { WineFx } from "@/components/site/wine-fx";
 import { ListItemRow } from "@/components/site/layout-presets";
 import { HeroCarousel } from "@/components/site/hero-carousel";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,7 @@ export default async function HomePage({
         <>
           {/* hero-list:全宽 Hero(首条 Banner 作背景) */}
           <section className="aurora-hero relative overflow-hidden border-b">
+            <WineFx />
             {hasBanners && (
               <HeroCarousel banners={banners.map((b) => ({ imageUrl: b.imageUrl, linkUrl: b.linkUrl }))} />
             )}
@@ -209,7 +211,8 @@ export default async function HomePage({
       {preset === "split" && (
         <>
           {/* split:左右分屏 Hero(左文右图) */}
-          <section className="aurora-hero border-b">
+          <section className="aurora-hero relative border-b">
+            <WineFx />
             <div className="container grid items-center gap-8 py-16 lg:grid-cols-2 lg:py-24">
               <Parallax speed={0.2}>
                 <div className="flex flex-col items-start gap-6">{heroCopy}</div>
@@ -240,6 +243,7 @@ export default async function HomePage({
               (hasBanners ? "" : " bg-gradient-to-b from-secondary/60 to-background")
             }
           >
+            <WineFx />
             {hasBanners && (
               <HeroCarousel banners={banners.map((b) => ({ imageUrl: b.imageUrl, linkUrl: b.linkUrl }))} />
             )}
@@ -320,7 +324,8 @@ export default async function HomePage({
       {preset === "grid" && (
         <>
           {/* grid(现状默认):轮播 Hero + 最新动态网格 */}
-          <section className={`aurora-hero ${hasBanners ? "relative overflow-hidden border-b" : "border-b bg-gradient-to-b from-secondary/60 to-background"}`}>
+          <section className={`aurora-hero relative ${hasBanners ? "overflow-hidden border-b" : "border-b bg-gradient-to-b from-secondary/60 to-background"}`}>
+            <WineFx />
             {hasBanners && (
               <HeroCarousel banners={banners.map((b) => ({ imageUrl: b.imageUrl, linkUrl: b.linkUrl }))} />
             )}

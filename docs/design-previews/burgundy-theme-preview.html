@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>勃艮第浅色主题 · 视觉稿（数字中圆）</title>
+<style>
+  :root{
+    --wine:#8E1C2E;          /* 主色:勃艮第红 */
+    --wine-deep:#5E1220;     /* 深酒红 */
+    --wine-ink:#3A0D15;      /* 酒红墨(深区块底) */
+    --gold:#C6A15B;          /* 香槟金(仅深底点缀) */
+    --gold-soft:rgba(198,161,91,.55);
+    --paper:#FDFBF8;         /* 暖白底 */
+    --card:#FFFFFF;
+    --ink:#261D18;           /* 正文墨色 */
+    --muted:#8A7B70;         /* 次要文字(暖灰) */
+    --line:#EDE4D7;          /* 分隔线(暖) */
+    --serif:"Noto Serif SC","Source Han Serif SC","Songti SC",Georgia,serif;
+    --sans:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  a{text-decoration:none;color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+  h1,h2,h3{font-family:var(--serif);font-weight:600}
+
+  /* ===== 页头(浅底) ===== */
+  header{position:sticky;top:0;background:rgba(253,251,248,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:50}
+  .nav{display:flex;align-items:center;gap:36px;height:68px}
+  .logo{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--wine);letter-spacing:2px;display:flex;align-items:center;gap:10px}
+  .logo .dot{width:10px;height:10px;background:var(--gold);transform:rotate(45deg)}
+  .nav .links{display:flex;gap:30px;margin-left:24px;font-size:15px;color:var(--ink)}
+  .nav .links a{padding:6px 2px;border-bottom:2px solid transparent}
+  .nav .links a.on{color:var(--wine);border-bottom-color:var(--wine);font-weight:600}
+  .nav .cta{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:10px 22px;font-size:15px;font-weight:600;cursor:pointer;border:1px solid transparent}
+  .btn-wine{background:var(--wine);color:#fff}
+  .btn-ghost{border-color:var(--line);color:var(--ink);background:#fff}
+
+  /* ===== Hero(唯一深色区块:深酒红渐变+金点缀) ===== */
+  .hero{position:relative;overflow:hidden;color:#fff;
+    background:
+      radial-gradient(70rem 34rem at 82% -18%, rgba(198,161,91,.20), transparent 60%),
+      radial-gradient(46rem 30rem at -8% 118%, rgba(142,28,46,.55), transparent 62%),
+      linear-gradient(158deg,#2A0A10 0%,#4A0E1B 46%,#6E1423 100%);}
+  .hero .inner{max-width:1180px;margin:0 auto;padding:110px 32px 96px;position:relative}
+  .hero .kicker{display:inline-flex;align-items:center;gap:10px;color:var(--gold);font-size:14px;letter-spacing:4px;margin-bottom:26px}
+  .hero .kicker::before{content:"";width:34px;height:1px;background:var(--gold)}
+  .hero h1{font-size:52px;line-height:1.22;letter-spacing:1px;max-width:760px}
+  .hero h1 em{font-style:normal;color:var(--gold)}
+  .hero p{margin-top:22px;max-width:640px;font-size:17px;line-height:1.9;color:rgba(255,255,255,.82)}
+  .hero .ctas{margin-top:38px;display:flex;gap:16px}
+  .btn-gold{background:var(--gold);color:#2A1A08}
+  .btn-line{border-color:rgba(255,255,255,.45);color:#fff}
+  .hero .grain{position:absolute;right:-60px;top:-40px;width:420px;height:420px;border:1px solid rgba(198,161,91,.28);transform:rotate(45deg)}
+  .hero .grain::after{content:"";position:absolute;inset:36px;border:1px solid rgba(198,161,91,.18)}
+  .hero canvas,.cta-band canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .cta-band .inner{position:relative;z-index:1}
+  .hero .inner{z-index:1}
+
+  /* ===== 数据条(浅底,酒红数字) ===== */
+  .stats{background:#fff;border-bottom:1px solid var(--line)}
+  .stats .grid{max-width:1180px;margin:0 auto;padding:34px 32px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  .stat b{display:block;font-family:var(--serif);font-size:34px;color:var(--wine)}
+  .stat span{font-size:13px;color:var(--muted);letter-spacing:1px}
+
+  /* ===== 通用区块头 ===== */
+  section{padding:72px 0}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:36px}
+  .sec-head .k{font-size:13px;color:var(--wine);letter-spacing:3px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .sec-head .k::before{content:"";width:26px;height:2px;background:var(--wine)}
+  .sec-head h2{font-size:32px;letter-spacing:1px}
+  .sec-head .more{font-size:14px;color:var(--wine);border-bottom:1px solid var(--wine);padding-bottom:2px}
+
+  /* ===== 洞察:主卡+列表(浅底,酒红角标) ===== */
+  .insight{display:grid;grid-template-columns:1.15fr 1fr;gap:28px}
+  .feat{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .feat .cover{height:260px;background:linear-gradient(135deg,#7A1826 0%,#A63A48 52%,#C6A15B 130%);position:relative}
+  .feat .cover::after{content:"封面图 1200×675";position:absolute;left:18px;bottom:14px;font-size:12px;color:rgba(255,255,255,.75);letter-spacing:2px}
+  .feat .body{padding:26px 28px 30px}
+  .tag{display:inline-block;font-size:12px;color:var(--wine);border:1px solid rgba(142,28,46,.35);padding:3px 10px;border-radius:99px;letter-spacing:1px}
+  .feat h3{font-size:22px;margin:14px 0 10px;line-height:1.5}
+  .feat p{font-size:14px;color:var(--muted);line-height:1.9}
+  .feat .meta{margin-top:16px;font-size:12px;color:var(--muted);display:flex;gap:14px}
+  .list .item{display:flex;gap:18px;padding:18px 4px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .list .item .no{font-family:var(--serif);font-size:20px;color:var(--gold);min-width:34px;padding-top:2px}
+  .list h4{font-size:16px;line-height:1.6;font-weight:600}
+  .list p{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.8}
+  .list .chips{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+  .chip{font-size:13px;color:var(--wine);background:rgba(142,28,46,.06);border:1px solid rgba(142,28,46,.18);padding:5px 14px;border-radius:99px}
+
+  /* ===== 解决方案六宫格 ===== */
+  .sols{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .sol-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .sol{border:1px solid var(--line);border-radius:14px;padding:28px;background:var(--paper);transition:.2s}
+  .sol:hover{border-color:rgba(142,28,46,.45);transform:translateY(-3px)}
+  .sol .ico{width:38px;height:38px;border-radius:10px;background:rgba(142,28,46,.08);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .sol .ico::after{content:"";width:14px;height:14px;background:var(--wine);border-radius:4px;transform:rotate(45deg)}
+  .sol h3{font-size:18px;margin-bottom:8px}
+  .sol p{font-size:13.5px;color:var(--muted);line-height:1.85}
+  .sol a{display:inline-block;margin-top:14px;font-size:13px;color:var(--wine);font-weight:600}
+
+  /* ===== CTA 横幅(深酒红+金) ===== */
+  .cta-band{background:linear-gradient(120deg,#3A0D15,#6E1423);color:#fff;position:relative;overflow:hidden}
+  .cta-band .inner{max-width:1180px;margin:0 auto;padding:64px 32px;display:flex;align-items:center;justify-content:space-between;gap:30px}
+  .cta-band .k{color:var(--gold);font-size:13px;letter-spacing:3px;margin-bottom:12px}
+  .cta-band h2{font-size:30px;letter-spacing:1px}
+  .cta-band p{color:rgba(255,255,255,.75);margin-top:10px;font-size:14.5px}
+  .cta-band::after{content:"";position:absolute;right:-70px;top:-70px;width:260px;height:260px;border:1px solid rgba(198,161,91,.3);transform:rotate(45deg)}
+
+  /* ===== 页脚(深底金点缀) ===== */
+  footer{background:#230B10;color:rgba(255,255,255,.72);font-size:14px}
+  footer .top{max-width:1180px;margin:0 auto;padding:56px 32px 40px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px}
+  footer .logo{color:#fff}
+  footer h5{color:var(--gold);font-size:13px;letter-spacing:2px;margin-bottom:16px;font-weight:600}
+  footer a{display:block;padding:5px 0;color:rgba(255,255,255,.72)}
+  footer .base{border-top:1px solid rgba(255,255,255,.12)}
+  footer .base .in{max-width:1180px;margin:0 auto;padding:18px 32px;display:flex;justify-content:space-between;font-size:12.5px;color:rgba(255,255,255,.45)}
+  /* 移动端:汉堡占位(真实系统用现有响应式头部) */
+  .burger{display:none;width:38px;height:38px;border:1px solid var(--line);border-radius:8px;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .burger span{width:16px;height:2px;background:var(--ink);display:block}
+  @media (max-width:860px){
+    .nav .links{display:none}
+    .burger{display:flex}
+    .hero .inner{padding:80px 24px 64px}
+    .hero h1{font-size:36px}
+    .stats .grid{grid-template-columns:repeat(2,1fr);padding:26px 24px}
+    .insight{grid-template-columns:1fr}
+    .sol-grid{grid-template-columns:1fr}
+    .cta-band .inner{flex-direction:column;text-align:center;padding:48px 24px}
+    footer .top{grid-template-columns:1fr;padding:40px 24px 30px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="dot"></span>数字中圆</div>
+    <nav class="links">
+      <a class="on" href="#">首页</a><a href="#">酒业洞察</a><a href="#">解决方案</a><a href="#">案例分析</a><a href="#">关于我</a><a href="#">联系我们</a>
+    </nav>
+    <div class="cta"><a class="btn btn-wine" style="display:none" id="ctaM">聊聊你的项目</a><div class="burger"><span></span><span></span><span></span></div></div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="grain"></div>
+  <canvas class="fx"></canvas>
+  <div class="inner">
+    <div class="kicker">数字中圆 · 酒业数智增长观察站</div>
+    <h1>看清中国酒业的<em>每一次增长</em></h1>
+    <p>监测政策、渠道、营销与消费趋势，输出数据溯源、结论先行的行业判断——服务酒企品牌方与酒类经销商。</p>
+    <div class="ctas">
+      <a class="btn btn-gold">聊聊你的项目 →</a>
+      <a class="btn btn-line">浏览最新洞察</a>
+    </div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="grid">
+    <div class="stat"><b>120+</b><span>行业信息监测源</span></div>
+    <div class="stat"><b>每周</b><span>深度观察更新</span></div>
+    <div class="stat"><b>6 大</b><span>数字化系统方案</span></div>
+    <div class="stat"><b>100+</b><span>酒企与经销商访谈</span></div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="k">INSIGHT</div>
+        <h2>酒业洞察</h2>
+      </div>
+      <a class="more" href="#">查看全部 →</a>
+    </div>
+    <div class="insight">
+      <div class="feat">
+        <div class="cover"></div>
+        <div class="body">
+          <span class="tag">渠道与终端</span>
+          <h3>渠道下沉的真相：县域酒市正在发生的三个信号</h3>
+          <p>当一线品牌还在争论高端化，县域市场的消费结构已经悄悄换挡。我们用三组数据说明谁在真正吃到这波红利。</p>
+          <div class="meta"><span>2026-09-08</span><span>阅读 1,204</span></div>
+        </div>
+      </div>
+      <div class="list">
+        <div class="item"><div class="no">02</div><div><h4>一物一码之后：费用数字化怎么真正落地</h4><p>扫码不是终点。从码关联到费用核销，拆解酒企数字化营销的闭环。</p></div></div>
+        <div class="item"><div class="no">03</div><div><h4>宴席用酒：被低估的确定性增量场景</h4><p>宴席是酒类消费中少有的「计划型」场景，抓得住、可预测、可运营。</p></div></div>
+        <div class="item"><div class="no">04</div><div><h4>从回厂游看酒企的用户资产沉淀</h4><p>回厂游不该是一次接待，而应是会员体系的第一触点。</p></div></div>
+        <div class="chips">
+          <span class="chip">渠道与终端</span><span class="chip">消费者与会员</span><span class="chip">一物一码</span><span class="chip">场景增长</span><span class="chip">行业动态</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sols">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="k">SOLUTIONS</div>
+        <h2>六大系统方案</h2>
+      </div>
+      <a class="more" href="#">合作方式 →</a>
+    </div>
+    <div class="sol-grid">
+      <div class="sol"><div class="ico"></div><h3>即时零售</h3><p>打通线上即时订单与线下门店履约，把「最近的一瓶酒」卖成常态生意。</p><a>了解方案 →</a></div>
+      <div class="sol"><div class="ico"></div><h3>扫码营销 · 一物一码</h3><p>一瓶一码关联消费者与终端，营销费用数字化、可核销、可追溯。</p><a>了解方案 →</a></div>
+      <div class="sol"><div class="ico"></div><h3>定制酒</h3><p>从企业礼赠到婚宴定制，小批量柔性供应链让定制成为利润项。</p><a>了解方案 →</a></div>
+      <div class="sol"><div class="ico"></div><h3>封坛酒</h3><p>把库存变成资产：封坛产品的销售、留存与二次转化设计。</p><a>了解方案 →</a></div>
+      <div class="sol"><div class="ico"></div><h3>回厂游</h3><p>从接待流程到会员转化，把一次回厂变成可复制的用户体验。</p><a>了解方案 →</a></div>
+      <div class="sol"><div class="ico"></div><h3>宴席酒</h3><p>宴席场景的进店、品鉴与转化路径设计，抓住计划型消费。</p><a>了解方案 →</a></div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-band">
+  <canvas class="fx"></canvas>
+  <div class="inner">
+    <div>
+      <div class="k">GET STARTED</div>
+      <h2>把下一次增长，变成可复制的判断</h2>
+      <p>聊聊你的项目——48 小时内给出初步诊断与建议方向。</p>
+    </div>
+    <a class="btn btn-gold">联系我们 →</a>
+  </div>
+</div>
+
+<footer>
+  <div class="top">
+    <div>
+      <div class="logo" style="font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:2px;display:flex;align-items:center;gap:10px;margin-bottom:16px"><span style="width:9px;height:9px;background:var(--gold);transform:rotate(45deg);display:inline-block"></span>数字中圆</div>
+      <p style="line-height:1.9;font-size:13px;max-width:300px">酒业品牌咨询与数字化系统解决方案。数据溯源，结论先行。</p>
+    </div>
+    <div><h5>内容</h5><a href="#">酒业洞察</a><a href="#">解决方案</a><a href="#">案例分析</a></div>
+    <div><h5>关于</h5><a href="#">关于我</a><a href="#">联系我们</a><a href="#">合作方式</a></div>
+    <div><h5>协议</h5><a href="#">用户注册协议</a><a href="#">用户隐私政策</a><a href="#">Cookie 政策</a></div>
+  </div>
+  <div class="base"><div class="in"><span>© 2026 数字中圆. All rights reserved.</span><span>黔ICP备2026086168号-1</span></div></div>
+</footer>
+
+<script>
+/* 「酒的韵味」粒子:上升酒珠气泡(杯中气泡/发酵) + 酒香光雾(开瓶香气)。
+   鼠标轻斥交互;prefers-reduced-motion 降级为静态一帧;视口外自动暂停。 */
+function wineFx(canvas, opts) {
+  const ctx = canvas.getContext("2d");
+  let W = 0, H = 0;
+  function resize() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+  const mouse = { x: -9e3, y: -9e3 };
+  const host = canvas.parentElement;
+  host.addEventListener("mousemove", (e) => {
+    const r = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+  });
+  host.addEventListener("mouseleave", () => { mouse.x = -9e3; mouse.y = -9e3; });
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  function Bubble(init) { this.reset(init); }
+  Bubble.prototype.reset = function (init) {
+    this.x = rand(0, W); this.y = init ? rand(0, H) : H + rand(10, 70);
+    this.r = rand(1, 3.6); this.v = rand(0.25, 0.85) * (opts.speed || 1);
+    this.sway = rand(0.4, 1.4); this.phase = rand(0, Math.PI * 2);
+    this.a = rand(0.14, 0.5); this.gold = Math.random() < 0.75;
+  };
+  Bubble.prototype.step = function (t) {
+    this.y -= this.v;
+    this.x += Math.sin(t * 0.001 * this.sway + this.phase) * 0.35;
+    const dx = this.x - mouse.x, dy = this.y - mouse.y, d = Math.hypot(dx, dy);
+    if (d < 110 && d > 0.1) { const f = ((110 - d) / 110) * 0.6; this.x += (dx / d) * f; this.y += (dy / d) * f; }
+    if (this.y < -12) this.reset(false);
+  };
+  Bubble.prototype.draw = function () {
+    const c = this.gold ? "198,161,91" : "255,236,220";
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(" + c + "," + this.a * 0.9 + ")"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(this.x - this.r * 0.3, this.y - this.r * 0.3, this.r * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(" + c + "," + this.a * 0.55 + ")"; ctx.fill();
+  };
+
+  function Mote(init) { this.reset(init); }
+  Mote.prototype.reset = function (init) {
+    this.x = rand(0, W); this.y = init ? rand(0, H) : H + rand(0, 90);
+    this.r = rand(7, 20); this.v = rand(0.06, 0.22); this.a = rand(0.04, 0.1);
+    this.phase = rand(0, Math.PI * 2);
+  };
+  Mote.prototype.step = function (t) {
+    this.y -= this.v; this.x += Math.sin(t * 0.0004 + this.phase) * 0.18;
+    if (this.y < -26) this.reset(false);
+  };
+  Mote.prototype.draw = function () {
+    const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+    g.addColorStop(0, "rgba(198,161,91," + this.a + ")");
+    g.addColorStop(1, "rgba(198,161,91,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.fill();
+  };
+
+  const bubbles = Array.from({ length: opts.bubbles || 46 }, () => new Bubble(true));
+  const motes = Array.from({ length: opts.motes || 10 }, () => new Mote(true));
+  let running = false, raf = 0;
+  function frame(t) {
+    if (!running) return;
+    ctx.clearRect(0, 0, W, H);
+    motes.forEach((m) => { m.step(t); m.draw(); });
+    bubbles.forEach((b) => { b.step(t); b.draw(); });
+    raf = requestAnimationFrame(frame);
+  }
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    ctx.clearRect(0, 0, W, H);
+    motes.forEach((m) => m.draw()); bubbles.forEach((b) => b.draw());
+    return;
+  }
+  new IntersectionObserver((es) => {
+    es.forEach((e) => {
+      if (e.isIntersecting && !running) { running = true; raf = requestAnimationFrame(frame); }
+      else if (!e.isIntersecting && running) { running = false; cancelAnimationFrame(raf); }
+    });
+  }).observe(canvas);
+}
+wineFx(document.querySelector(".hero canvas"), { bubbles: 54, motes: 12, speed: 1 });
+wineFx(document.querySelector(".cta-band canvas"), { bubbles: 20, motes: 6, speed: 0.65 });
+</script>
+</body>
+</html>

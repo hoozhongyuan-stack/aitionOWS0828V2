@@ -780,3 +780,199 @@ html [data-glass-header] header {
     -webkit-backdrop-filter: none;
   }
 }
+
+/* ============================================================
+   V4.6 第四主题包「勃艮第 · Burgundy」——酒红浅底 + 香槟金点缀 + 酒珠粒子
+   借势 iPhone 18 勃艮第红;与窖藏(全暗墨金)气质相反:浅色为底、深色点睛,
+   对齐「干净浅底 + 一个浓郁主色」。深色仅 Hero / CTA 横幅 / 页脚三处。
+   颜色变量仍由后台调色板注入(选择卡预填推荐色);本段只做结构性覆盖,
+   组件零侵入;酒珠粒子由 WineFx 组件承担(仅 Hero/CTA 挂载)。
+   prefers-reduced-motion 用户自动降级。
+   ============================================================ */
+
+[data-theme="burgundy"] {
+  color-scheme: light;
+  --burgundy-gold: #c6a15b;
+  --burgundy-line: #ebe0d2;
+  --burgundy-card: #ffffff;
+}
+
+/* —— 基底:暖白 + 酒红/金极淡晕(固定层) —— */
+[data-theme="burgundy"] {
+  background-color: #fdfbf8;
+  background-image:
+    radial-gradient(56rem 36rem at 88% -10%, rgba(142, 28, 46, 0.05), transparent 60%),
+    radial-gradient(44rem 30rem at -8% 14%, rgba(198, 161, 91, 0.07), transparent 58%);
+  background-attachment: fixed;
+  color: #261d18;
+}
+
+/* —— 边框:暖色系 —— */
+[data-theme="burgundy"] .border-input,
+[data-theme="burgundy"] .border-border {
+  border-color: var(--burgundy-line);
+}
+
+/* —— 卡片:白底暖边 + hover 酒红描边轻上浮 —— */
+[data-theme="burgundy"] .bg-card,
+[data-theme="burgundy"] [data-slot="card"] {
+  background: var(--burgundy-card);
+  border-color: var(--burgundy-line);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+[data-theme="burgundy"] .bg-card:hover,
+[data-theme="burgundy"] [data-slot="card"]:hover {
+  transform: translateY(-3px);
+  border-color: rgba(142, 28, 46, 0.45);
+  box-shadow: 0 10px 26px rgba(94, 18, 32, 0.1);
+}
+
+/* —— 主按钮:酒红;hover 深化轻浮 —— */
+[data-theme="burgundy"] button[class*="bg-primary"],
+[data-theme="burgundy"] a[class*="bg-primary"] {
+  background-color: #8e1c2e;
+  transition: background-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+[data-theme="burgundy"] button[class*="bg-primary"]:hover:not(:disabled),
+[data-theme="burgundy"] a[class*="bg-primary"]:hover {
+  background-color: #731524;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(142, 28, 46, 0.28);
+}
+[data-theme="burgundy"] .text-primary {
+  color: #8e1c2e;
+}
+
+/* —— 标题:衬线 + 金菱形装饰(呼应品牌菱形元素) —— */
+[data-theme="burgundy"] h1,
+[data-theme="burgundy"] h2 {
+  font-family: var(--font-serif, "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif);
+}
+[data-theme="burgundy"] h2::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.55rem;
+  vertical-align: 1px;
+  background: var(--burgundy-gold);
+  transform: rotate(45deg);
+}
+
+/* —— 页头:暖白通透 —— */
+[data-theme="burgundy"] header {
+  background: rgba(253, 251, 248, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom-color: var(--burgundy-line);
+}
+
+/* —— Hero(唯一大面积深色):深酒红渐变 + 金晕 + 酒珠粒子(WineFx) —— */
+[data-theme="burgundy"] .aurora-hero {
+  background:
+    radial-gradient(64rem 30rem at 82% -16%, rgba(198, 161, 91, 0.22), transparent 60%),
+    radial-gradient(46rem 30rem at -8% 118%, rgba(142, 28, 46, 0.5), transparent 62%),
+    linear-gradient(158deg, #2a0a10 0%, #4a0e1b 46%, #6e1423 100%);
+  color: #fff;
+}
+[data-theme="burgundy"] .aurora-hero h1,
+[data-theme="burgundy"] .aurora-hero h2 {
+  color: #fff;
+}
+[data-theme="burgundy"] .aurora-hero p {
+  color: rgba(255, 255, 255, 0.82);
+}
+[data-theme="burgundy"] .aurora-hero .text-muted-foreground {
+  color: rgba(255, 255, 255, 0.8);
+}
+/* Hero 内主按钮换香槟金(深底语言);描边按钮白 */
+[data-theme="burgundy"] .aurora-hero a[class*="bg-primary"],
+[data-theme="burgundy"] .aurora-hero button[class*="bg-primary"] {
+  background-color: var(--burgundy-gold);
+  color: #2a1a08;
+}
+[data-theme="burgundy"] .aurora-hero a[class*="bg-primary"]:hover:not(:disabled) {
+  background-color: #d4b276;
+  box-shadow: 0 6px 18px rgba(198, 161, 91, 0.35);
+}
+[data-theme="burgundy"] .aurora-hero .btn-line,
+[data-theme="burgundy"] .aurora-hero a[class*="border"] {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+/* Hero 内次按钮(outline/secondary variant):深底上改幽灵描边样式,避免浅底配色不可读 */
+[data-theme="burgundy"] .aurora-hero .bg-secondary,
+[data-theme="burgundy"] .aurora-hero .bg-background {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+[data-theme="burgundy"] .aurora-hero .bg-background:hover {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+.wine-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* —— CTA 横幅:深酒红 + 金按钮(与 Hero 同语言) —— */
+[data-theme="burgundy"] .cta-banner {
+  background: linear-gradient(120deg, #3a0d15, #6e1423);
+  border-color: transparent;
+  color: #fff;
+}
+[data-theme="burgundy"] .cta-banner p {
+  color: rgba(255, 255, 255, 0.88);
+}
+[data-theme="burgundy"] .cta-banner a[class*="bg-primary"],
+[data-theme="burgundy"] .cta-banner button[class*="bg-primary"] {
+  background-color: var(--burgundy-gold);
+  color: #2a1a08;
+}
+
+/* —— 页脚:深酒红 + 金标题 —— */
+[data-theme="burgundy"] footer {
+  background: #2e0b12;
+  border-top: none;
+  color: rgba(255, 255, 255, 0.72);
+}
+[data-theme="burgundy"] footer a,
+[data-theme="burgundy"] footer .text-muted-foreground {
+  color: rgba(255, 255, 255, 0.6);
+}
+[data-theme="burgundy"] footer a:hover {
+  color: var(--burgundy-gold);
+}
+
+/* —— 入场编排:生长式淡入(曲线柔) —— */
+[data-theme="burgundy"] .aurora-rise {
+  animation: burgundy-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-theme="burgundy"] .aurora-rise:nth-child(2),
+[data-theme="burgundy"] .aurora-rise.aurora-delay-1 { animation-delay: 0.1s; }
+[data-theme="burgundy"] .aurora-rise:nth-child(3),
+[data-theme="burgundy"] .aurora-rise.aurora-delay-2 { animation-delay: 0.2s; }
+[data-theme="burgundy"] .aurora-rise.aurora-delay-3 { animation-delay: 0.3s; }
+@keyframes burgundy-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+[data-theme="burgundy"] .aurora-reveal {
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* —— 降级:偏好减弱动效的用户直接呈现终态 —— */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="burgundy"] .aurora-rise,
+  [data-theme="burgundy"] h2::before,
+  .aurora-reveal {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .wine-fx {
+    display: none;
+  }
+}

@@ -9,11 +9,20 @@ import { useEffect, useRef, type ReactNode } from "react";
  * 其他主题/偏好减弱动效的用户:原样渲染 children,零行为差异。
  */
 
+/** 当前生效主题名(V4.4.0 起 data-theme 挂在前台布局容器,不再在 <html> 上) */
+export function activeThemeName(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const el = document.querySelector("[data-theme]");
+  return el?.getAttribute("data-theme") ?? undefined;
+}
+
 function auroraActive(): boolean {
-  // V4.3:禾野(harvest)复用动效层(显现/视差);V4.2.1:窖藏(cellar)同此。
+  // V4.3:禾野(harvest)复用动效层(显现/视差);V4.2.1:窖藏(cellar)、V4.6:勃艮第(burgundy)同此。
   // 动画风格由各主题 CSS 段各自定义(本层只管"是否启用动效")
-  const t = typeof document !== "undefined" ? document.documentElement.dataset.theme : undefined;
-  return t === "aurora" || t === "harvest" || t === "cellar";
+  // V4.6 修复:V4.4.0 把 data-theme 从 <html> 挪到前台容器后,此处仍读 documentElement,
+  // 导致三主题的 Reveal/Parallax 自 V4.4.0 起失效——改读容器属性。
+  const t = activeThemeName();
+  return t === "aurora" || t === "harvest" || t === "cellar" || t === "burgundy";
 }
 
 function reducedMotion(): boolean {

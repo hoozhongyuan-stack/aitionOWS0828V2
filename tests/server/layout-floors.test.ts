@@ -111,3 +111,27 @@ describe("国内引擎白名单增补(C3)", () => {
     expect(names).toContain("PanguBot (华为盘古)");
   });
 });
+
+describe("V4.6 勃艮第主题包", () => {
+  it("preset 白名单含 burgundy(单一来源,zod 自动跟随)", async () => {
+    const { THEME_PRESETS_ALLOWED } = await import("@/lib/config");
+    expect(THEME_PRESETS_ALLOWED).toContain("burgundy");
+  });
+
+  it("getThemeConfig 可读取 burgundy 配置(往返)", async () => {
+    const { prisma } = await import("@/lib/db");
+    await prisma.setting.upsert({
+      where: { group_key: { group: "theme", key: "preset" } },
+      update: { value: JSON.stringify("burgundy") },
+      create: { group: "theme", key: "preset", value: JSON.stringify("burgundy") },
+    });
+    const { invalidateSettingCache } = await import("@/server/setting");
+    invalidateSettingCache("theme");
+    const { getThemeConfig } = await import("@/lib/config");
+    const cfg = await getThemeConfig();
+    expect(cfg.preset).toBe("burgundy");
+    // 还原本地原值(harvest),避免影响其它用例/演示
+    await prisma.setting.update({ where: { group_key: { group: "theme", key: "preset" } }, data: { value: JSON.stringify("harvest") } });
+    invalidateSettingCache("theme");
+  });
+});

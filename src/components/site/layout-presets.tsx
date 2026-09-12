@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { WineFx } from "@/components/site/wine-fx";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -49,8 +50,9 @@ export function CtaBanner({ text, href, label }: { text: string; href: string; l
   const [hidden] = useState(false);
   if (hidden) return null;
   return (
-    <section className="container pb-16">
-      <div className="flex flex-col items-center justify-between gap-4 rounded-xl border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 sm:flex-row">
+    <section className="container relative pb-16">
+      <WineFx />
+      <div className="cta-banner flex flex-col items-center justify-between gap-4 rounded-xl border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 sm:flex-row">
         <p className="text-lg font-medium">{text}</p>
         <Button asChild>
           <Link href={href}>

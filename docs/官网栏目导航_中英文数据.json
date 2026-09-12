@@ -1,0 +1,532 @@
+{
+  "_meta": {
+    "purpose": "官网栏目与导航的中英文定稿数据（可直接用于后台建栏目/建导航，或作为实现输入）",
+    "site": "aition.xin",
+    "locales": [
+      "zh-CN",
+      "en"
+    ],
+    "fieldMapping": {
+      "categories[].translations[locale].name": "CategoryTranslation.name",
+      "categories[].translations[locale].description": "CategoryTranslation.description（同时作为栏目页 meta description 与分享卡片描述）",
+      "navItems[].labelI18n": "NavItem.labelI18n (JSON)",
+      "navItems[].categorySlug": "NavItem.categoryId（按 slug 解析）",
+      "navItems[].url": "NavItem.url（与 categorySlug 二选一）"
+    },
+    "note": "navItems 的 sort 刻意用 21-25 / 31-33，使二级排在父项之后、下一个一级之前；parentKey 指向同级数组中的 key",
+    "source": "docs/官网栏目导航_中英文定稿.md",
+    "date": "2026-09-11"
+  },
+  "categories": [
+    {
+      "slug": "insight",
+      "moduleType": "article",
+      "sort": 10,
+      "parentSlug": null,
+      "translations": {
+        "zh-CN": {
+          "name": "酒业洞察",
+          "description": "酒行业的政策、渠道、营销、消费与企业动态观察。只做数据溯源、结论先行的独立判断，每篇回答一个具体的经营问题——面向酒企品牌方与酒类经销商的决策者。"
+        },
+        "en": {
+          "name": "Industry Insights",
+          "description": "Independent, sourced analysis of China's liquor industry — policy, channels, marketing and consumer trends, one real business question per piece."
+        }
+      }
+    },
+    {
+      "slug": "insight-channel",
+      "moduleType": "article",
+      "sort": 11,
+      "parentSlug": "insight",
+      "translations": {
+        "zh-CN": {
+          "name": "渠道与终端",
+          "description": "即时零售、前置仓与同城配送、DMS/B2B 订货、终端管理与供应链履约——渠道数字化怎么落地、坑在哪、账怎么算。主受众：区域经销商、连锁酒行与终端经营者。"
+        },
+        "en": {
+          "name": "Channels & Retail",
+          "description": "Instant retail, DMS/B2B ordering, outlet management and supply-chain fulfilment — how channel digitalisation lands, where it fails and what it costs."
+        }
+      }
+    },
+    {
+      "slug": "insight-consumer",
+      "moduleType": "article",
+      "sort": 12,
+      "parentSlug": "insight",
+      "translations": {
+        "zh-CN": {
+          "name": "消费者与会员",
+          "description": "消费者运营、会员体系、私域与用户数据资产，以及 CDP／SCRM／CRM 与数据中台的选型与实施经验。主受众：酒企营销、消费者运营与数字化负责人。"
+        },
+        "en": {
+          "name": "Consumers & Membership",
+          "description": "Consumer operations, membership, private domain and customer data assets, plus hands-on notes on CDP/SCRM/CRM and data platforms for brand teams."
+        }
+      }
+    },
+    {
+      "slug": "insight-code",
+      "moduleType": "article",
+      "sort": 13,
+      "parentSlug": "insight",
+      "translations": {
+        "zh-CN": {
+          "name": "一物一码与防窜货",
+          "description": "一物一码、扫码营销、渠道返利、防伪与防窜货——从一个码的建设成本，到动销数据能否真实留痕。主受众：酒企市场与渠道负责人、承担控价控货责任的总代。"
+        },
+        "en": {
+          "name": "Serialization & Anti-Diversion",
+          "description": "Item-level codes, scan-based marketing, channel rebates and anti-diversion — from the real cost of a code to whether sell-through data is truly captured."
+        }
+      }
+    },
+    {
+      "slug": "insight-scene",
+      "moduleType": "article",
+      "sort": 14,
+      "parentSlug": "insight",
+      "translations": {
+        "zh-CN": {
+          "name": "场景增长",
+          "description": "宴席酒、封坛酒、定制酒、回厂游与企业团购礼赠——把一个个消费场景做成可以运营的增长入口。主受众：酒企品牌方。"
+        },
+        "en": {
+          "name": "Consumption Scenarios",
+          "description": "Banquet liquor, sealed cask, custom bottling, distillery tours and corporate gifting — turning consumption occasions into operable growth entry points."
+        }
+      }
+    },
+    {
+      "slug": "insight-trend",
+      "moduleType": "article",
+      "sort": 15,
+      "parentSlug": "insight",
+      "translations": {
+        "zh-CN": {
+          "name": "行业动态与技术",
+          "description": "酒企新品、渠道变革、组织调整、财报与招投标动态，以及 AI、大模型、营销自动化等可迁移到酒行业的新技术。主受众：酒企与经销商的经营决策者。"
+        },
+        "en": {
+          "name": "Industry News & Technology",
+          "description": "New products, channel shifts, earnings and tender activity across liquor companies, plus AI and marketing automation transferable to the industry."
+        }
+      }
+    },
+    {
+      "slug": "solutions",
+      "moduleType": "article",
+      "sort": 20,
+      "parentSlug": null,
+      "translations": {
+        "zh-CN": {
+          "name": "解决方案",
+          "description": "六类系统能力与三档合作方式：即时零售、扫码营销、定制酒、封坛酒、回厂游、宴席酒。每个页面写清它解决什么问题、适合谁、和哪些业务场景对应。"
+        },
+        "en": {
+          "name": "Solutions",
+          "description": "Six system capabilities and three ways to engage — instant retail, scan-to-marketing, custom liquor, sealed cask, distillery tours and banquet liquor."
+        }
+      }
+    },
+    {
+      "slug": "instant-retail",
+      "moduleType": "article",
+      "sort": 21,
+      "parentSlug": "solutions",
+      "translations": {
+        "zh-CN": {
+          "name": "即时零售",
+          "description": "同城配送、多门店与前置仓的线上线下一体化：把门店和仓库接上网，让消费者在 30 分钟到 1 小时里买到酒。主受众：区域经销商、连锁酒行与终端门店。"
+        },
+        "en": {
+          "name": "Instant Retail",
+          "description": "Same-city delivery, multi-store and dark-store operations in one system — bringing outlets and warehouses online for 30–60 minute liquor delivery."
+        }
+      }
+    },
+    {
+      "slug": "scan-marketing",
+      "moduleType": "article",
+      "sort": 22,
+      "parentSlug": "solutions",
+      "translations": {
+        "zh-CN": {
+          "name": "扫码营销",
+          "description": "瓶盖码、箱码与渠道返利一体化：让每一瓶的去向可查、动销数据真实留痕，把促销费用发到真正卖货的人手上。主受众：酒企市场与渠道负责人。"
+        },
+        "en": {
+          "name": "Scan-to-Marketing",
+          "description": "Bottle and carton codes plus channel rebates — every bottle traceable, sell-through genuinely captured, spend reaching those who actually sell."
+        }
+      }
+    },
+    {
+      "slug": "custom-liquor",
+      "moduleType": "article",
+      "sort": 23,
+      "parentSlug": "solutions",
+      "translations": {
+        "zh-CN": {
+          "name": "定制酒",
+          "description": "企业礼赠、婚宴纪念与个性化包装的定制下单与生产协同：从选酒、选包装到交付进度都在线。主受众：酒企品牌方与承接企业团购的经销商。"
+        },
+        "en": {
+          "name": "Custom Liquor",
+          "description": "Custom ordering and production coordination for corporate gifting, wedding keepsakes and personalised packaging, from liquor selection to delivery status."
+        }
+      }
+    },
+    {
+      "slug": "sealed-cask",
+      "moduleType": "article",
+      "sort": 24,
+      "parentSlug": "solutions",
+      "translations": {
+        "zh-CN": {
+          "name": "封坛酒",
+          "description": "封坛认购、藏酒管理与取酒转赠的线上化：把窖藏做成可运营的高价值客户资产，而不是一张纸质凭证。主受众：有窖藏能力与高端客户群的酒企。"
+        },
+        "en": {
+          "name": "Sealed Cask",
+          "description": "Online management of cask sealing, cellar storage, withdrawal and gifting — turning cellar inventory into an operable high-value customer asset."
+        }
+      }
+    },
+    {
+      "slug": "distillery-tour",
+      "moduleType": "article",
+      "sort": 25,
+      "parentSlug": "solutions",
+      "translations": {
+        "zh-CN": {
+          "name": "回厂游",
+          "description": "酒庄与厂区参观、品鉴、接待与研学的预约和运营：把一次参观变成可追踪的客户旅程与复购入口。主受众：酒企品牌与市场团队。"
+        },
+        "en": {
+          "name": "Distillery Tour",
+          "description": "Booking and operations for distillery visits, tastings and study tours — turning one visit into a trackable customer journey and a repeat-purchase entry point."
+        }
+      }
+    },
+    {
+      "slug": "banquet-liquor",
+      "moduleType": "article",
+      "sort": 26,
+      "parentSlug": "solutions",
+      "translations": {
+        "zh-CN": {
+          "name": "宴席酒",
+          "description": "婚宴、寿宴、升学宴的场景化销售与费用管理：把宴席政策、用酒台账与终端激励放进同一套系统。主受众：区域经销商与承办宴席的终端门店。"
+        },
+        "en": {
+          "name": "Banquet Liquor",
+          "description": "Scenario-based selling for weddings, birthdays and school banquets — banquet policy, consumption records and outlet incentives in one system."
+        }
+      }
+    },
+    {
+      "slug": "engagement",
+      "moduleType": "article",
+      "sort": 27,
+      "parentSlug": "solutions",
+      "translations": {
+        "zh-CN": {
+          "name": "服务与合作方式",
+          "description": "品牌咨询、数字化系统落地、年度顾问三档合作方式，每档写清解决什么问题、交付什么、周期多长、不做什么。"
+        },
+        "en": {
+          "name": "Services & Engagement",
+          "description": "Brand consulting, digital system delivery and annual advisory — each stating what it solves, what it delivers, how long it takes and what it does not do."
+        }
+      }
+    },
+    {
+      "slug": "cases",
+      "moduleType": "case",
+      "sort": 30,
+      "parentSlug": null,
+      "translations": {
+        "zh-CN": {
+          "name": "案例",
+          "description": "已获授权的项目复盘，按背景、做法、数据与复盘四段呈现；未获授权的一律以“某头部酒企／某区域经销商”代称。"
+        },
+        "en": {
+          "name": "Case Studies",
+          "description": "Authorised project reviews in four parts: context, approach, results and reflection. Unauthorised engagements are anonymised."
+        }
+      }
+    },
+    {
+      "slug": "about",
+      "moduleType": "page",
+      "sort": 40,
+      "parentSlug": null,
+      "translations": {
+        "zh-CN": {
+          "name": "关于我",
+          "description": "我在酒行业的从业经历、亲手实施过的系统类型，以及我提供服务的方式与边界。"
+        },
+        "en": {
+          "name": "About",
+          "description": "My background in China's liquor industry, the systems I have personally delivered, and how I work with clients — including where my expertise ends."
+        }
+      }
+    }
+  ],
+  "navItems": [
+    {
+      "key": "home",
+      "sort": 10,
+      "parentKey": null,
+      "url": "/",
+      "labelI18n": {
+        "zh-CN": "首页",
+        "en": "Home"
+      }
+    },
+    {
+      "key": "nav-insight",
+      "sort": 20,
+      "parentKey": null,
+      "categorySlug": "insight",
+      "labelI18n": {
+        "zh-CN": "酒业洞察",
+        "en": "Industry Insights"
+      }
+    },
+    {
+      "key": "nav-insight-channel",
+      "sort": 21,
+      "parentKey": "nav-insight",
+      "categorySlug": "insight-channel",
+      "labelI18n": {
+        "zh-CN": "渠道与终端",
+        "en": "Channels & Retail"
+      }
+    },
+    {
+      "key": "nav-insight-consumer",
+      "sort": 22,
+      "parentKey": "nav-insight",
+      "categorySlug": "insight-consumer",
+      "labelI18n": {
+        "zh-CN": "消费者与会员",
+        "en": "Consumers & Membership"
+      }
+    },
+    {
+      "key": "nav-insight-code",
+      "sort": 23,
+      "parentKey": "nav-insight",
+      "categorySlug": "insight-code",
+      "labelI18n": {
+        "zh-CN": "一物一码与防窜货",
+        "en": "Serialization & Anti-Diversion"
+      }
+    },
+    {
+      "key": "nav-insight-scene",
+      "sort": 24,
+      "parentKey": "nav-insight",
+      "categorySlug": "insight-scene",
+      "labelI18n": {
+        "zh-CN": "场景增长",
+        "en": "Consumption Scenarios"
+      }
+    },
+    {
+      "key": "nav-insight-trend",
+      "sort": 25,
+      "parentKey": "nav-insight",
+      "categorySlug": "insight-trend",
+      "labelI18n": {
+        "zh-CN": "行业动态与技术",
+        "en": "Industry News & Technology"
+      }
+    },
+    {
+      "key": "nav-solutions",
+      "sort": 30,
+      "parentKey": null,
+      "categorySlug": "solutions",
+      "labelI18n": {
+        "zh-CN": "解决方案",
+        "en": "Solutions"
+      }
+    },
+    {
+      "key": "nav-instant-retail",
+      "sort": 31,
+      "parentKey": "nav-solutions",
+      "categorySlug": "instant-retail",
+      "labelI18n": {
+        "zh-CN": "即时零售",
+        "en": "Instant Retail"
+      }
+    },
+    {
+      "key": "nav-scan-marketing",
+      "sort": 32,
+      "parentKey": "nav-solutions",
+      "categorySlug": "scan-marketing",
+      "labelI18n": {
+        "zh-CN": "扫码营销",
+        "en": "Scan-to-Marketing"
+      }
+    },
+    {
+      "key": "nav-custom-liquor",
+      "sort": 33,
+      "parentKey": "nav-solutions",
+      "categorySlug": "custom-liquor",
+      "labelI18n": {
+        "zh-CN": "定制酒",
+        "en": "Custom Liquor"
+      }
+    },
+    {
+      "key": "nav-sealed-cask",
+      "sort": 34,
+      "parentKey": "nav-solutions",
+      "categorySlug": "sealed-cask",
+      "labelI18n": {
+        "zh-CN": "封坛酒",
+        "en": "Sealed Cask"
+      }
+    },
+    {
+      "key": "nav-distillery-tour",
+      "sort": 35,
+      "parentKey": "nav-solutions",
+      "categorySlug": "distillery-tour",
+      "labelI18n": {
+        "zh-CN": "回厂游",
+        "en": "Distillery Tour"
+      }
+    },
+    {
+      "key": "nav-banquet-liquor",
+      "sort": 36,
+      "parentKey": "nav-solutions",
+      "categorySlug": "banquet-liquor",
+      "labelI18n": {
+        "zh-CN": "宴席酒",
+        "en": "Banquet Liquor"
+      }
+    },
+    {
+      "key": "nav-engagement",
+      "sort": 37,
+      "parentKey": "nav-solutions",
+      "categorySlug": "engagement",
+      "labelI18n": {
+        "zh-CN": "服务与合作方式",
+        "en": "Services & Engagement"
+      }
+    },
+    {
+      "key": "nav-cases",
+      "sort": 40,
+      "parentKey": null,
+      "categorySlug": "cases",
+      "labelI18n": {
+        "zh-CN": "案例",
+        "en": "Case Studies"
+      }
+    },
+    {
+      "key": "nav-about",
+      "sort": 50,
+      "parentKey": null,
+      "url": "/article/about",
+      "labelI18n": {
+        "zh-CN": "关于我",
+        "en": "About"
+      }
+    }
+  ],
+  "footerLabels": {
+    "subscribe": {
+      "zh-CN": "订阅",
+      "en": "Subscribe"
+    },
+    "trackRecord": {
+      "zh-CN": "观点台账",
+      "en": "Track Record"
+    },
+    "contact": {
+      "zh-CN": "联系我们",
+      "en": "Contact Us"
+    },
+    "wechat": {
+      "zh-CN": "联系微信",
+      "en": "WeChat"
+    },
+    "officialAccount": {
+      "zh-CN": "公众号",
+      "en": "Official Account"
+    },
+    "terms": {
+      "zh-CN": "用户注册协议",
+      "en": "Terms of Registration"
+    },
+    "privacy": {
+      "zh-CN": "用户隐私政策",
+      "en": "Privacy Policy"
+    },
+    "cookies": {
+      "zh-CN": "Cookie 政策",
+      "en": "Cookie Policy"
+    }
+  },
+  "siteCopy": {
+    "heroTitle": {
+      "zh-CN": "让酒企的每一分投入，都看得见动销",
+      "en": "Make every yuan in liquor go where the sell-through is visible"
+    },
+    "heroSubtitle": {
+      "zh-CN": "酒行业品牌咨询与数字化系统落地：从渠道价格秩序，到消费者数据资产",
+      "en": "Brand consulting and digital system delivery for the liquor industry — from channel price order to customer data assets"
+    },
+    "heroCta": {
+      "zh-CN": "聊聊你的项目",
+      "en": "Talk to us"
+    },
+    "heroCtaSecondary": {
+      "zh-CN": "看看我们在看什么",
+      "en": "See what we track"
+    },
+    "latestNews": {
+      "zh-CN": "最新洞察",
+      "en": "Latest Insights"
+    },
+    "siteSubtitle": {
+      "zh-CN": "酒业数智增长观察站",
+      "en": "The Liquor Digital Growth Desk"
+    }
+  },
+  "seoMeta": [
+    {
+      "pageKey": "home",
+      "locale": "zh-CN",
+      "description": "酒业数智增长观察站：酒行业品牌咨询与数字化系统解决方案。监测政策、渠道、营销与消费趋势，输出数据溯源、结论先行的行业判断，服务酒企品牌方与酒类经销商。"
+    },
+    {
+      "pageKey": "home",
+      "locale": "en",
+      "description": "A desk tracking digital growth in China's liquor industry: brand consulting and digital system solutions for liquor brands, distilleries and distributors — policy, channels, marketing and consumer trends, with sourced and conclusion-first analysis."
+    },
+    {
+      "pageKey": "contact",
+      "locale": "zh-CN",
+      "description": "联系酒行业品牌咨询与数字化系统落地服务：告诉我们你遇到的渠道、动销或会员问题，我们会先判断问题值不值得做系统，再谈怎么做。"
+    },
+    {
+      "pageKey": "contact",
+      "locale": "en",
+      "description": "Talk to us about brand consulting and digital system delivery for the liquor industry. Tell us your channel, sell-through or membership problem — we will first judge whether it needs a system at all, then how to build it."
+    }
+  ]
+}

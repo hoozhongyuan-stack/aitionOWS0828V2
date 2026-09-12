@@ -101,6 +101,19 @@ const THEME_PRESETS: Record<string, { label: string; desc: string; values: Prese
       fontHeading: "Georgia, 'Times New Roman', 'Songti SC', SimSun, serif",
     },
   },
+  burgundy: {
+    label: "勃艮第",
+    desc: "酒红浅底·香槟金点缀·酒珠粒子动效,酒业专业刊物风(推荐)",
+    values: {
+      preset: "burgundy",
+      primary: "#8e1c2e",
+      secondary: "#f3ebdd",
+      background: "#fdfbf8",
+      foreground: "#261d18",
+      mutedTextColor: "#8a7b70",
+      radius: "0.875rem",
+    },
+  },
 };
 
 const FONT_PRESETS = [
