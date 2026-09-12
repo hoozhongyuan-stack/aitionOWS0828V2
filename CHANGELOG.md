@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.6.3 (2026-09-13)
+
+V4.6.3:富文本字号/颜色修复(用户验收发现"无法调整")
+
+修复:
+- 富文本编辑器字号/颜色不可用(三处叠加缺陷):①V4.6.2 插入工具栏下拉时脚本静默未命中(生产版本实际无下拉,用户找不到入口);②FontSize 扩展只加属性未定义命令,且与 TextStyle 同名重复注册互相覆盖;③消毒白名单 allowedAttributes.span=[] 使 style 在校验前被剥,allowedStyles 定向规则失效(即使保存成功前台渲染也会洗掉样式)
+- 现:合并为单一 TextStyleExt(color/fontSize 属性 + setColor/unsetColor/setFontSize/unsetFontSize 四命令);工具栏补字号(12~32px 档位)与颜色(品牌色板)两个下拉;sanitize 放行 span[style] 后定向规则生效
+
+质量:
+- 新增 3 例消毒白名单测试(hex/rgb 保留、position/background/javascript: 剥离、expression 剥离);213 测试全绿;lint/tsc 清零;生产构建通过;浏览器实测选中文字改色改字号输出正确
+
 ## 4.6.2 (2026-09-13)
 
 V4.6.2:体验修补批(7 项,用户验收反馈;方案 docs/V4.6.2升级计划.md)
