@@ -941,6 +941,10 @@ html [data-glass-header] header {
 [data-theme="burgundy"] footer .text-muted-foreground {
   color: rgba(255, 255, 255, 0.6);
 }
+/* footer 标题类文字(text-foreground):深酒红底上用香槟金(浅底主题卡的 foreground=墨色,直接落深底不可读) */
+[data-theme="burgundy"] footer .text-foreground {
+  color: var(--burgundy-gold);
+}
 [data-theme="burgundy"] footer a:hover {
   color: var(--burgundy-gold);
 }

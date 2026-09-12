@@ -91,7 +91,7 @@ export function SiteHeader({
 
         {/* PC 导航(字号/加粗由主题外观控制) */}
         <nav
-          className={cn("hidden items-center gap-1 md:flex", navBold && "font-semibold")}
+          className={cn("hidden items-center gap-2 md:flex", navBold && "font-semibold")}
           style={{ fontSize: navFontSize }}
           aria-label="主导航"
         >
@@ -101,20 +101,20 @@ export function SiteHeader({
                 href={item.href}
                 target={item.target}
                 className={cn(
-                  "rounded-md px-3 py-2 transition-colors hover:bg-accent hover:text-accent-foreground",
+                  "rounded-md px-4 py-2.5 transition-colors hover:bg-accent hover:text-accent-foreground",
                   pathname === item.href && "text-primary"
                 )}
               >
                 {item.label}
               </Link>
               {item.children.length > 0 && (
-                <div className="invisible absolute left-0 top-full z-50 min-w-40 rounded-md border bg-popover p-1 opacity-0 shadow-md transition-all group-hover:visible group-hover:opacity-100">
+                <div className="invisible absolute left-0 top-full z-50 mt-2 min-w-44 rounded-xl border bg-popover p-1.5 opacity-0 shadow-lg transition-all duration-150 translate-y-1 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 before:content-[''] before:absolute before:-top-2 before:left-0 before:h-2 before:w-full">
                   {item.children.map((child) => (
                     <Link
                       key={child.id}
                       href={child.href}
                       target={child.target}
-                      className="block rounded px-3 py-2 text-sm font-normal hover:bg-accent hover:text-accent-foreground"
+                      className="block rounded-lg px-3.5 py-2.5 text-sm font-normal hover:bg-accent hover:text-primary"
                     >
                       {child.label}
                     </Link>
