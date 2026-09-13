@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -106,18 +107,14 @@ export function AdminDialogHost() {
                   const po = req as Request & PromptOptions;
                   if (po.select) {
                     return (
-                      <select
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      <AdminSelect
+                        className="w-full"
                         value={value}
-                        onChange={(e) => setValue(e.target.value)}
+                        onChange={setValue}
+                        options={po.select}
+                        placeholder="请选择"
                         autoFocus
-                      >
-                        {po.select.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     );
                   }
                   return (

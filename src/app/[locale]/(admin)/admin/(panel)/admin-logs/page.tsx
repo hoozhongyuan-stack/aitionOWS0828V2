@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { apiGet } from "@/components/admin/api-client";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { Badge } from "@/components/ui/badge";
+import { AdminSelect } from "@/components/admin/admin-select";
 
 /**
  * 操作日志(V4.1,主账号专属):敏感写操作审计;按管理员/动作/日期筛选,每页 10|50|100。
@@ -86,21 +87,17 @@ export default function AdminLogsPage() {
             setPage(1);
           }}
         />
-        <select
-          className="rounded-md border bg-background px-2 py-1 text-sm"
+        <AdminSelect
+          className="w-40"
+          size="sm"
           value={actionPrefix}
-          onChange={(e) => {
-            setActionPrefix(e.target.value);
+          aria-label="动作类型筛选"
+          onChange={(v) => {
+            setActionPrefix(v);
             setPage(1);
           }}
-        >
-          <option value="">全部动作</option>
-          {ACTION_LABELS.map(([p, l]) => (
-            <option key={p} value={p}>
-              {l}
-            </option>
-          ))}
-        </select>
+          options={[{ value: "", label: "全部动作" }, ...ACTION_LABELS.map(([p, l]) => ({ value: p, label: l }))]}
+        />
         <Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} />
         <span className="text-muted-foreground">至</span>
         <Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} />

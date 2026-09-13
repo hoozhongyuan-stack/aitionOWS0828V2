@@ -414,7 +414,7 @@ export default function ContentAdminPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>定制发布</DialogTitle>
-            <DialogDescription className="truncate">
+            <DialogDescription className="line-clamp-2 break-words">
               {scheduleRow ? adminTitle(scheduleRow.translations, scheduleRow.slug) : ""}
             </DialogDescription>
           </DialogHeader>

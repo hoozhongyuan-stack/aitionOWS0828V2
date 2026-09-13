@@ -4,6 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { AdminSelect } from "@/components/admin/admin-select";
 
 /**
  * 商品栏目筛选条(V4.0):关键词 + 价格区间 + 排序。
@@ -66,16 +67,18 @@ export function ProductFilterBar({ currency }: { currency: string }) {
         onChange={(e) => setMax(e.target.value)}
         aria-label={t("max")}
       />
-      <select
-        className="rounded-md border bg-background px-2 py-1 text-sm"
+      <AdminSelect
+        className="w-36"
+        size="sm"
         value={activeSort}
-        onChange={(e) => apply({ sort: e.target.value })}
         aria-label={t("sort")}
-      >
-        <option value="latest">{t("sortLatest")}</option>
-        <option value="priceAsc">{t("sortPriceAsc")}</option>
-        <option value="priceDesc">{t("sortPriceDesc")}</option>
-      </select>
+        onChange={(v) => apply({ sort: v })}
+        options={[
+          { value: "latest", label: t("sortLatest") },
+          { value: "priceAsc", label: t("sortPriceAsc") },
+          { value: "priceDesc", label: t("sortPriceDesc") },
+        ]}
+      />
       <Button size="sm" variant="outline" onClick={() => apply({})}>
         {t("apply")}
       </Button>

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { logAdmin } from "@/server/admin";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { requirePerm } from "@/lib/auth/session";
-import { listMedia, updateMediaAlt, deleteMedia, listFolders, createFolder, renameFolder, deleteFolder, listAssetsForPicker, moveAssets } from "@/server/media";
+import { listMedia, updateMediaAlt, deleteMedia, listFolders, createFolder, renameFolder, deleteFolder, listAssetsForPicker, moveAssets, getFolderCounts } from "@/server/media";
 
 /** 文件管理:GET ?page=&mime=&folderId= 列表+文件夹树 / POST 动作分发(alt/文件夹 CRUD/移动) / DELETE ?id= */
 
@@ -34,13 +34,20 @@ export async function GET(req: Request) {
       })),
     });
   }
-  return jsonOk({
-    folders: await listFolders(),
-    ...(await listMedia({
+  // V4.6.5:透传 folderId/keyword(此前被忽略 → 分组切换与搜索无效),并附真实计数
+  const folderIdRaw = sp.get("folderId");
+  const [folders, counts, list] = await Promise.all([
+    listFolders(),
+    getFolderCounts(),
+    listMedia({
       page: Number(sp.get("page")) || 1,
+      pageSize: Number(sp.get("pageSize")) || 24,
       mime: sp.get("mime") || undefined,
-    })),
-  });
+      folderId: folderIdRaw === "unassigned" ? null : folderIdRaw === null || folderIdRaw === "" ? undefined : Number(folderIdRaw),
+      keyword: sp.get("keyword") || undefined,
+    }),
+  ]);
+  return jsonOk({ folders, counts, ...list });
 }
 
 export async function POST(req: Request) {

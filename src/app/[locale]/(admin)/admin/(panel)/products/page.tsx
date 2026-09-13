@@ -16,6 +16,7 @@ import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-
 import { TablePagination } from "@/components/admin/table-pagination";
 import { formatMoney } from "@/lib/utils";
 import { Pencil, Plus, List, LayoutGrid } from "lucide-react";
+import { AdminSelect } from "@/components/admin/admin-select";
 
 /**
  * 商品管理(V4.2,交易模块入口):数据为 Content(product 栏目),本页为专属管理视图;
@@ -146,22 +147,21 @@ export default function ProductsPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          className="rounded-md border bg-background px-2 py-1.5 text-sm"
+        <AdminSelect
+          className="w-44"
+          size="sm"
           value={categoryId}
-          onChange={(e) => {
+          aria-label="商品栏目筛选"
+          onChange={(v) => {
             batch.clear();
-            setCategoryId(e.target.value);
+            setCategoryId(v);
             setPage(1);
           }}
-        >
-          <option value="">全部商品栏目</option>
-          {(data?.categories ?? []).map((c) => (
-            <option key={c.id} value={c.id}>
-              {catName(c)}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: "全部商品栏目" },
+            ...(data?.categories ?? []).map((c) => ({ value: String(c.id), label: catName(c) })),
+          ]}
+        />
         <Input
           className="w-56"
           placeholder="搜索商品标题…"

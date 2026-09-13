@@ -35,11 +35,37 @@ export async function createMedia(
   return { ...asset, url: `/uploads/${asset.path}` };
 }
 
-/** 分页列出媒体资产 */
-export async function listMedia(opts: { page?: number; pageSize?: number; mime?: string }) {
+/**
+ * 分页列出媒体资产(V4.6.5:支持 folderId/keyword —— 此前仅 picker 分支支持,
+ * 普通列表传参被静默忽略,导致「切换分组右侧不变、搜索无效」)。
+ * folderId 语义:undefined=全部;null=未分类;数字=该文件夹(合并其子文件夹,与 picker 一致)。
+ */
+export async function listMedia(opts: {
+  page?: number;
+  pageSize?: number;
+  mime?: string;
+  folderId?: number | null;
+  keyword?: string;
+}) {
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = Math.min(100, opts.pageSize ?? 24);
-  const where = opts.mime ? { mime: { startsWith: opts.mime } } : {};
+  const where: Record<string, unknown> = {};
+  if (opts.folderId !== undefined) {
+    where.folderId =
+      opts.folderId === null
+        ? null
+        : {
+            in: [
+              opts.folderId,
+              ...(await prisma.mediaFolder.findMany({ where: { parentId: opts.folderId }, select: { id: true } })).map(
+                (c) => c.id
+              ),
+            ],
+          };
+  }
+  if (opts.mime) where.mime = { startsWith: opts.mime };
+  const kw = opts.keyword?.trim();
+  if (kw) where.filename = { contains: kw };
   const [total, items] = await Promise.all([
     prisma.mediaAsset.count({ where }),
     prisma.mediaAsset.findMany({
@@ -79,6 +105,34 @@ export async function listFolders() {
   const all = await prisma.mediaFolder.findMany({ orderBy: [{ sort: "asc" }, { id: "asc" }] });
   const roots = all.filter((f) => f.parentId == null);
   return roots.map((r) => ({ ...r, children: all.filter((c) => c.parentId === r.id) }));
+}
+
+/**
+ * 各文件夹的真实文件数(V4.6.5):一级 = 自身 + 其子文件夹合计;另返回未分类计数。
+ * 取代页面此前 `children.length + 1` 的占位算法。
+ */
+export async function getFolderCounts(): Promise<{ unassigned: number; byId: Record<number, number> }> {
+  const [unassigned, grouped, folders] = await Promise.all([
+    prisma.mediaAsset.count({ where: { folderId: null } }),
+    prisma.mediaAsset.groupBy({ by: ["folderId"], _count: { _all: true } }),
+    prisma.mediaFolder.findMany({ select: { id: true, parentId: true } }),
+  ]);
+  const direct = new Map<number, number>();
+  for (const g of grouped) {
+    if (g.folderId != null) direct.set(g.folderId, g._count._all);
+  }
+  const byId: Record<number, number> = {};
+  for (const f of folders) {
+    let n = direct.get(f.id) ?? 0;
+    if (f.parentId == null) {
+      // 一级文件夹:合计其所有子文件夹
+      for (const c of folders) {
+        if (c.parentId === f.id) n += direct.get(c.id) ?? 0;
+      }
+    }
+    byId[f.id] = n;
+  }
+  return { unassigned, byId };
 }
 
 /** 创建文件夹(parentId 仅允许一级 id——二级封顶);同名同级拒绝 */

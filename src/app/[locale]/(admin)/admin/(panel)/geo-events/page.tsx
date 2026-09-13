@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { apiGet } from "@/components/admin/api-client";
 import { TablePagination } from "@/components/admin/table-pagination";
+import { AdminSelect } from "@/components/admin/admin-select";
 
 /**
  * 访问明细(V4.1.1 独立页):AI 爬虫/渠道引荐逐条记录,时间/引擎/路径筛选+分页+CSV 导出。
@@ -195,21 +196,21 @@ export default function GeoEventsPage() {
           应用
         </Button>
         {eventType === "crawl" && (
-          <select
-            className="rounded-md border bg-background px-2 py-1.5 text-sm"
+          <AdminSelect
+            className="w-56"
+            size="sm"
             value={bot}
-            onChange={(e) => {
-              setBot(e.target.value);
+            aria-label="AI 引擎筛选"
+            searchThreshold={8}
+            onChange={(v) => {
+              setBot(v);
               setPage(1);
             }}
-          >
-            <option value="">全部引擎</option>
-            {knownBots.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "全部引擎" },
+              ...knownBots.map((b) => ({ value: b, label: b })),
+            ]}
+          />
         )}
         <Input
           className="w-48"

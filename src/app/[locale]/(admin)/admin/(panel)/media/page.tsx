@@ -35,6 +35,8 @@ type FolderNode = {
 
 type ListData = {
   folders: FolderNode[];
+  /** 真实文件计数(V4.6.5):未分类 + 各文件夹(一级含子级合计) */
+  counts?: { unassigned: number; byId: Record<string, number> };
   items: MediaRow[];
   total: number;
   page: number;
@@ -67,7 +69,8 @@ export default function MediaPage() {
 
   const load = useCallback(async () => {
     const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-    if (folder !== "") q.set("folderId", folder);
+    // V4.6.5:""=未分类(显式传 unassigned);数字串=指定文件夹;此前 "" 不传导致"未分类"显示全部文件
+    if (folder !== "all") q.set("folderId", folder === "" ? "unassigned" : folder);
     if (mime !== "all") q.set("mime", mime === "document" ? "application" : mime);
     if (keyword.trim()) q.set("keyword", keyword.trim());
     try {
@@ -217,6 +220,22 @@ export default function MediaPage() {
       <div className="flex gap-4">
         {/* 左侧文件夹列表 */}
         <aside className="w-44 shrink-0 space-y-1">
+          {/* 全部文件(V4.6.5):跨分组总览;未分类=仅 folderId IS NULL */}
+          <button
+            className={cn(
+              "block w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent",
+              folder === "all" && "bg-accent font-medium"
+            )}
+            onClick={() => {
+              setFolder("all");
+              setPage(1);
+              setSelected(new Set());
+            }}
+          >
+            <span className="flex items-center justify-between">
+              <span>全部文件</span>
+            </span>
+          </button>
           <button
             className={cn(
               "block w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent",
@@ -230,7 +249,7 @@ export default function MediaPage() {
           >
             <span className="flex items-center justify-between">
               <span>未分类</span>
-              <span className="text-xs text-muted-foreground">({data?.total ?? 0})</span>
+              <span className="text-xs text-muted-foreground">({data?.counts?.unassigned ?? 0})</span>
             </span>
           </button>
           {(data?.folders ?? []).map((f) => (
@@ -248,7 +267,9 @@ export default function MediaPage() {
               >
                 <span className="flex items-center justify-between">
                   <span className="truncate">{f.name}</span>
-                  <span className="text-xs text-muted-foreground">({f.children.length + 1})</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({data?.counts?.byId?.[String(f.id)] ?? 0})
+                  </span>
                 </span>
               </button>
               {f.children.map((c) => (
@@ -264,7 +285,10 @@ export default function MediaPage() {
                     setSelected(new Set());
                   }}
                 >
-                  └ {c.name}
+                  <span className="flex items-center justify-between">
+                    <span className="truncate">└ {c.name}</span>
+                    <span className="text-[10px]">({data?.counts?.byId?.[String(c.id)] ?? 0})</span>
+                  </span>
                 </button>
               ))}
             </div>
@@ -418,7 +442,7 @@ export default function MediaPage() {
           </div>
           {items.length === 0 && (
             <div className="rounded-lg border border-dashed p-16 text-center text-sm text-muted-foreground">
-              当前文件夹暂无文件
+              {folder === "all" ? "暂无任何文件" : folder === "" ? "「未分类」下暂无文件" : "该分组暂无文件"}
             </div>
           )}
         </div>

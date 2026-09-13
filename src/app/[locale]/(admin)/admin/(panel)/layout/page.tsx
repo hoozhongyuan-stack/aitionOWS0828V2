@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { apiGet, apiPut } from "@/components/admin/api-client";
+import { AdminSelect } from "@/components/admin/admin-select";
 
 /**
  * V3.2 页面布局配置(方案 A · 轻量):
@@ -208,28 +209,22 @@ export default function PageLayoutPage() {
               <div key={`${f.categoryId}-${i}`} className="rounded-lg border p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="w-12 text-sm font-medium text-muted-foreground">第 {i + 1} 层</span>
-                  <select
-                    className="rounded-md border bg-background px-2 py-1 text-sm"
-                    value={f.categoryId}
-                    onChange={(e) => updateFloor(i, { categoryId: Number(e.target.value) })}
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="rounded-md border bg-background px-2 py-1 text-sm"
+                  <AdminSelect
+                    className="w-44"
+                    size="sm"
+                    value={String(f.categoryId)}
+                    aria-label="楼层栏目"
+                    onChange={(v) => updateFloor(i, { categoryId: Number(v) })}
+                    options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
+                  />
+                  <AdminSelect
+                    className="w-28"
+                    size="sm"
                     value={f.style}
-                    onChange={(e) => updateFloor(i, { style: e.target.value as Floor["style"] })}
-                  >
-                    {FLOOR_STYLES.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
+                    aria-label="楼层样式"
+                    onChange={(v) => updateFloor(i, { style: v as Floor["style"] })}
+                    options={FLOOR_STYLES.map((s) => ({ value: s.key, label: s.label }))}
+                  />
                   <label className="flex items-center gap-1 text-sm text-muted-foreground">
                     条数
                     <input
