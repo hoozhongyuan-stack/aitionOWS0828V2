@@ -45,6 +45,11 @@ interface UserRow {
   _count: { comments: number };
   orderCount: number; // 名下订单数(V4.0.2)
 }
+/** 地区文本(国家 · 省 · 市,缺项自动跳过;全空返回空串) */
+function regionText(u: Pick<UserRow, "country" | "province" | "city">): string {
+  return [u.country, u.province, u.city].filter((v): v is string => !!v && v.trim() !== "").join(" · ");
+}
+
 interface ListData {
   total: number;
   page: number;
@@ -161,7 +166,7 @@ export default function UsersAdminPage() {
 
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">注册用户</h1>
         <p className="text-sm text-muted-foreground">共 {data?.total ?? "…"} 位用户;禁用后其会话与评论/投稿权限即刻失效。</p>
@@ -238,7 +243,7 @@ export default function UsersAdminPage() {
             </TableHead>
             <TableHead>用户</TableHead>
             <TableHead>登录方式</TableHead>
-            <TableHead>公司名称</TableHead>
+            <TableHead>资料</TableHead>
             <TableHead>评论数</TableHead>
             <TableHead>订单数</TableHead>
             <TableHead>注册时间</TableHead>
@@ -275,8 +280,17 @@ export default function UsersAdminPage() {
                   {u.wechatOpenId && <Badge variant="outline">微信</Badge>}
                 </div>
               </TableCell>
-              <TableCell className="max-w-48 truncate text-sm">
-                {u.companyName || <span className="text-muted-foreground">-</span>}
+              {/* 资料列(V4.6.7):公司名称 + 地区两行 —— 此前只有公司名称一列,后台填的
+                  国家/省/市在列表里无处可见;缺项自动跳过,全空显示 - */}
+              <TableCell className="text-sm">
+                <div className="max-w-56 truncate" title={u.companyName ?? undefined}>
+                  {u.companyName || <span className="text-muted-foreground">-</span>}
+                </div>
+                {regionText(u) ? (
+                  <div className="max-w-56 truncate text-xs text-muted-foreground" title={regionText(u)}>
+                    {regionText(u)}
+                  </div>
+                ) : null}
               </TableCell>
               <TableCell>{u._count.comments}</TableCell>
               <TableCell>

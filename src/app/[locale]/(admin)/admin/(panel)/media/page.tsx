@@ -193,7 +193,7 @@ export default function MediaPage() {
   const allChecked = items.length > 0 && items.every((i) => selected.has(i.id));
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4">
+    <div className="w-full space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">文件管理</h1>
         <label>

@@ -69,7 +69,7 @@ export default function SeoPage() {
   const setS = (k: string, val: unknown) => setV({ ...v, [k]: val });
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">SEO / GEO</h1>
         <p className="text-sm text-muted-foreground">

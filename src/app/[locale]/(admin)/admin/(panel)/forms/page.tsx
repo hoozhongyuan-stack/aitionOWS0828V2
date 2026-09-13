@@ -58,7 +58,7 @@ export default function FormsAdminPage() {
   if (!rows) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">表单管理</h1>

@@ -50,7 +50,7 @@ interface CommentRow {
 }
 
 function CommentsTab() {
-  const [status, setStatus] = useState("PENDING");
+  const [status, setStatus] = useState("ALL"); // V4.6.7:默认「全部」,与内容列表口径一致
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
@@ -184,7 +184,7 @@ function CommentsTab() {
               {data?.items.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    暂无{status === "PENDING" ? "待审核" : ""}评论
+                    {status === "ALL" ? "暂无评论" : "当前筛选下没有评论"}
                   </TableCell>
                 </TableRow>
               )}
@@ -263,7 +263,7 @@ interface SubmissionRow {
 }
 
 function SubmissionsTab() {
-  const [status, setStatus] = useState("PENDING");
+  const [status, setStatus] = useState("ALL"); // V4.6.7:默认「全部」,与内容列表口径一致
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
@@ -386,7 +386,7 @@ function SubmissionsTab() {
               {data?.items.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                    暂无投稿
+                    {status === "ALL" ? "暂无投稿" : "当前筛选下没有投稿"}
                   </TableCell>
                 </TableRow>
               )}
@@ -550,7 +550,7 @@ function WordsTab() {
 
 export default function UgcAdminPage() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">互动审核</h1>
         <p className="text-sm text-muted-foreground">所有 UGC 内容先审后发;互动总开关见「功能设置」。</p>

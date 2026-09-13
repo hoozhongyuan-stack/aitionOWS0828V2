@@ -109,6 +109,29 @@ describe("V4.6.4 口径分区:传统搜索白名单 + 疑似抓取启发式 + ki
     expect(geo.matchReferral("https://workbuddy.ai/x")).toBe("WorkBuddy");
   });
 
+  it("AI 引荐主域兜底匹配(V4.6.7):根域与子域都命中,仿冒域不命中", async () => {
+    const geo = await import("@/server/geo");
+    // 用户实测缺口:此前只写 chat.deepseek.com,根域与 www 都漏记
+    expect(geo.matchReferral("https://www.deepseek.com/a/chat")).toBe("DeepSeek");
+    expect(geo.matchReferral("https://chat.deepseek.com/a/chat/s/1")).toBe("DeepSeek");
+    // 子域覆盖:写主域一次即覆盖 www./m./chat.
+    expect(geo.matchReferral("https://m.doubao.com/chat/")).toBe("豆包");
+    expect(geo.matchReferral("https://www.qwen.ai/")).toBe("通义千问");
+    expect(geo.matchReferral("https://www.zhipuai.cn/")).toBe("智谱清言");
+    expect(geo.matchReferral("https://www.xfyun.cn/")).toBe("讯飞星火");
+    expect(geo.matchReferral("https://yuanbao.tencent.com/chat/x")).toBe("腾讯元宝");
+    // 边界:不以 ".域名" 结尾的仿冒/相邻域不得命中(旧子串匹配会误判)
+    expect(geo.matchReferral("https://deepseek.com.evil.com/x")).toBeNull();
+    expect(geo.matchReferral("https://notdeepseek.com/x")).toBeNull();
+    expect(geo.matchReferral("https://www.tencent.com/")).toBeNull(); // 腾讯网 ≠ 元宝
+    // 非标准 referer(无 scheme 的裸主机)退回子串兜底
+    expect(geo.matchReferral("chat.deepseek.com")).toBe("DeepSeek");
+    // 与搜索引擎互斥:百度系主域只归传统搜索,绝不落 AI(文心只认 wenxin/yiyan 子域)
+    expect(geo.matchReferral("https://www.baidu.com/s?wd=x")).toBeNull();
+    expect(geo.matchSearchReferral("https://www.baidu.com/s?wd=x")).toBe("百度搜索");
+    expect(geo.matchReferral("https://wenxin.baidu.com/")).toBe("文心一言");
+  });
+
   it("疑似抓取启发式:通用客户端 UA 命中,浏览器 UA 不命中", async () => {
     const geo = await import("@/server/geo");
     expect(geo.isGenericClient("node")).toBe(true);

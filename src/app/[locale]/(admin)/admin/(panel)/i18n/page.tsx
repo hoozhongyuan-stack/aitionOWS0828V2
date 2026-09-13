@@ -374,7 +374,7 @@ export default function I18nAdminPage() {
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">语言管理</h1>
         <p className="text-sm text-muted-foreground">多语言启用、界面文案与协议文本。</p>

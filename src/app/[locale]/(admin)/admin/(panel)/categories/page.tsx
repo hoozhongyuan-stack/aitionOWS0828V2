@@ -185,7 +185,7 @@ export default function CategoriesAdminPage() {
   const selectable = rows.map((r) => r.cat);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">栏目管理</h1>

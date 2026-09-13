@@ -118,35 +118,42 @@ export function matchSearchReferral(referer: string | null | undefined): string 
   return null;
 }
 
-/** AI 引荐渠道:referer host 关键字 → 渠道显示名 */
-export const AI_REFERRERS: ReadonlyArray<{ match: string; name: string }> = [
-  { match: "chatgpt.com", name: "ChatGPT" },
-  { match: "perplexity.ai", name: "Perplexity" },
-  { match: "doubao.com", name: "豆包" },
-  { match: "yuanbao.tencent.com", name: "腾讯元宝" },
-  { match: "grok.com", name: "Grok" },
-  { match: "copilot.microsoft.com", name: "Copilot" },
-  { match: "gemini.google.com", name: "Gemini" },
-  // 国内 AI 助手/搜索(V4.6.4 扩,域名均 DoH 核实;用户勾选 A 组 1-14 + Trae/WorkBuddy)
-  { match: "kimi.com", name: "Kimi" },
-  { match: "kimi.moonshot.cn", name: "Kimi" },
-  { match: "tongyi.com", name: "通义千问" },
-  { match: "qianwen.com", name: "通义千问" },
-  { match: "chatglm.cn", name: "智谱清言" },
-  { match: "chatglm.com", name: "智谱清言" },
-  { match: "zhipuai.cn", name: "智谱清言" },
-  { match: "wenxin.baidu.com", name: "文心一言" },
-  { match: "yiyan.baidu.com", name: "文心一言" },
-  { match: "chat.deepseek.com", name: "DeepSeek" },
-  { match: "metaso.cn", name: "秘塔 AI 搜索" },
-  { match: "tiangong.cn", name: "天工" },
-  { match: "xinghuo.xfyun.cn", name: "讯飞星火" },
-  { match: "n.cn", name: "纳米 AI 搜索(360)" },
-  { match: "quark.cn", name: "夸克" },
-  { match: "hailuoai.com", name: "海螺 AI" },
-  { match: "yuewen.cn", name: "跃问" },
-  { match: "trae.cn", name: "Trae" },
-  { match: "workbuddy.ai", name: "WorkBuddy" },
+/**
+ * AI 引荐渠道:referer 主机名 → 渠道显示名。
+ *
+ * 匹配规则(V4.6.7 改「主域名兜底」):host === 域名,或 host 以 ".域名" 结尾。
+ *   - 收益:主域写一次即覆盖 www./chat./m. 等所有子域。实测 deepseek.com 与
+ *     chat.deepseek.com 解析到同一 IP,此前只写 chat.deepseek.com 会漏掉根域引荐。
+ *   - 防误判:"deepseek.com.evil.com" 不以 ".deepseek.com" 结尾 → 不命中;
+ *     旧的子串匹配会把它误判成 DeepSeek,这是本次改法的关键差异。
+ *   - 铁律:凡与搜索引擎/通用站点共享主域的条目必须写全子域 —— 文心写
+ *     wenxin.baidu.com / yiyan.baidu.com,绝不能写 baidu.com,否则「百度搜索」会被
+ *     误记成 AI 引荐(引荐判定 AI 先于传统搜索,顺序见 app/[locale]/layout.tsx)。
+ *   - 域名均经 DoH 核实(2026-09-13 复核)。
+ */
+export const AI_REFERRERS: ReadonlyArray<{ name: string; domains: readonly string[] }> = [
+  { name: "ChatGPT", domains: ["chatgpt.com", "chat.openai.com"] },
+  { name: "Perplexity", domains: ["perplexity.ai"] },
+  { name: "豆包", domains: ["doubao.com"] },
+  { name: "腾讯元宝", domains: ["yuanbao.tencent.com"] },
+  { name: "Grok", domains: ["grok.com", "x.ai"] },
+  { name: "Copilot", domains: ["copilot.microsoft.com"] },
+  { name: "Gemini", domains: ["gemini.google.com"] },
+  // 国内 AI 助手/搜索(V4.6.4 建表,用户勾选 A 组 1-14 + Trae/WorkBuddy;V4.6.7 扩主域)
+  { name: "Kimi", domains: ["kimi.com", "moonshot.cn"] },
+  { name: "通义千问", domains: ["tongyi.com", "qianwen.com", "qwen.ai", "tongyi.aliyun.com"] },
+  { name: "智谱清言", domains: ["chatglm.cn", "chatglm.com", "zhipuai.cn", "z.ai"] },
+  { name: "文心一言", domains: ["wenxin.baidu.com", "yiyan.baidu.com"] },
+  { name: "DeepSeek", domains: ["deepseek.com"] },
+  { name: "秘塔 AI 搜索", domains: ["metaso.cn"] },
+  { name: "天工", domains: ["tiangong.cn"] },
+  { name: "讯飞星火", domains: ["xinghuo.xfyun.cn", "xfyun.cn"] },
+  { name: "纳米 AI 搜索(360)", domains: ["n.cn"] },
+  { name: "夸克", domains: ["quark.cn"] },
+  { name: "海螺 AI", domains: ["hailuoai.com"] },
+  { name: "跃问", domains: ["yuewen.cn"] },
+  { name: "Trae", domains: ["trae.cn"] },
+  { name: "WorkBuddy", domains: ["workbuddy.ai"] },
 ];
 
 /** UA → 引擎名;非 AI 爬虫返回 null */
@@ -159,12 +166,31 @@ export function matchBot(ua: string | null | undefined): string | null {
   return null;
 }
 
+/** 取 referer 主机名;非标准 URL(如 android-app://xxx 或裸字符串)返回 null */
+function refererHost(referer: string): string | null {
+  try {
+    return new URL(referer).hostname.toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** 主域兜底匹配:host 等于域名,或以 ".域名" 结尾(带点前缀,避免后缀仿冒域误判) */
+function hostMatchesDomain(host: string, domain: string): boolean {
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
 /** referer → 渠道名;非 AI 渠道返回 null */
 export function matchReferral(referer: string | null | undefined): string | null {
   if (!referer) return null;
+  const host = refererHost(referer);
   const lower = referer.toLowerCase();
   for (const r of AI_REFERRERS) {
-    if (lower.includes(r.match)) return r.name;
+    // 标准 URL 走主机名精确/子域匹配;非标准 referer(客户端自定义 scheme)退回子串兜底
+    const hit = host
+      ? r.domains.some((d) => hostMatchesDomain(host, d))
+      : r.domains.some((d) => lower.includes(d));
+    if (hit) return r.name;
   }
   return null;
 }
