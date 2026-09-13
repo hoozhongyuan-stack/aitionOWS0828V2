@@ -2,11 +2,14 @@
  * 数据库种子:首次部署自动初始化。
  * 内容:默认管理员、默认语言、默认主题/品牌/功能开关配置、基础敏感词。
  * 幂等:全部使用 upsert,可重复执行不产生重复数据。
+ * 演示夹具例外(V4.6.6):只在首次初始化播种,存量站点重启不会补回被删的演示内容——
+ * 判据见 src/server/seed/demo-guard.ts;需要全新部署不带演示数据时设 SEED_DEMO=0。
  *
  * 默认管理员账号:admin / admin888(生产首次登录后请立即修改)
  */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { decideDemoSeed, DEMO_SEED_MARKER } from "../src/server/seed/demo-guard";
 
 const prisma = new PrismaClient();
 
@@ -114,50 +117,14 @@ async function upsertSettings(group: string, obj: Record<string, unknown>) {
   }
 }
 
-async function main() {
-  // 启用 SQLite WAL(持久化设置,写一次即落库;与 src/lib/db.ts 双保险)
-  await prisma.$queryRawUnsafe("PRAGMA journal_mode=WAL;");
-
-  // 默认语言:简体中文(默认)+ 英文
-  await prisma.locale.upsert({
-    where: { code: "zh-CN" },
-    update: {},
-    create: { code: "zh-CN", name: "简体中文", isDefault: true, enabled: true, sort: 0 },
-  });
-  await prisma.locale.upsert({
-    where: { code: "en" },
-    update: {},
-    create: { code: "en", name: "English", isDefault: false, enabled: true, sort: 1 },
-  });
-
-  // 默认管理员
-  const passwordHash = await bcrypt.hash("admin888", 10);
-  await prisma.adminUser.upsert({
-    where: { username: "admin" },
-    update: {},
-    create: { username: "admin", passwordHash, displayName: "超级管理员", role: "admin" },
-  });
-
-  // 默认配置分组
-  await upsertSettings("theme", DEFAULT_THEME);
-  await upsertSettings("brand", DEFAULT_BRAND);
-  await upsertSettings("features", DEFAULT_FEATURES);
-  await upsertSettings("upload", DEFAULT_UPLOAD);
-  await upsertSettings("seo", DEFAULT_SEO);
-  await upsertSettings("wechat", DEFAULT_WECHAT);
-  await upsertSettings("errors", DEFAULT_ERRORS);
-  await upsertSettings("security", DEFAULT_SECURITY);
-
-  // 基础敏感词(示例,客户可后台增删)
-  const words = ["敏感词示例", "违禁词示例"];
-  for (const word of words) {
-    await prisma.sensitiveWord.upsert({
-      where: { word },
-      update: {},
-      create: { word },
-    });
-  }
-
+/**
+ * 演示夹具(news 栏目 + 欢迎内容 + 在线咨询表单 + 「产品中心」栏目树 + 演示商品)。
+ *
+ * ⚠️ 只允许在**首次初始化**时调用一次:这些行是 upsert「只补缺失」,在存量站点上重跑
+ *    会把管理员删掉的演示内容种回来(V4.6.5 发布事故)。是否调用由 decideDemoSeed 决定。
+ *    新库要预置演示数据 → 保持默认;不需要 → 设 SEED_DEMO=0。
+ */
+async function seedDemoFixtures() {
   // —— 验收/演示夹具(scripts/acceptance.mjs 依赖;同样只补缺失,客户删掉后重跑 seed 会还原)——
   const news = await prisma.category.upsert({
     where: { slug: "news" },
@@ -396,6 +363,84 @@ async function main() {
             },
           ],
         },
+      },
+    });
+  }
+}
+
+async function main() {
+  // 启用 SQLite WAL(持久化设置,写一次即落库;与 src/lib/db.ts 双保险)
+  await prisma.$queryRawUnsafe("PRAGMA journal_mode=WAL;");
+
+  // 默认语言:简体中文(默认)+ 英文
+  await prisma.locale.upsert({
+    where: { code: "zh-CN" },
+    update: {},
+    create: { code: "zh-CN", name: "简体中文", isDefault: true, enabled: true, sort: 0 },
+  });
+  await prisma.locale.upsert({
+    where: { code: "en" },
+    update: {},
+    create: { code: "en", name: "English", isDefault: false, enabled: true, sort: 1 },
+  });
+
+  // 默认管理员
+  const passwordHash = await bcrypt.hash("admin888", 10);
+  await prisma.adminUser.upsert({
+    where: { username: "admin" },
+    update: {},
+    create: { username: "admin", passwordHash, displayName: "超级管理员", role: "admin" },
+  });
+
+  // 默认配置分组
+  await upsertSettings("theme", DEFAULT_THEME);
+  await upsertSettings("brand", DEFAULT_BRAND);
+  await upsertSettings("features", DEFAULT_FEATURES);
+  await upsertSettings("upload", DEFAULT_UPLOAD);
+  await upsertSettings("seo", DEFAULT_SEO);
+  await upsertSettings("wechat", DEFAULT_WECHAT);
+  await upsertSettings("errors", DEFAULT_ERRORS);
+  await upsertSettings("security", DEFAULT_SECURITY);
+
+  // 基础敏感词(示例,客户可后台增删)
+  const words = ["敏感词示例", "违禁词示例"];
+  for (const word of words) {
+    await prisma.sensitiveWord.upsert({
+      where: { word },
+      update: {},
+      create: { word },
+    });
+  }
+
+  // —— 演示数据:仅首次初始化时播种(判据见 src/server/seed/demo-guard.ts)——
+  const demo = decideDemoSeed({
+    hasContent: (await prisma.content.count()) > 0,
+    hasCategory: (await prisma.category.count()) > 0,
+    hasForm: (await prisma.form.count()) > 0,
+    markerExists:
+      (await prisma.setting.findUnique({
+        where: { group_key: { group: DEMO_SEED_MARKER.group, key: DEMO_SEED_MARKER.key } },
+      })) !== null,
+    disabled: process.env.SEED_DEMO === "0",
+  });
+  if (demo.run) {
+    await seedDemoFixtures();
+    console.log("==> 演示数据已播种(首次初始化)");
+  } else {
+    console.log(`==> 跳过演示数据:${demo.reason}`);
+  }
+  if (demo.markInitialized) {
+    // 一次性标记:自此之后任何重启/发版都不再播种,即使管理员清空了全部内容
+    await prisma.setting.upsert({
+      where: { group_key: { group: DEMO_SEED_MARKER.group, key: DEMO_SEED_MARKER.key } },
+      update: {},
+      create: {
+        group: DEMO_SEED_MARKER.group,
+        key: DEMO_SEED_MARKER.key,
+        value: JSON.stringify({
+          seeded: demo.run,
+          at: new Date().toISOString(),
+        }),
       },
     });
   }
