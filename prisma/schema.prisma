@@ -440,6 +440,7 @@ model AICrawlStat {
   date  String // YYYY-MM-DD(服务器时区)
   path  String
   count Int    @default(1)
+  kind  String @default("ai") // ai | search | suspected(V4.6.4 口径分区)
 
   @@unique([bot, date, path])
   @@index([date, bot])
@@ -451,6 +452,7 @@ model AICrawlEvent {
   bot  String
   path String
   ua   String?
+  kind String   @default("ai") // ai | search | suspected(V4.6.4)
   ts   DateTime @default(now())
 
   @@index([bot, ts])
@@ -462,6 +464,7 @@ model AIReferralEvent {
   id      Int      @id @default(autoincrement())
   source  String
   landing String
+  kind    String   @default("ai") // ai | search(V4.6.4)
   ts      DateTime @default(now())
 
   @@index([source, ts])
@@ -471,11 +474,12 @@ model AIReferralEvent {
 /// AI 渠道引荐统计:来源×落地页×日期 计数(referer 白名单命中)
 model AIReferralStat {
   id       Int    @id @default(autoincrement())
-  source   String // AI 渠道域名(如 chatgpt.com / doubao.com)
+  source   String // 来源域名(AI 渠道 或 传统搜索引擎;V4.6.4 起含后者)
   landing  String // 落地页路径
   date     String
   count    Int    @default(1)
   visitors Int    @default(1)
+  kind     String @default("ai") // ai | search(V4.6.4 口径分区)
 
   @@unique([source, landing, date])
   @@index([date, source])

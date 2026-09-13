@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { adminName } from "@/lib/admin-display";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -343,7 +344,7 @@ export default function ContentEditPage() {
               <SelectContent>
                 {cats.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
-                    {c.translations[0]?.name ?? `#${c.id}`}
+                    {adminName(c.translations, `#${c.id}`)}
                   </SelectItem>
                 ))}
               </SelectContent>

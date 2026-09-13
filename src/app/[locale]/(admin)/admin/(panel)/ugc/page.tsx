@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { adminName, adminTitle, adminSummary, adminBody } from "@/lib/admin-display";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
@@ -216,7 +217,7 @@ function CommentsTab() {
                         className="text-primary hover:underline"
                         rel="noreferrer"
                       >
-                        {c.content.translations[0]?.title ?? c.content.slug}
+                        {adminTitle(c.content.translations, c.content.slug)}
                       </a>
                     </TableCell>
                     <TableCell>
@@ -403,10 +404,10 @@ function SubmissionsTab() {
                       />
                     </TableCell>
                     <TableCell className="max-w-64 truncate font-medium">
-                      {s.translations[0]?.title ?? s.slug}
+                      {adminTitle(s.translations, s.slug)}
                     </TableCell>
                     <TableCell>{s.authorName}</TableCell>
-                    <TableCell>{s.category.translations[0]?.name ?? s.category.slug}</TableCell>
+                    <TableCell>{adminName(s.category.translations, s.category.slug)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(s.createdAt).toLocaleDateString("zh-CN")}
                     </TableCell>
@@ -439,25 +440,25 @@ function SubmissionsTab() {
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{preview?.translations[0]?.title}</DialogTitle>
+            <DialogTitle>{adminTitle(preview?.translations)}</DialogTitle>
           </DialogHeader>
           {preview && (
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
                 {preview.authorName} · {new Date(preview.createdAt).toLocaleString("zh-CN")} ·{" "}
-                {preview.category.translations[0]?.name}
+                {adminName(preview.category.translations)}
               </div>
               {preview.coverUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={preview.coverUrl} alt="封面" className="w-full rounded-lg" />
               )}
-              {preview.translations[0]?.summary && (
-                <p className="rounded bg-muted p-3 text-sm">{preview.translations[0].summary}</p>
+              {adminSummary(preview.translations) && (
+                <p className="rounded bg-muted p-3 text-sm">{adminSummary(preview.translations)}</p>
               )}
               <div
                 className="rich-content"
                 // 投稿预览来自未信任用户,渲染前消毒,防止 XSS 打管理员会话
-                dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(preview.translations[0]?.body ?? "") }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(adminBody(preview.translations)) }}
               />
               {preview.status === "PENDING" && (
                 <div className="flex justify-end gap-2 border-t pt-4">

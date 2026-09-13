@@ -135,3 +135,23 @@ describe("V4.6 勃艮第主题包", () => {
     invalidateSettingCache("theme");
   });
 });
+
+describe("V4.6.4 后台展示名 helper(修栏目英文反模式)", () => {
+  it("en 排在首位时仍取中文(默认语言优先)", async () => {
+    const { adminName, adminTitle } = await import("@/lib/admin-display");
+    const rows = [
+      { locale: "en", name: "Industry Insights" },
+      { locale: "zh-CN", name: "酒业洞察" },
+    ];
+    expect(adminName(rows)).toBe("酒业洞察");
+    expect(adminName([{ locale: "en", name: "News" }])).toBe("News"); // 无中文回退首条
+    expect(adminName([])).toBe("-");
+    expect(adminName(undefined, "#9")).toBe("#9");
+    const titles = [
+      { locale: "en", title: "Hello" },
+      { locale: "zh-CN", title: "你好" },
+    ];
+    expect(adminTitle(titles)).toBe("你好");
+    expect(adminTitle(titles, "兜底")).toBe("你好");
+  });
+});

@@ -11,7 +11,14 @@ import { prisma } from "@/lib/db";
  * 口径:
  *   - date 为服务器时区 YYYY-MM-DD(与 DailyStat/week 口径一致)
  *   - 爬虫/引荐计数 upsert 累加;引用通知无行业标准,二期探测补充
+ *
+ * V4.6.4 口径分区(kind):'ai'(AI 引擎) / 'search'(传统搜索引擎) / 'suspected'(疑似 AI 抓取,推测)
+ *   - AI 与 传统搜索 **分开计数**,GEO 可见性指标不被传统搜索污染
+ *   - 'suspected' 为启发式(通用 UA 抓取),独立只读区块展示,不进正式指标
  */
+
+/** 统计口径(V4.6.4):ai=AI 引擎 | search=传统搜索引擎 | suspected=疑似 AI 抓取(推测) */
+export type GeoKind = "ai" | "search" | "suspected";
 
 /** 已知 AI 爬虫 UA 关键字 → 引擎显示名(小写包含匹配) */
 export const AI_BOTS: ReadonlyArray<{ match: string; name: string }> = [
@@ -38,6 +45,79 @@ export const AI_BOTS: ReadonlyArray<{ match: string; name: string }> = [
   { match: "pangubot", name: "PanguBot (华为盘古)" },
 ];
 
+/** 传统搜索引擎爬虫 UA 关键字 → 显示名(V4.6.4;与 AI 口径隔离统计) */
+export const SEARCH_BOTS: ReadonlyArray<{ match: string; name: string }> = [
+  { match: "baiduspider", name: "Baiduspider (百度)" },
+  { match: "sogou web spider", name: "Sogou web spider (搜狗)" },
+  { match: "sogou inst spider", name: "Sogou inst spider (搜狗)" },
+  { match: "360spider", name: "360Spider (360 搜索)" },
+  { match: "haosouspider", name: "HaosouSpider (360 好搜)" },
+  { match: "shenmaspider", name: "ShenmaSpider (神马/移动)" },
+  { match: "yisouspider", name: "YisouSpider (一搜)" },
+  { match: "bingbot", name: "Bingbot (微软 Bing)" },
+];
+
+/** 传统搜索引擎引荐:referer host 关键字 → 显示名(V4.6.4) */
+export const SEARCH_REFERRERS: ReadonlyArray<{ match: string; name: string }> = [
+  { match: "baidu.com", name: "百度搜索" },
+  { match: "so.com", name: "360 搜索" },
+  { match: "sogou.com", name: "搜狗搜索" },
+  { match: "sm.cn", name: "神马搜索" },
+  { match: "bing.com", name: "Bing" },
+  { match: "google.", name: "Google 搜索" },
+];
+
+/**
+ * 疑似 AI 抓取启发式(V4.6.4):通用 HTTP 客户端 UA —— 这类抓取多来自
+ * AI 开发/办公工具(WorkBuddy/Trae/ZCode 等按需抓取)或脚本,无产品标识。
+ * 仅作"推测"分区展示;中间件不经过静态资源,"同 IP 不取静态资源"信号无法观测(已知限制)。
+ */
+const GENERIC_CLIENT_PATTERNS = [
+  "node",
+  "undici",
+  "python-requests",
+  "python-urllib",
+  "httpx",
+  "aiohttp",
+  "curl",
+  "wget",
+  "go-http-client",
+  "okhttp",
+  "java/",
+  "axios",
+  "guzzle",
+  "scrapy",
+  "libwww-perl",
+  "postmanruntime",
+];
+
+/** UA 是否为通用 HTTP 客户端(疑似爬取脚本/AI 工具按需抓取) */
+export function isGenericClient(ua: string | null | undefined): boolean {
+  if (!ua) return false;
+  const lower = ua.toLowerCase();
+  return GENERIC_CLIENT_PATTERNS.some((p) => lower.includes(p));
+}
+
+/** UA → 传统搜索引擎名;非搜索爬虫返回 null */
+export function matchSearchBot(ua: string | null | undefined): string | null {
+  if (!ua) return null;
+  const lower = ua.toLowerCase();
+  for (const b of SEARCH_BOTS) {
+    if (lower.includes(b.match)) return b.name;
+  }
+  return null;
+}
+
+/** referer → 传统搜索引擎名 */
+export function matchSearchReferral(referer: string | null | undefined): string | null {
+  if (!referer) return null;
+  const lower = referer.toLowerCase();
+  for (const r of SEARCH_REFERRERS) {
+    if (lower.includes(r.match)) return r.name;
+  }
+  return null;
+}
+
 /** AI 引荐渠道:referer host 关键字 → 渠道显示名 */
 export const AI_REFERRERS: ReadonlyArray<{ match: string; name: string }> = [
   { match: "chatgpt.com", name: "ChatGPT" },
@@ -47,7 +127,26 @@ export const AI_REFERRERS: ReadonlyArray<{ match: string; name: string }> = [
   { match: "grok.com", name: "Grok" },
   { match: "copilot.microsoft.com", name: "Copilot" },
   { match: "gemini.google.com", name: "Gemini" },
+  // 国内 AI 助手/搜索(V4.6.4 扩,域名均 DoH 核实;用户勾选 A 组 1-14 + Trae/WorkBuddy)
+  { match: "kimi.com", name: "Kimi" },
   { match: "kimi.moonshot.cn", name: "Kimi" },
+  { match: "tongyi.com", name: "通义千问" },
+  { match: "qianwen.com", name: "通义千问" },
+  { match: "chatglm.cn", name: "智谱清言" },
+  { match: "chatglm.com", name: "智谱清言" },
+  { match: "zhipuai.cn", name: "智谱清言" },
+  { match: "wenxin.baidu.com", name: "文心一言" },
+  { match: "yiyan.baidu.com", name: "文心一言" },
+  { match: "chat.deepseek.com", name: "DeepSeek" },
+  { match: "metaso.cn", name: "秘塔 AI 搜索" },
+  { match: "tiangong.cn", name: "天工" },
+  { match: "xinghuo.xfyun.cn", name: "讯飞星火" },
+  { match: "n.cn", name: "纳米 AI 搜索(360)" },
+  { match: "quark.cn", name: "夸克" },
+  { match: "hailuoai.com", name: "海螺 AI" },
+  { match: "yuewen.cn", name: "跃问" },
+  { match: "trae.cn", name: "Trae" },
+  { match: "workbuddy.ai", name: "WorkBuddy" },
 ];
 
 /** UA → 引擎名;非 AI 爬虫返回 null */
@@ -76,29 +175,55 @@ function today(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** 记录一次 AI 爬虫抓取(按 引擎+日期+路径 upsert 累加);失败静默不阻断渲染 */
-export async function recordCrawl(bot: string, path: string, ua?: string): Promise<void> {
+/** 记录一次爬虫抓取(按 引擎+日期+路径 upsert 累加);kind: ai | search | suspected */
+export async function recordCrawl(
+  bot: string,
+  path: string,
+  ua?: string,
+  kind: GeoKind = "ai"
+): Promise<void> {
   const p = path.slice(0, 200) || "/";
+  // 疑似抓取:日采样上限(超出只累加聚合计数,不再存明细,防噪声爆库)
+  const storeEvent = kind !== "suspected" || bumpSuspectedSampling();
   try {
-    // 聚合(趋势/Top 高效) + 明细(下钻搜索) 双写;明细保留 180 天(清理见 listRetentionNote)
     await prisma.$transaction([
       prisma.aICrawlStat.upsert({
         where: { bot_date_path: { bot, date: today(), path: p } },
         update: { count: { increment: 1 } },
-        create: { bot, date: today(), path: p, count: 1 },
+        create: { bot, date: today(), path: p, count: 1, kind },
       }),
-      prisma.aICrawlEvent.create({ data: { bot, path: p, ua: ua?.slice(0, 300) } }),
+      ...(storeEvent
+        ? [prisma.aICrawlEvent.create({ data: { bot, path: p, ua: ua?.slice(0, 300), kind } })]
+        : []),
     ]);
   } catch (e) {
     console.error("[geo] 爬虫记录失败:", e);
   }
 }
 
-/** 记录一次 AI 渠道引荐(渠道+落地页+日期 upsert 累加,访客按会话级去重由调用方传入) */
-export async function recordReferral(source: string, landing: string, isNewVisitor: boolean): Promise<void> {
+/** 疑似抓取日采样上限(V4.6.4):进程内计数,跨日自动重置 */
+export const SUSPECTED_DAILY_SAMPLE_LIMIT = 200;
+const g = globalThis as unknown as { __suspectSample?: { date: string; n: number } };
+function bumpSuspectedSampling(): boolean {
+  const d = today();
+  const cur = g.__suspectSample ?? (g.__suspectSample = { date: d, n: 0 });
+  if (cur.date !== d) {
+    cur.date = d;
+    cur.n = 0;
+  }
+  cur.n += 1;
+  return cur.n <= SUSPECTED_DAILY_SAMPLE_LIMIT;
+}
+
+/** 记录一次引荐(渠道+落地页+日期 upsert 累加);kind: ai | search */
+export async function recordReferral(
+  source: string,
+  landing: string,
+  isNewVisitor: boolean,
+  kind: GeoKind = "ai"
+): Promise<void> {
   const p = landing.slice(0, 200) || "/";
   try {
-    // 聚合 + 明细 双写(引荐点击事件秒级留痕)
     await prisma.$transaction([
       prisma.aIReferralStat.upsert({
         where: { source_landing_date: { source, landing: p, date: today() } },
@@ -106,9 +231,9 @@ export async function recordReferral(source: string, landing: string, isNewVisit
           count: { increment: 1 },
           ...(isNewVisitor ? { visitors: { increment: 1 } } : {}),
         },
-        create: { source, landing: p, date: today(), count: 1, visitors: 1 },
+        create: { source, landing: p, date: today(), count: 1, visitors: 1, kind },
       }),
-      prisma.aIReferralEvent.create({ data: { source, landing: p } }),
+      prisma.aIReferralEvent.create({ data: { source, landing: p, kind } }),
     ]);
   } catch (e) {
     console.error("[geo] 引荐记录失败:", e);
@@ -116,24 +241,24 @@ export async function recordReferral(source: string, landing: string, isNewVisit
 }
 
 /** 后台 GEO 监测聚合:趋势/Top 页面/引荐表(from/to 为 YYYY-MM-DD,默认近 7 天) */
-export async function getGeoMonitorStats(from: string, to: string) {
+export async function getGeoMonitorStats(from: string, to: string, kind: GeoKind = "ai") {
   const [crawlTrend, topPages, referrals] = await Promise.all([
     prisma.aICrawlStat.groupBy({
       by: ["date", "bot"],
-      where: { date: { gte: from, lte: to } },
+      where: { date: { gte: from, lte: to }, kind },
       _sum: { count: true },
       orderBy: { date: "asc" },
     }),
     prisma.aICrawlStat.groupBy({
       by: ["path", "bot"],
-      where: { date: { gte: from, lte: to } },
+      where: { date: { gte: from, lte: to }, kind },
       _sum: { count: true },
       orderBy: { _sum: { count: "desc" } },
       take: 10,
     }),
     prisma.aIReferralStat.groupBy({
       by: ["source", "landing"],
-      where: { date: { gte: from, lte: to } },
+      where: { date: { gte: from, lte: to }, kind: kind === "suspected" ? "ai" : kind },
       _sum: { count: true, visitors: true },
       orderBy: { _sum: { count: "desc" } },
       take: 10,
@@ -179,8 +304,9 @@ export interface GeoEventFilter {
 }
 
 /** 爬虫事件明细分页列表 */
-export async function listCrawlEvents(f: GeoEventFilter) {
+export async function listCrawlEvents(f: GeoEventFilter, kind: GeoKind = "ai") {
   const where = {
+    kind,
     ...(f.bot ? { bot: f.bot } : {}),
     ...(f.pathLike ? { path: { contains: f.pathLike } } : {}),
     ts: dateRange(f.from, f.to),
@@ -200,8 +326,9 @@ export async function listCrawlEvents(f: GeoEventFilter) {
 }
 
 /** 引荐事件明细分页列表 */
-export async function listReferralEvents(f: GeoEventFilter) {
+export async function listReferralEvents(f: GeoEventFilter, kind: GeoKind = "ai") {
   const where = {
+    kind: kind === "suspected" ? "ai" : kind,
     ...(f.source ? { source: f.source } : {}),
     ...(f.pathLike ? { landing: { contains: f.pathLike } } : {}),
     ts: dateRange(f.from, f.to),

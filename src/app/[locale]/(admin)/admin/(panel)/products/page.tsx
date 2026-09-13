@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { adminName } from "@/lib/admin-display";
 import Link from "next/link";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/admin/dialogs";
@@ -100,7 +101,7 @@ export default function ProductsPage() {
   useEffect(load, [load]);
 
   const catName = (c: { translations: { locale: string; name: string }[] }) =>
-    (c.translations.find((t) => t.locale === "zh-CN") ?? c.translations[0])?.name ?? "-";
+    adminName(c.translations);
 
   /** V4.4.0 批量动作:商品是 Content(product 栏目),后端复用内容批量端点 */
   async function doBatch(action: string) {

@@ -1,6 +1,6 @@
 import { jsonErr, jsonOk } from "@/lib/api";
 import { requirePerm } from "@/lib/auth/session";
-import { AI_BOTS, getGeoMonitorStats, listCrawlEvents, listReferralEvents } from "@/server/geo";
+import { AI_BOTS, SEARCH_BOTS, getGeoMonitorStats, listCrawlEvents, listReferralEvents, type GeoKind } from "@/server/geo";
 
 /**
  * GEO 监测数据:GET /api/admin/geo-monitor?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -16,6 +16,11 @@ export async function GET(req: Request) {
 
   const sp = new URL(req.url).searchParams;
 
+  // 口径(V4.6.4):ai(默认) | search | suspected——AI 与传统搜索分开统计
+  const kindParam = sp.get("kind");
+  const kind: GeoKind =
+    kindParam === "search" || kindParam === "suspected" ? kindParam : "ai";
+
   // 明细查询(V3.2.1):type=events 时返回爬虫/引荐事件明细分页
   if (sp.get("type") === "events") {
     const f = {
@@ -29,7 +34,7 @@ export async function GET(req: Request) {
     };
     const type = sp.get("eventType") === "referral" ? "referral" : "crawl";
     const result =
-      type === "referral" ? await listReferralEvents(f) : await listCrawlEvents(f);
+      type === "referral" ? await listReferralEvents(f, kind) : await listCrawlEvents(f, kind);
     return jsonOk(result);
   }
 
@@ -53,6 +58,9 @@ export async function GET(req: Request) {
     return jsonErr("from/to 必须成对出现", 400);
   }
 
-  const stats = await getGeoMonitorStats(range.from, range.to);
-  return jsonOk({ ...stats, knownBots: AI_BOTS.map((b) => b.name) });
+  const stats = await getGeoMonitorStats(range.from, range.to, kind);
+  // 下拉选项:ai→AI 引擎;search→传统搜索引擎;suspected→无固定名单(自由文本)
+  const knownBots =
+    kind === "search" ? SEARCH_BOTS.map((b) => b.name) : kind === "ai" ? AI_BOTS.map((b) => b.name) : [];
+  return jsonOk({ ...stats, kind, knownBots });
 }

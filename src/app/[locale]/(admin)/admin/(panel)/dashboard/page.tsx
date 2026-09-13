@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet } from "@/components/admin/api-client";
+import { TrendChart } from "@/components/admin/trend-chart";
 import {
   PRESET_DAYS,
   presetRange,
@@ -82,7 +83,6 @@ export default function DashboardPage() {
   if (!stats) return <div className="text-sm text-muted-foreground">加载中…</div>;
 
   const trend = resolveTrendSeries(stats);
-  const maxPv = Math.max(1, ...trend.map((d) => d.pv));
   const pendingTotal = stats.totals.pendingComments + stats.totals.pendingSubmissions;
 
   const cards = [
@@ -185,22 +185,8 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* 区间可达 90+ 天:横向滚动,列宽固定,date 完整展示 YYYY-MM-DD */}
-          <div className="overflow-x-auto">
-            <div className="flex h-40 min-w-max items-end gap-2">
-              {trend.map((d) => (
-                <div key={d.date} className="flex w-9 flex-none flex-col items-center gap-1">
-                  <span className="text-xs text-muted-foreground">{d.pv}</span>
-                  <div
-                    className="w-full rounded-t bg-primary/80 transition-all"
-                    style={{ height: `${Math.max(4, (d.pv / maxPv) * 110)}px` }}
-                    title={`${d.date}:PV ${d.pv} / UV ${d.uv}`}
-                  />
-                  <span className="text-[10px] text-muted-foreground">{d.date}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* V4.6.4:SVG 面积折线图(刻度/网格/hover 浮层/禁选中) */}
+          <TrendChart data={trend.map((d) => ({ date: d.date, pv: d.pv, uv: d.uv }))} />
         </CardContent>
       </Card>
 

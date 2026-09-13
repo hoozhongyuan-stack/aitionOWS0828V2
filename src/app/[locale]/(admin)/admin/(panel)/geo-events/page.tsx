@@ -38,7 +38,12 @@ function fmtRange(days: number) {
 }
 
 export default function GeoEventsPage() {
-  const [eventType, setEventType] = useState<"crawl" | "referral">("crawl");
+  // V4.6.4 五类口径:AI 爬虫 / 搜索引擎 / 疑似抓取 / AI 引荐 / 搜索引荐
+  type TabKey = "ai-crawl" | "search-crawl" | "suspected-crawl" | "ai-referral" | "search-referral";
+  const [tab, setTab] = useState<TabKey>("ai-crawl");
+  const eventType: "crawl" | "referral" = tab.endsWith("referral") ? "referral" : "crawl";
+  const kind: "ai" | "search" | "suspected" =
+    tab.startsWith("search") ? "search" : tab.startsWith("suspected") ? "suspected" : "ai";
   const [range, setRange] = useState(fmtRange(7));
   const [custom, setCustom] = useState({ from: "", to: "" });
   const [bot, setBot] = useState("");
@@ -52,6 +57,7 @@ export default function GeoEventsPage() {
     const qs = new URLSearchParams({
       type: "events",
       eventType,
+      kind,
       from: range.from,
       to: range.to,
       page: String(page),
@@ -67,19 +73,19 @@ export default function GeoEventsPage() {
     } catch {
       toast.error("明细加载失败");
     }
-  }, [eventType, range, page, pageSize, bot, pathLike]);
+  }, [eventType, kind, range, page, pageSize, bot, pathLike]);
   useEffect(() => {
     void load();
   }, [load]);
 
   // 引擎下拉选项(白名单常量经 stats 接口带出;缓存一次)
   useEffect(() => {
-    const qs = new URLSearchParams({ from: range.from, to: range.to });
+    const qs = new URLSearchParams({ from: range.from, to: range.to, kind });
     apiGet<{ knownBots?: string[] }>(`/api/admin/geo-monitor?${qs}`)
       .then((d) => setKnownBots(d.knownBots ?? []))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [kind]);
 
   function exportCsv() {
     const items = data?.items ?? [];
@@ -89,8 +95,8 @@ export default function GeoEventsPage() {
     }
     const rows = items.map((i) =>
       eventType === "crawl"
-        ? { ts: i.ts, bot: i.bot ?? "", path: i.path ?? "", ua: i.ua ?? "" }
-        : { ts: i.ts, source: i.source ?? "", landing: i.landing ?? "" }
+        ? { kind, ts: i.ts, bot: i.bot ?? "", path: i.path ?? "", ua: i.ua ?? "" }
+        : { kind, ts: i.ts, source: i.source ?? "", landing: i.landing ?? "" }
     );
     const head = Object.keys(rows[0]).join(",");
     const csv =
@@ -98,7 +104,7 @@ export default function GeoEventsPage() {
     const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `geo-${eventType}-${range.from}_${range.to}.csv`;
+    a.download = `geo-${tab}-${range.from}_${range.to}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -115,27 +121,34 @@ export default function GeoEventsPage() {
       </div>
 
       {/* 类型 Tab + 时间 + 筛选 */}
+      {tab === "suspected-crawl" && (
+        <p className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+          ⚠️ 推测口径:通用客户端 UA + 无 Cookie + 无站内来源的抓取;无法归因具体产品,可能含 RSS/监控/脚本噪声,请勿作为正式指标。
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant={eventType === "crawl" ? "default" : "outline"}
-          onClick={() => {
-            setEventType("crawl");
-            setPage(1);
-          }}
-        >
-          爬虫明细
-        </Button>
-        <Button
-          size="sm"
-          variant={eventType === "referral" ? "default" : "outline"}
-          onClick={() => {
-            setEventType("referral");
-            setPage(1);
-          }}
-        >
-          引荐明细
-        </Button>
+        {(
+          [
+            ["ai-crawl", "AI 爬虫"],
+            ["search-crawl", "搜索引擎"],
+            ["suspected-crawl", "疑似抓取"],
+            ["ai-referral", "AI 引荐"],
+            ["search-referral", "搜索引荐"],
+          ] as [TabKey, string][]
+        ).map(([k, label]) => (
+          <Button
+            key={k}
+            size="sm"
+            variant={tab === k ? "default" : "outline"}
+            onClick={() => {
+              setTab(k);
+              setBot("");
+              setPage(1);
+            }}
+          >
+            {label}
+          </Button>
+        ))}
         <span className="ml-2 text-sm text-muted-foreground">时间:</span>
         {RANGES.map((r) => (
           <Button
@@ -215,7 +228,17 @@ export default function GeoEventsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{eventType === "crawl" ? "AI 爬虫明细" : "AI 渠道引荐明细"}</CardTitle>
+          <CardTitle>
+            {tab === "ai-crawl"
+              ? "AI 爬虫明细"
+              : tab === "search-crawl"
+                ? "传统搜索引擎明细"
+                : tab === "suspected-crawl"
+                  ? "疑似 AI 抓取明细(推测口径)"
+                  : tab === "ai-referral"
+                    ? "AI 渠道引荐明细"
+                    : "搜索引擎引荐明细"}
+          </CardTitle>
           <CardDescription>共 {data?.total ?? "…"} 条</CardDescription>
         </CardHeader>
         <CardContent>

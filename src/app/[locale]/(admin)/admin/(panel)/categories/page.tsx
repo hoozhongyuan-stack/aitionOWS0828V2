@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { adminName } from "@/lib/admin-display";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
@@ -21,12 +22,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiGet, apiPut, apiDelete } from "@/components/admin/api-client";
 import { useBatchSelection } from "@/components/admin/use-batch-selection";
 import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
-import { routing } from "@/i18n/routing";
 
 /** 后台列表显示名:优先站点默认语言(zh-CN),缺失回退首条翻译(修复后台显示英文) */
-const DEFAULT_LOCALE = routing.defaultLocale;
 function adminDisplayName(translations: { locale: string; name: string }[], slug: string) {
-  return translations.find(t => t.locale === DEFAULT_LOCALE)?.name ?? translations[0]?.name ?? slug;
+  return adminName(translations, slug);
 }
 import { Plus, Pencil, Trash2, EyeOff, CornerDownRight } from "lucide-react";
 

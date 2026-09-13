@@ -5,7 +5,16 @@ import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getBrandConfig } from "@/lib/config";
-import { matchBot, matchReferral, recordCrawl, recordReferral } from "@/server/geo";
+import {
+  matchBot,
+  matchReferral,
+  matchSearchBot,
+  matchSearchReferral,
+  isGenericClient,
+  recordCrawl,
+  recordReferral,
+} from "@/server/geo";
+import { cookies } from "next/headers";
 
 /**
  * 语言布局(所有前台/后台页面的多语言上下文层)。
@@ -80,12 +89,30 @@ export default async function LocaleLayout({
   const reqPath = h.get("x-geo-path") ?? `/${locale}`;
   const isSitePath = !/\/admin|\/_next|\/uploads|\/api/.test(reqPath);
   if (isSitePath) {
-    const bot = matchBot(h.get("user-agent"));
-    const referral = matchReferral(h.get("referer"));
+    const ua = h.get("user-agent");
+    const referer = h.get("referer");
+    // 三级判定(V4.6.4):AI 引擎 → 传统搜索引擎 → 疑似 AI 抓取(启发式,推测口径)
+    const bot = matchBot(ua);
+    const searchBot = bot ? null : matchSearchBot(ua);
+    const referral = matchReferral(referer);
+    const searchReferral = referral ? null : matchSearchReferral(referer);
     if (bot) {
-      void recordCrawl(bot, reqPath);
+      void recordCrawl(bot, reqPath, ua ?? undefined, "ai");
+    } else if (searchBot) {
+      void recordCrawl(searchBot, reqPath, ua ?? undefined, "search");
     } else if (referral) {
-      void recordReferral(referral, reqPath, true);
+      void recordReferral(referral, reqPath, true, "ai");
+    } else if (searchReferral) {
+      void recordReferral(searchReferral, reqPath, true, "search");
+    } else {
+      // 疑似 AI 抓取:通用客户端 UA + 无 Cookie + 无站内 referer(仅可观测信号)
+      const c = await cookies();
+      const hasCookie =
+        !!c.get("aition_user")?.value || !!c.get("aition_guest")?.value || !!c.get("aition_admin")?.value;
+      const sameSiteReferer = !!referer && referer.includes(h.get("host") ?? "\u0000");
+      if (isGenericClient(ua) && !hasCookie && !sameSiteReferer) {
+        void recordCrawl(`疑似抓取(${(ua ?? "").slice(0, 40)})`, reqPath, ua ?? undefined, "suspected");
+      }
     }
   }
 

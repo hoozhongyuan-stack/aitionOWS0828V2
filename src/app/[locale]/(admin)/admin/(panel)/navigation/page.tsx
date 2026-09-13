@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { adminName } from "@/lib/admin-display";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
@@ -110,7 +111,7 @@ export default function NavigationAdminPage() {
     const fallbackLabel =
       form.labels[locales[0]] ||
       Object.values(form.labels).find(Boolean) ||
-      cats.find((c) => c.id === form.categoryId)?.translations[0]?.name ||
+      adminName(cats.find((c) => c.id === form.categoryId)?.translations) ||
       "";
     setSaving(true);
     try {
@@ -170,7 +171,7 @@ export default function NavigationAdminPage() {
   /** 表格渲染的是 { item, depth } 包装行,批量选择取其中的导航项本身 */
   const selectable = rows.map((r) => r.item);
   const catName = (id: number | null) =>
-    id == null ? "-" : (cats.find((c) => c.id === id)?.translations[0]?.name ?? `#${id}`);
+    id == null ? "-" : adminName(cats.find((c) => c.id === id)?.translations, `#${id}`);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -318,7 +319,7 @@ export default function NavigationAdminPage() {
                     <SelectContent>
                       {cats.map((c) => (
                         <SelectItem key={c.id} value={String(c.id)}>
-                          {c.translations[0]?.name ?? c.slug}
+                          {adminName(c.translations, c.slug)}
                         </SelectItem>
                       ))}
                     </SelectContent>
