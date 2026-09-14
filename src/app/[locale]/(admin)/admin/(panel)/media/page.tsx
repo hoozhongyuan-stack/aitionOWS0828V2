@@ -19,6 +19,7 @@ type MediaRow = {
   id: number;
   path: string;
   filename: string;
+  alt: string | null;
   mime: string;
   size: number;
   folderId: number | null;
@@ -114,14 +115,42 @@ export default function MediaPage() {
     }
   }
 
+  /**
+   * 改展示名(V4.7.0):写 filename。
+   * 此前这里写的是 alt、而列表显示的是 filename,改完看不到任何变化(用户反馈"无效")。
+   * 文件名与 alt(SEO 说明)本是两件事,现在分开:本函数改展示名,editAlt 改说明。
+   */
   async function renameFile(row: MediaRow) {
-    const name = await promptDialog({ title: "修改文件名(展示名)", defaultValue: row.filename });
-    if (!name?.trim()) return;
+    const name = await promptDialog({
+      title: "修改文件名(展示名)",
+      label: "文件在列表与素材选择器中的显示名(不影响图片地址)",
+      defaultValue: row.filename,
+    });
+    if (!name?.trim() || name.trim() === row.filename) return;
     try {
-      await apiPost("/api/admin/media", { id: row.id, alt: name.trim() });
+      await apiPost("/api/admin/media", { action: "renameAsset", id: row.id, filename: name.trim() });
+      toast.success("已改名");
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "失败");
+      toast.error(e instanceof Error ? e.message : "改名失败");
+    }
+  }
+
+  /** 图片说明(alt,SEO 用):前台 <img alt> 与读屏软件会用到 */
+  async function editAlt(row: MediaRow) {
+    const alt = await promptDialog({
+      title: "图片说明(alt)",
+      label: "供搜索引擎与读屏软件识别图片内容",
+      defaultValue: row.alt ?? "",
+      placeholder: "例如:酒水即时零售流程图",
+    });
+    if (alt === null) return;
+    try {
+      await apiPost("/api/admin/media", { id: row.id, alt: alt.trim() });
+      toast.success("说明已保存");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "保存失败");
     }
   }
 
@@ -421,6 +450,11 @@ export default function MediaPage() {
                   <p className="truncate text-xs font-medium" title={m.filename}>
                     {m.filename}
                   </p>
+                  {m.alt ? (
+                    <p className="truncate text-[11px] text-muted-foreground" title={`alt:${m.alt}`}>
+                      {m.alt}
+                    </p>
+                  ) : null}
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {fmtSize(m.size)}
                     {m.width && m.height ? ` · ${m.width}×${m.height}` : ""}
@@ -428,6 +462,9 @@ export default function MediaPage() {
                   <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                     <button className="hover:text-primary" onClick={() => renameFile(m)}>
                       改名
+                    </button>
+                    <button className="hover:text-primary" onClick={() => editAlt(m)}>
+                      说明
                     </button>
                     <button className="hover:text-primary" onClick={() => moveOne(m)}>
                       分组

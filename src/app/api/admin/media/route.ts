@@ -2,7 +2,7 @@ import { z } from "zod";
 import { logAdmin } from "@/server/admin";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { requirePerm } from "@/lib/auth/session";
-import { listMedia, updateMediaAlt, deleteMedia, listFolders, createFolder, renameFolder, deleteFolder, listAssetsForPicker, moveAssets, getFolderCounts } from "@/server/media";
+import { listMedia, updateMediaAlt, renameMediaAsset, deleteMedia, listFolders, createFolder, renameFolder, deleteFolder, listAssetsForPicker, moveAssets, getFolderCounts } from "@/server/media";
 
 /** 文件管理:GET ?page=&mime=&folderId= 列表+文件夹树 / POST 动作分发(alt/文件夹 CRUD/移动) / DELETE ?id= */
 
@@ -14,6 +14,8 @@ const folderActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("renameFolder"), id: z.number().int(), name: z.string().max(40) }),
   z.object({ action: z.literal("deleteFolder"), id: z.number().int() }),
   z.object({ action: z.literal("moveAssets"), ids: z.array(z.number().int()).min(1), folderId: z.number().int().nullable() }),
+  // V4.7.0:改展示名(filename);与 alt(SEO 说明)分开,此前二者混用导致改名无效
+  z.object({ action: z.literal("renameAsset"), id: z.number().int(), filename: z.string().trim().min(1).max(200) }),
 ]);
 
 export async function GET(req: Request) {
@@ -65,6 +67,7 @@ export async function POST(req: Request) {
       if (fa.data.action === "renameFolder") await renameFolder(fa.data.id, fa.data.name);
       if (fa.data.action === "deleteFolder") await deleteFolder(fa.data.id);
       if (fa.data.action === "moveAssets") await moveAssets(fa.data.ids, fa.data.folderId);
+      if (fa.data.action === "renameAsset") await renameMediaAsset(fa.data.id, fa.data.filename);
       void logAdmin({ adminId: admin?.id ?? null, adminName: admin?.name ?? "?", action: `media.${fa.data.action}`, target: fa.data.action === "moveAssets" ? undefined : `folder:${"id" in fa.data ? fa.data.id : ""}`, ip: getClientIp(req) });
       return jsonOk();
     } catch (e) {

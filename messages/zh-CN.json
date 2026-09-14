@@ -46,6 +46,9 @@
     "favorite": "收藏",
     "favorited": "已收藏"
   },
+  "article": {
+    "keywords": "关键词"
+  },
   "auth": {
     "login": "登录",
     "register": "注册",

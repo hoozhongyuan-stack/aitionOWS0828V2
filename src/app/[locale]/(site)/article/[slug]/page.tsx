@@ -11,6 +11,7 @@ import { hasFavorited } from "@/server/ugc";
 import { getActiveUserSession, getGuardedAdmin } from "@/lib/auth/session";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { safeDateLocale } from "@/lib/utils";
+import { parseKeywords } from "@/lib/keywords";
 import { InteractionBar } from "@/components/site/interaction-bar";
 import { CommentsSection } from "@/components/site/comments-section";
 import { ViewTracker } from "@/components/site/view-tracker";
@@ -65,10 +66,11 @@ export default async function ArticlePage({ params, searchParams }: Props) {
   setRequestLocale(locale);
   const previewAllowed = (await searchParams)?.preview === "1" ? await canPreview() : false;
 
-  const [content, features, t, user] = await Promise.all([
+  const [content, features, t, tArticle, user] = await Promise.all([
     getPublishedBySlug(slug, locale, { allowUnpublished: previewAllowed }),
     getFeatureFlags(),
     getTranslations("interaction"),
+    getTranslations("article"),
     // 与页头/写接口同口径:被禁用账号即使持有效 JWT 也按未登录对待
     getActiveUserSession(),
   ]);
@@ -78,6 +80,8 @@ export default async function ArticlePage({ params, searchParams }: Props) {
   const favorited = user ? await hasFavorited({ contentId: content.id, userId: user.id }) : false;
 
   const date = new Date(content.publishedAt);
+  // 关键词(V4.7.0):此前只进了 meta,访客在页面上看不到
+  const keywords = parseKeywords(content.seoKeywords);
 
   // 编辑器「所属表单」挂载:表单已删除或被停用则自动不渲染(应用层一致性)
   const attachedForm = content.formId ? await getForm(content.formId) : null;
@@ -91,7 +95,8 @@ export default async function ArticlePage({ params, searchParams }: Props) {
   }
 
   return (
-    <main className="container max-w-3xl py-10">
+    <main className="container max-w-4xl py-10">
+      {/* V4.7.0:正文列由 max-w-3xl 放宽到 max-w-4xl —— 15px 根字号下 720px→840px */}
       {/* V4.3.0 预览提示：明确告知内容未发布、不对外可见 */}
       {previewAllowed && (
         <div className="mb-6 rounded-lg border border-dashed border-amber-500/60 bg-amber-500/10 px-4 py-2 text-sm">
@@ -105,7 +110,8 @@ export default async function ArticlePage({ params, searchParams }: Props) {
         locale={locale}
         slug={content.slug}
         title={content.title}
-        description={content.seoDesc || content.summary || ""}
+        description={content.summary || content.seoDesc || ""}
+        keywords={keywords}
         cover={content.coverUrl}
         publishedAt={date.toISOString()}
         authorName={content.authorName}
@@ -137,14 +143,25 @@ export default async function ArticlePage({ params, searchParams }: Props) {
           </div>
         </header>
 
+        {/* 封面走"出血"版式(V4.7.0):正文列 840px,封面在宽屏下放宽到约 1080px;窄屏保持容器内 */}
         {content.coverUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={content.coverUrl} alt={content.title} className="mb-6 w-full rounded-xl" />
+          <div className="mb-6 xl:-mx-36">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={content.coverUrl} alt={content.title} className="w-full rounded-xl" />
+          </div>
+        )}
+
+        {/* 导语块(V4.7.0):摘要在详情页的落地位置——封面之后、正文之前,左侧品牌色竖线
+            与正文区分;摘要为空时整块不渲染。此前摘要只用于列表卡片 */}
+        {content.summary && (
+          <p className="mb-6 border-l-[3px] border-primary/60 pl-4 text-base leading-[1.9] text-muted-foreground">
+            {content.summary}
+          </p>
         )}
 
         {/* 渲染端兜底消毒:正文可能来自 UGC 投稿,防存储型 XSS */}
         <div
-          className="rich-content"
+          className="rich-content rich-content--bleed"
           dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(content.body) }}
         />
       </article>
@@ -157,6 +174,20 @@ export default async function ArticlePage({ params, searchParams }: Props) {
             title={attachedForm.name}
             fields={attachedFields}
           />
+        </section>
+      )}
+
+      {/* 关键词标签组(V4.7.0):元信息放页尾不打断阅读;当前站点无搜索页,故不做跳转 */}
+      {keywords.length > 0 && (
+        <section className="mt-8 border-t pt-4" aria-label={tArticle("keywords")}>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>{tArticle("keywords")}</span>
+            {keywords.map((k) => (
+              <span key={k} className="rounded-full border px-2.5 py-0.5">
+                {k}
+              </span>
+            ))}
+          </div>
         </section>
       )}
 

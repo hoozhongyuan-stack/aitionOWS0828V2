@@ -46,6 +46,9 @@
     "favorite": "Favorite",
     "favorited": "Favorited"
   },
+  "article": {
+    "keywords": "Keywords"
+  },
   "auth": {
     "login": "Log in",
     "register": "Sign up",

@@ -179,6 +179,7 @@ export default async function HomePage({
                         summary: item.summary,
                         coverUrl: item.coverUrl,
                         publishedAt: item.publishedAt,
+                        authorName: item.authorName,
                         href: item.moduleType === "product" ? `/${locale}/product/${item.slug}` : `/${locale}/article/${item.slug}`,
                       }}
                       dateLabel={tInter("views")}
@@ -388,6 +389,7 @@ function FloorSection({
                   summary: item.summary,
                   coverUrl: item.coverUrl,
                   publishedAt: item.publishedAt,
+                  authorName: item.authorName,
                   href: hrefOf(item),
                 }}
                 dateLabel={viewsLabel}

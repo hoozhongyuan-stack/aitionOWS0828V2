@@ -551,6 +551,8 @@ export async function listPublishedByCategory(
         id: true,
         slug: true,
         coverUrl: true,
+        // V4.7.0:列表卡片展示作者,需一并取出(此前列表侧无作者字段)
+        authorName: true,
         viewCount: true,
         likeCount: true,
         publishAt: true,
@@ -677,6 +679,7 @@ function shapeCard(
     id: number;
     slug: string;
     coverUrl: string | null;
+    authorName?: string | null;
     viewCount: number;
     likeCount: number;
     publishAt: Date | null;
@@ -694,6 +697,7 @@ function shapeCard(
     id: c.id,
     slug: c.slug,
     coverUrl: c.coverUrl,
+    authorName: c.authorName ?? null,
     viewCount: c.viewCount,
     likeCount: c.likeCount,
     publishedAt: c.publishAt ?? c.createdAt,

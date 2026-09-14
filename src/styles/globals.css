@@ -100,7 +100,10 @@
 @layer components {
   .prose-editor,
   .rich-content {
-    @apply text-sm leading-relaxed text-foreground;
+    /* V4.7.0:正文由 text-sm(本站根字号 15px 下仅 13.1px)提到 text-base(15px),
+       行高加到 1.75 —— 详情页列宽放宽后必须同步放大字号,否则每行字数过多更难读。
+       使用 rem 尺度,跟随主题 font-size 设置自动缩放。 */
+    @apply text-base leading-[1.75] text-foreground;
   }
   .prose-editor h2,
   .rich-content h2 {
@@ -150,6 +153,30 @@
   .rich-content pre {
     @apply my-3 overflow-x-auto rounded-md bg-muted p-3;
   }
+  /* 详情页媒体出血(V4.7.0):正文列 840px,图片/视频/表格在 ≥1280px 时拓宽到约 1080px,
+     形成"正文窄、媒体宽"的杂志版式。
+     - 只作用于文章详情页(带 rich-content--bleed 的容器),不影响后台审核弹窗里的正文预览
+       (弹窗只有 672px 宽,若整体出血会溢出弹窗)
+     - 1280px 以下不出血:窄屏容器本就接近满宽,负边距会导致横向滚动
+     - video 需要 !important:编辑器插入的 <video> 自带内联 max-width:100% */
+  @media (min-width: 1280px) {
+    .rich-content--bleed > img,
+    .rich-content--bleed > figure,
+    .rich-content--bleed > p > img {
+      margin-inline: -9rem;
+      max-width: calc(100% + 18rem);
+    }
+    .rich-content--bleed > video {
+      margin-inline: -9rem;
+      max-width: calc(100% + 18rem) !important;
+    }
+    .rich-content--bleed > table {
+      width: calc(100% + 18rem);
+      max-width: calc(100% + 18rem);
+      margin-inline: -9rem;
+    }
+  }
+
   .rich-content table {
     @apply my-3 w-full border-collapse text-sm;
   }

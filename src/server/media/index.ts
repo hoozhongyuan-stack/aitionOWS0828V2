@@ -83,6 +83,16 @@ export async function listMedia(opts: {
   };
 }
 
+/**
+ * 改展示名(V4.7.0)。
+ * 只改 MediaAsset.filename(列表/素材选择器显示用),**不动物理文件与 path** ——
+ * uploads/ 下真实文件名不变,已发布的引用 URL 全部继续有效,因此零迁移零文件风险。
+ * 此前「修改文件名」写的是 alt,而界面显示的是 filename,导致改完看不到任何变化。
+ */
+export async function renameMediaAsset(id: number, filename: string) {
+  return prisma.mediaAsset.update({ where: { id }, data: { filename } });
+}
+
 /** 更新 alt(SEO 语义) */
 export async function updateMediaAlt(id: number, alt: string) {
   return prisma.mediaAsset.update({ where: { id }, data: { alt } });

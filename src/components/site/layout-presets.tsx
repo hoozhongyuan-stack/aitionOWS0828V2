@@ -16,6 +16,8 @@ export interface ListItem {
   coverUrl: string | null;
   publishedAt: Date | string;
   href: string;
+  /** 作者显示名(V4.7.0):与 ContentCard 保持同构 */
+  authorName?: string | null;
 }
 
 export function ListItemRow({ item, dateLabel }: { item: ListItem; dateLabel: string }) {
@@ -37,10 +39,19 @@ export function ListItemRow({ item, dateLabel }: { item: ListItem; dateLabel: st
         <h3 className="truncate font-medium group-hover:text-primary">{item.title}</h3>
         {item.summary && <p className="truncate text-sm text-muted-foreground">{item.summary}</p>}
       </div>
-      <time dateTime={date.toISOString()} className="shrink-0 text-xs text-muted-foreground">
-        {date.toLocaleDateString()}
-        <span className="sr-only">{dateLabel}</span>
-      </time>
+      <div className="flex shrink-0 flex-col items-end gap-1 text-xs text-muted-foreground">
+        {/* 作者(V4.7.0):为空时不渲染占位 */}
+        {item.authorName && (
+          <span className="inline-flex max-w-28 items-center gap-1" title={item.authorName}>
+            <UserRound className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{item.authorName}</span>
+          </span>
+        )}
+        <time dateTime={date.toISOString()}>
+          {date.toLocaleDateString()}
+          <span className="sr-only">{dateLabel}</span>
+        </time>
+      </div>
     </Link>
   );
 }
@@ -66,3 +77,4 @@ export function CtaBanner({ text, href, label }: { text: string; href: string; l
 }
 
 import { Button } from "@/components/ui/button";
+import { UserRound } from "lucide-react";

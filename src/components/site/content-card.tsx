@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, ThumbsUp } from "lucide-react";
+import { Eye, ThumbsUp, UserRound } from "lucide-react";
 import { formatMoney, safeDateLocale } from "@/lib/utils";
 import { resolveContentDetailPath } from "@/server/content";
 
@@ -21,6 +21,8 @@ export function ContentCard({
     title: string;
     summary: string | null;
     coverUrl: string | null;
+    /** 作者显示名(V4.7.0):列表卡片展示署名 */
+    authorName?: string | null;
     viewCount: number;
     likeCount: number;
     publishedAt: Date | string;
@@ -59,7 +61,14 @@ export function ContentCard({
             {formatMoney(item.priceCents, item.currency || "USD", locale)}
           </span>
         )}
-        <div className="mt-auto flex items-center gap-3 pt-2 text-xs text-muted-foreground">
+        <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 text-xs text-muted-foreground">
+          {/* 作者(V4.7.0):与详情页署名图标一致;为空时不渲染占位 */}
+          {item.authorName && (
+            <span className="inline-flex max-w-32 items-center gap-1" title={item.authorName}>
+              <UserRound className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{item.authorName}</span>
+            </span>
+          )}
           <time dateTime={date.toISOString()}>{date.toLocaleDateString(safeDateLocale(locale))}</time>
           <span className="inline-flex items-center gap-1" title={viewsLabel}>
             <Eye className="h-3.5 w-3.5" />
