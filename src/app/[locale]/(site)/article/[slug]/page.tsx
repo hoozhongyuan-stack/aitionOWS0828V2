@@ -143,9 +143,10 @@ export default async function ArticlePage({ params, searchParams }: Props) {
           </div>
         </header>
 
-        {/* 封面走"出血"版式(V4.7.0):正文列 840px,封面在宽屏下放宽到约 1080px;窄屏保持容器内 */}
+        {/* 封面与正文同宽(V4.7.1):V4.7.0 曾让封面/正文图片出血到约 1080px,视觉上比文字宽,
+            与"内容对齐"的预期相反,故取消出血,统一按正文列宽度呈现 */}
         {content.coverUrl && (
-          <div className="mb-6 xl:-mx-36">
+          <div className="mb-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={content.coverUrl} alt={content.title} className="w-full rounded-xl" />
           </div>
@@ -161,7 +162,7 @@ export default async function ArticlePage({ params, searchParams }: Props) {
 
         {/* 渲染端兜底消毒:正文可能来自 UGC 投稿,防存储型 XSS */}
         <div
-          className="rich-content rich-content--bleed"
+          className="rich-content"
           dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(content.body) }}
         />
       </article>

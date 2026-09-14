@@ -43,6 +43,18 @@ beforeAll(async () => {
   ({ prisma } = await import("@/lib/db"));
   tsconfigSnapshot = readFileSync(path.join(PROJECT_ROOT, "tsconfig.json"), "utf8");
 
+  // 封面登记进素材库并带宽高(V4.7.1):og:image 需要输出尺寸给社交爬虫
+  await prisma.mediaAsset.create({
+    data: {
+      path: "2026/09/v470-cover.png",
+      filename: "v470-cover.png",
+      mime: "image/png",
+      size: 1000,
+      width: 1200,
+      height: 675,
+    },
+  });
+
   const cat = await prisma.category.create({
     data: {
       slug: CAT_SLUG,
@@ -138,8 +150,9 @@ describe("文章详情页呈现(V4.7.0)", () => {
     for (const k of ["即时零售", "私域", "公域"]) expect(html).toContain(`>${k}<`);
     // 导语块样式:左侧品牌色竖线
     expect(html).toContain("border-l-[3px]");
-    // 正文容器启用媒体出血(仅文章详情页)
-    expect(html).toContain("rich-content--bleed");
+    // V4.7.1 取消媒体出血:图片/封面与正文同宽,不得再出现出血类与负边距
+    expect(html).not.toContain("rich-content--bleed");
+    expect(html).not.toContain("xl:-mx-36");
     // 正文列宽由 max-w-3xl 放宽到 max-w-4xl
     expect(html).toContain("container max-w-4xl");
     expect(html).not.toContain("container max-w-3xl");
@@ -153,9 +166,17 @@ describe("文章详情页呈现(V4.7.0)", () => {
     );
     const data = blocks.find((b) => b["@type"] === "Article");
     expect(data, "应有 Article 结构化数据").toBeDefined();
+    if (!data) throw new Error("未找到 Article 结构化数据");
     expect(String(data.keywords)).toContain("即时零售");
     // 摘要优先于 seoDesc(本例无 seoDesc,应为摘要全文)
     expect(data.description).toBe(SUMMARY);
+  });
+
+  it("og:image 输出宽高(V4.7.1),便于社交爬虫判定卡片版式", async () => {
+    const html = await getHtml(`/zh-CN/article/${SLUG}`);
+    expect(html).toMatch(/property="og:image" content="[^"]*v470-cover\.png/);
+    expect(html).toMatch(/property="og:image:width" content="1200"/);
+    expect(html).toMatch(/property="og:image:height" content="675"/);
   });
 
   it("正文内的图片照常渲染,且详情页不使用 max-w-3xl(避免回退)", async () => {

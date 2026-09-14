@@ -62,6 +62,9 @@ export interface BrandConfig {
   logoUrl: string;
   footerLogoUrl: string; // 页脚 LOGO(深底用,V4.6.2);空=回落 logoUrl
   faviconUrl: string;
+  /** 默认分享图(V4.7.1):og:image 的兜底候选,微信/社交分享卡片缩略图用。
+   *  建议 1200×630(微信要求 ≥300×300,朋友圈大图更佳);空=回落到 LOGO。 */
+  shareImageUrl: string;
   icp: string; // 备案号
   copyright: string;
   contactPhone: string;
@@ -76,6 +79,7 @@ const BRAND_DEFAULTS: BrandConfig = {
   logoUrl: "",
   footerLogoUrl: "",
   faviconUrl: "",
+  shareImageUrl: "",
   icp: "",
   copyright: `© ${new Date().getFullYear()} AitionOWS. All rights reserved.`,
   contactPhone: "",

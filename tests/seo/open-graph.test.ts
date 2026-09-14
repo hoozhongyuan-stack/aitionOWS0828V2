@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it } from "vitest";
  * buildOpenGraph 单元测试(V3.1 REQ-003/004 / NFR-002):
  * 图片兜底链=imagePath 绝对化→LOGO 绝对化→省略;标题解析;无相对路径输出。
  * LOGO 两端锁定:植入 logoUrl 断言精确 URL;清空 logoUrl 断言 images 省略。
+ * V4.7.1:images 元素由字符串升级为 { url, width?, height? }(素材库有宽高时一并输出,
+ *          供社交爬虫判定卡片版式;尺寸校验与兜底链单测见 tests/seo/share-image.test.ts)。
  */
 describe("buildOpenGraph / resolveMetadataTitle", () => {
   const prevUrl = process.env.NEXT_PUBLIC_SITE_URL;
@@ -33,8 +35,8 @@ describe("buildOpenGraph / resolveMetadataTitle", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
     const { buildOpenGraph } = await import("@/lib/seo/open-graph");
     const og = await buildOpenGraph({ title: "T", description: "D", imagePath: "/uploads/a.png", locale: "zh-CN" });
-    const images = og.images as string[] | undefined;
-    expect(images?.[0]).toBe("https://example.com/uploads/a.png");
+    const images = og.images as { url: string }[] | undefined;
+    expect(images?.[0]?.url).toBe("https://example.com/uploads/a.png");
     expect(og.title).toBe("T");
     expect(og.locale).toBe("zh-CN");
   });
@@ -44,8 +46,8 @@ describe("buildOpenGraph / resolveMetadataTitle", () => {
     await setLogo("/uploads/brand-logo.png");
     const { buildOpenGraph } = await import("@/lib/seo/open-graph");
     const og = await buildOpenGraph({ title: "T", imagePath: null, locale: "en" });
-    const images = og.images as string[] | undefined;
-    expect(images?.[0]).toBe("https://example.com/uploads/brand-logo.png");
+    const images = og.images as { url: string }[] | undefined;
+    expect(images?.[0]?.url).toBe("https://example.com/uploads/brand-logo.png");
   });
 
   it("无 imagePath 且 LOGO 为空 → images 省略(兜底链末端)", async () => {
@@ -60,8 +62,8 @@ describe("buildOpenGraph / resolveMetadataTitle", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
     const { buildOpenGraph } = await import("@/lib/seo/open-graph");
     const og = await buildOpenGraph({ title: "T", imagePath: "https://cdn.example.com/x.png", locale: "en" });
-    const images = og.images as string[] | undefined;
-    expect(images?.[0]).toBe("https://cdn.example.com/x.png");
+    const images = og.images as { url: string }[] | undefined;
+    expect(images?.[0]?.url).toBe("https://cdn.example.com/x.png");
   });
 
   it("resolveMetadataTitle:string/absolute/缺省三分支", async () => {

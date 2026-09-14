@@ -90,6 +90,7 @@ const FALLBACK_BRAND: BrandConfig = {
   logoUrl: "",
   footerLogoUrl: "",
   faviconUrl: "",
+  shareImageUrl: "",
   icp: "",
   copyright: `© ${new Date().getFullYear()} AitionOWS. All rights reserved.`,
   contactPhone: "",

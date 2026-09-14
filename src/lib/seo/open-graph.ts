@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
 import { getBrandConfig } from "@/lib/config";
+import { getMediaDimensions } from "@/server/media";
 
 /**
  * 分享 OG(V3.1 REQ-003/004):统一构造 Next Metadata openGraph 对象。
  *
- * 图片兜底链(NFR-002):imagePath(相对 → 按 NEXT_PUBLIC_SITE_URL 绝对化)
- * → 品牌 LOGO 绝对 URL → 均为空时省略 og:image(images=undefined)。
- * metadataBase 由根布局兜底,这里仍显式绝对化,保证不输出相对路径。
+ * 图片兜底链(V4.7.1 起带尺寸校验):
+ *   imagePath(内容封面/首页轮播图) → 默认分享图(brand.shareImageUrl) → 品牌 LOGO
+ * 逐候选检查,**不满足微信分享卡片要求就跳过换下一个**,最后都没有才省略 og:image。
+ * 背景:2026-09-14 实测「朋友圈无缩略图」——首页 og:image 兜底到 LOGO(600×180),
+ * 高度不足微信要求的 300,于是朋友圈退化成默认链接图标。
+ *
+ * 跳过规则:
+ *   - 空值
+ *   - 非 http(s) 协议(data:/blob: 微信抓不到)
+ *   - 素材库登记了宽高、且任一边 < MIN_SHARE_IMAGE_SIDE
+ * 放行规则(宁可给图也不要没图):素材库未登记该路径(外链/历史数据)、或宽高未知。
+ * 同时输出 og:image:width/height,让社交爬虫直接知道尺寸、不必下载后判断。
  */
 
 /** 站点基础 URL(与 alternates / seo 服务同口径) */
@@ -40,6 +50,64 @@ export function resolveMetadataTitle(
   return fallback;
 }
 
+/** 分享图最小边长:微信分享卡片要求缩略图 ≥300×300(朋友圈大图推荐 1200×630) */
+export const MIN_SHARE_IMAGE_SIDE = 300;
+
+/** 本站 /uploads/<相对路径> → 素材库的相对路径;外链或非 uploads 路径返回 null */
+function toMediaPath(url: string): string | null {
+  try {
+    const base = new URL(siteBaseUrl());
+    const abs = new URL(url, base);
+    if (abs.origin !== base.origin) return null; // 外链不查库,直接放行
+    const m = abs.pathname.match(/^\/uploads\/(.+)$/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface ShareImage {
+  url: string;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * 按优先级挑选可用的分享图(导出以便单测)。
+ * 命中第一个"尺寸合格或尺寸未知"的候选即返回;全不合格返回 null(调用方省略 og:image)。
+ */
+export async function pickShareImage(
+  candidates: (string | null | undefined)[]
+): Promise<ShareImage | null> {
+  // 逐候选整理出可用 URL 与待查路径
+  const usable: { url: string; mediaPath: string | null }[] = [];
+  for (const raw of candidates) {
+    if (!raw || raw.trim() === "") continue;
+    if (/^(data|blob):/i.test(raw.trim())) continue; // 微信抓不到,直接跳过
+    const url = toAbsoluteUrl(raw.trim());
+    if (!/^https?:/i.test(url)) continue;
+    usable.push({ url, mediaPath: toMediaPath(url) });
+  }
+  if (usable.length === 0) return null;
+
+  const dims = await getMediaDimensions(
+    usable.map((u) => u.mediaPath).filter((x): x is string => !!x)
+  );
+  let lastResort: ShareImage | null = null;
+  for (const c of usable) {
+    const d = c.mediaPath ? dims.get(c.mediaPath) : undefined;
+    const w = d?.width ?? null;
+    const h = d?.height ?? null;
+    if (w != null && h != null) {
+      if (w < MIN_SHARE_IMAGE_SIDE || h < MIN_SHARE_IMAGE_SIDE) continue; // 尺寸不足,换下一个候选
+      return { url: c.url, width: w, height: h };
+    }
+    // 尺寸未知(未登记素材 / 外链 / 历史数据):放行,但记下来作为最后兜底
+    if (!lastResort) lastResort = { url: c.url };
+  }
+  return lastResort;
+}
+
 /** 构造 openGraph 元数据(description/imagePath 允许空,空图按兜底链处理) */
 export async function buildOpenGraph(input: {
   title: string;
@@ -48,15 +116,13 @@ export async function buildOpenGraph(input: {
   locale: string;
 }): Promise<NonNullable<Metadata["openGraph"]>> {
   const brand = await getBrandConfig();
-  const image = input.imagePath
-    ? toAbsoluteUrl(input.imagePath)
-    : brand.logoUrl
-      ? toAbsoluteUrl(brand.logoUrl)
-      : undefined;
+  const image = await pickShareImage([input.imagePath, brand.shareImageUrl, brand.logoUrl]);
   return {
     title: input.title,
     description: input.description ?? undefined,
     locale: input.locale,
-    images: image ? [image] : undefined,
+    images: image
+      ? [{ url: image.url, ...(image.width && image.height ? { width: image.width, height: image.height } : {}) }]
+      : undefined,
   };
 }

@@ -84,6 +84,23 @@ export async function listMedia(opts: {
 }
 
 /**
+ * 按 uploads 相对路径批量取图片宽高(V4.7.1)。
+ * 用途:分享图(og:image)尺寸校验 —— 微信要求缩略图 ≥300×300,拿不准尺寸时
+ * 宁可回退到下一候选,也不要让整张卡片没有缩略图。未在素材库登记的路径不返回。
+ */
+export async function getMediaDimensions(
+  paths: string[]
+): Promise<Map<string, { width: number | null; height: number | null }>> {
+  const clean = [...new Set(paths.filter((x): x is string => !!x && x.trim() !== ""))];
+  if (clean.length === 0) return new Map();
+  const rows = await prisma.mediaAsset.findMany({
+    where: { path: { in: clean } },
+    select: { path: true, width: true, height: true },
+  });
+  return new Map(rows.map((r) => [r.path, { width: r.width, height: r.height }]));
+}
+
+/**
  * 改展示名(V4.7.0)。
  * 只改 MediaAsset.filename(列表/素材选择器显示用),**不动物理文件与 path** ——
  * uploads/ 下真实文件名不变,已发布的引用 URL 全部继续有效,因此零迁移零文件风险。

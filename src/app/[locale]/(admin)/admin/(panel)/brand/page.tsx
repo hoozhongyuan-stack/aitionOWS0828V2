@@ -28,6 +28,7 @@ interface BrandValues {
   logoUrl: string;
   footerLogoUrl: string;
   faviconUrl: string;
+  shareImageUrl: string;
   icp: string;
   copyright: string;
   contactPhone: string;
@@ -51,6 +52,7 @@ export default function BrandPage() {
           logoUrl: d.logoUrl ?? "",
           footerLogoUrl: d.footerLogoUrl ?? "",
           faviconUrl: d.faviconUrl ?? "",
+          shareImageUrl: d.shareImageUrl ?? "",
           icp: d.icp ?? "",
           copyright: d.copyright ?? "",
           contactPhone: d.contactPhone ?? "",
@@ -124,6 +126,15 @@ export default function BrandPage() {
                 onChange={(url) => setV({ ...v, faviconUrl: url })}
                 label="favicon"
                 hint="建议尺寸 64×64px 正方形 PNG/ICO,≤512KB"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>默认分享图(社交卡片缩略图)</Label>
+              <UploadField
+                value={v.shareImageUrl}
+                onChange={(url) => setV({ ...v, shareImageUrl: url })}
+                label="分享图"
+                hint="建议 1200×630px PNG/JPG(微信要求 ≥300×300,过小会被分享卡片忽略)。用于没有封面的页面(如首页未配轮播图时);未配置则回落到站点 LOGO"
               />
             </div>
           </div>
