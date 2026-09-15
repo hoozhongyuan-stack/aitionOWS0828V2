@@ -49,6 +49,23 @@
   "article": {
     "keywords": "Keywords"
   },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search articles and products…",
+    "submit": "Search",
+    "all": "All",
+    "article": "Articles",
+    "product": "Products",
+    "count": "{n} results",
+    "empty": "No matching content",
+    "emptyHint": "Try another keyword, or explore these popular topics:",
+    "popular": "Popular keywords",
+    "viewAll": "View all",
+    "noQuery": "Type a keyword to search articles and products on this site",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} / {total}"
+  },
   "auth": {
     "login": "Log in",
     "register": "Sign up",

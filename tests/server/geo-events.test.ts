@@ -43,7 +43,7 @@ describe("GEO 明细层", () => {
   it("recordReferral 双写:引荐明细含渠道与落地页", async () => {
     const { recordReferral } = await import("@/server/geo");
     const { prisma } = await import("@/lib/db");
-    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway", true);
+    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway");
     const ev = await prisma.aIReferralEvent.findFirst({ where: { source: "豆包" } });
     expect(ev?.landing).toBe("/zh-CN/product/demo-product-gateway");
   });
@@ -52,7 +52,7 @@ describe("GEO 明细层", () => {
     const geo = await import("@/server/geo");
     const { prisma } = await import("@/lib/db");
     await geo.recordCrawl("GPTBot (OpenAI)", "/zh-CN/article/what-is-geo");
-    await geo.recordReferral("豆包", "/zh-CN/product/demo-product-gateway", true);
+    await geo.recordReferral("豆包", "/zh-CN/product/demo-product-gateway");
     const tomorrow = new Date(Date.now() + 86_400_000);
     const f = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -67,7 +67,7 @@ describe("GEO 明细层", () => {
     const geo = await import("@/server/geo");
     const { prisma } = await import("@/lib/db");
     await geo.recordCrawl("GPTBot (OpenAI)", "/zh-CN/article/what-is-geo");
-    await geo.recordReferral("豆包", "/zh-CN/product/demo-product-gateway", true);
+    await geo.recordReferral("豆包", "/zh-CN/product/demo-product-gateway");
     const today = new Date();
     const f = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

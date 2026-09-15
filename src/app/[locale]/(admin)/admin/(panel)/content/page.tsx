@@ -214,7 +214,6 @@ export default function ContentAdminPage() {
     }
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
     <div className="space-y-6">
@@ -497,29 +496,6 @@ export default function ContentAdminPage() {
         </DialogContent>
       </Dialog>
 
-      {data && totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2 text-sm">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={filter.page <= 1}
-            onClick={() => setFilter({ ...filter, page: filter.page - 1 })}
-          >
-            上一页
-          </Button>
-          <span className="text-muted-foreground">
-            {filter.page} / {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={filter.page >= totalPages}
-            onClick={() => setFilter({ ...filter, page: filter.page + 1 })}
-          >
-            下一页
-          </Button>
-        </div>
-      )}
           <TablePagination
         total={data?.total ?? 0}
         page={filter.page}

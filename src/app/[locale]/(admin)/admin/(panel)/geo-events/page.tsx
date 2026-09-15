@@ -40,11 +40,24 @@ function fmtRange(days: number) {
 
 export default function GeoEventsPage() {
   // V4.6.4 五类口径:AI 爬虫 / 搜索引擎 / 疑似抓取 / AI 引荐 / 搜索引荐
-  type TabKey = "ai-crawl" | "search-crawl" | "suspected-crawl" | "ai-referral" | "search-referral";
+  // V4.7.2 六类口径:AI 爬虫 / 搜索引擎 / 疑似抓取 / AI 引荐 / 搜索引荐 / 未识别来源
+  type TabKey =
+    | "ai-crawl"
+    | "search-crawl"
+    | "suspected-crawl"
+    | "ai-referral"
+    | "search-referral"
+    | "unknown-referral";
   const [tab, setTab] = useState<TabKey>("ai-crawl");
   const eventType: "crawl" | "referral" = tab.endsWith("referral") ? "referral" : "crawl";
-  const kind: "ai" | "search" | "suspected" =
-    tab.startsWith("search") ? "search" : tab.startsWith("suspected") ? "suspected" : "ai";
+  const kind: "ai" | "search" | "suspected" | "unknown" =
+    tab.startsWith("search")
+      ? "search"
+      : tab.startsWith("suspected")
+        ? "suspected"
+        : tab.startsWith("unknown")
+          ? "unknown"
+          : "ai";
   const [range, setRange] = useState(fmtRange(7));
   const [custom, setCustom] = useState({ from: "", to: "" });
   const [bot, setBot] = useState("");
@@ -122,6 +135,13 @@ export default function GeoEventsPage() {
       </div>
 
       {/* 类型 Tab + 时间 + 筛选 */}
+      {tab === "unknown-referral" && (
+        <p className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+          ⚠️ 仅供参考,<strong>不等于 AI 渠道</strong>:这里的来源是 Referer 存在但<strong>未命中任何白名单</strong>的主机名
+          (可能是普通外链、也可能是不在名单里的 AI 产品)。用途是排查「某家 AI 为什么没有引荐记录」:
+          若这里出现对应主机名,说明它带了 Referer 只是格式未收录;若这里也没有,则说明它<strong>未发送 Referer</strong>(客户端行为,服务端无法记录)。
+        </p>
+      )}
       {tab === "suspected-crawl" && (
         <p className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
           ⚠️ 推测口径:通用客户端 UA + 无 Cookie + 无站内来源的抓取;无法归因具体产品,可能含 RSS/监控/脚本噪声,请勿作为正式指标。
@@ -135,6 +155,7 @@ export default function GeoEventsPage() {
             ["suspected-crawl", "疑似抓取"],
             ["ai-referral", "AI 引荐"],
             ["search-referral", "搜索引荐"],
+            ["unknown-referral", "未识别来源"],
           ] as [TabKey, string][]
         ).map(([k, label]) => (
           <Button

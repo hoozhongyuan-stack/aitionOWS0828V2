@@ -13,6 +13,8 @@ import {
   isGenericClient,
   recordCrawl,
   recordReferral,
+  recordUnknownReferral,
+  refererHostname,
 } from "@/server/geo";
 import { cookies } from "next/headers";
 
@@ -101,10 +103,19 @@ export default async function LocaleLayout({
     } else if (searchBot) {
       void recordCrawl(searchBot, reqPath, ua ?? undefined, "search");
     } else if (referral) {
-      void recordReferral(referral, reqPath, true, "ai");
+      void recordReferral(referral, reqPath, "ai");
     } else if (searchReferral) {
-      void recordReferral(searchReferral, reqPath, true, "search");
+      void recordReferral(searchReferral, reqPath, "search");
     } else {
+      // 未识别来源(V4.7.2):Referer 存在、非本站、且没命中任何白名单时,只记主机名 ——
+      // 用于查清"某家 AI 为什么没有引荐记录"(带了但没收录 vs 压根没带 Referer)。
+      // 仅记真实浏览器(通用 HTTP 客户端视为抓取,交给下面的疑似分区,避免两个桶重复计数)。
+      const refHost = refererHostname(referer);
+      const hostOnly = (h.get("host") ?? "").split(":")[0].toLowerCase();
+      if (refHost && refHost !== hostOnly && !isGenericClient(ua)) {
+        void recordUnknownReferral(refHost, reqPath);
+      }
+
       // 疑似 AI 抓取:通用客户端 UA + 无 Cookie + 无站内 referer(仅可观测信号)
       const c = await cookies();
       const hasCookie =

@@ -46,8 +46,8 @@ describe("GEO 监测服务", () => {
 
   it("getGeoMonitorStats:引荐表返回来源/落地/次数", async () => {
     const { recordReferral, getGeoMonitorStats } = await import("@/server/geo");
-    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway", true);
-    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway", true);
+    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway");
+    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway");
     const today = new Date();
     const fmt = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const stats = await getGeoMonitorStats(fmt, fmt);

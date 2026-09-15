@@ -96,6 +96,9 @@ export async function GET(req: Request) {
   return jsonOk(
     await listContentsAdmin({
       page: Number(sp.get("page")) || 1,
+      // V4.7.2:补上 pageSize 透传 —— 此前漏读该参数,服务层回落到默认值,
+      // 导致页面「每页 10 条」写着 10 却实际拉 20 条、两套分页器算出不同页数
+      pageSize: Number(sp.get("pageSize")) || undefined,
       categoryId: sp.get("categoryId") ? Number(sp.get("categoryId")) : undefined,
       status: sp.get("status") || undefined,
       source: sp.get("source") || undefined,

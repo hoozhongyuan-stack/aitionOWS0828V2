@@ -184,9 +184,14 @@ export default async function ArticlePage({ params, searchParams }: Props) {
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>{tArticle("keywords")}</span>
             {keywords.map((k) => (
-              <span key={k} className="rounded-full border px-2.5 py-0.5">
+              // V4.7.2:关键词可点 → 跳到站内搜索,让"关键词"从纯展示变成可探索入口
+              <Link
+                key={k}
+                href={`/${locale}/search?q=${encodeURIComponent(k)}`}
+                className="rounded-full border px-2.5 py-0.5 transition-colors hover:border-primary hover:text-primary"
+              >
                 {k}
-              </span>
+              </Link>
             ))}
           </div>
         </section>

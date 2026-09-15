@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Menu, X, Globe, LogOut, UserRound, ShoppingCart, ChevronDown } from "lucide-react";
+import { Menu, X, Globe, LogOut, UserRound, ShoppingCart, ChevronDown, Search } from "lucide-react";
 import { CartBadge } from "@/components/site/cart-badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ export function SiteHeader({
   // 「个人中心」入口文案走 i18n 命名空间 account(layout 无需新增 props,向后兼容)
   const tAccount = useTranslations("account");
   const tShop = useTranslations("shop");
+  const tSearch = useTranslations("search");
   const accountLabel = tAccount("menu");
   const ordersLabel = tAccount("tabOrders");
 
@@ -153,6 +154,13 @@ export function SiteHeader({
               )}
             </div>
           )}
+
+          {/* 站内搜索(V4.7.2):进入搜索页(页内含输入框,移动端同一入口) */}
+          <Button variant="ghost" size="icon" asChild className="h-8 w-8" >
+            <Link href={`/${currentLocale}/search`} aria-label={tSearch("title")}>
+              <Search className="h-4 w-4" />
+            </Link>
+          </Button>
 
           {/* 购物车(V4.0;V4.3 受下单开关控制) */}
           {orderingEnabled && (

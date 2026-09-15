@@ -120,7 +120,7 @@ function StatsBlock({
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="py-2">路径</th>
                   <th className="py-2">来源</th>
-                  <th className="py-2 text-right">次数</th>
+                  <th className="py-2 text-right tabular-nums">次数</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,7 +132,7 @@ function StatsBlock({
                     <td className="max-w-56 truncate py-2 text-muted-foreground" title={p.bot}>
                       {p.bot}
                     </td>
-                    <td className="py-2 text-right">{p.count}</td>
+                    <td className="py-2 text-right tabular-nums">{p.count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -151,19 +151,23 @@ export default function GeoMonitorPage() {
   const [ai, setAi] = useState<GeoStats | null>(null);
   const [search, setSearch] = useState<GeoStats | null>(null);
   const [suspected, setSuspected] = useState<GeoStats | null>(null);
+  // V4.7.2:未识别来源(Referer 存在但未命中白名单,只记主机名)——诊断"某家 AI 为何无记录"
+  const [unknown, setUnknown] = useState<GeoStats | null>(null);
 
   const load = useCallback(async () => {
     setError("");
     const qs = (kind: string) => `from=${range.from}&to=${range.to}&kind=${kind}`;
     try {
-      const [a, s, u] = await Promise.all([
+      const [a, s, u, unk] = await Promise.all([
         apiGet<GeoStats>(`/api/admin/geo-monitor?${qs("ai")}`),
         apiGet<GeoStats>(`/api/admin/geo-monitor?${qs("search")}`),
         apiGet<GeoStats>(`/api/admin/geo-monitor?${qs("suspected")}`),
+        apiGet<GeoStats>(`/api/admin/geo-monitor?${qs("unknown")}`),
       ]);
       setAi(a);
       setSearch(s);
       setSuspected(u);
+      setUnknown(unk);
     } catch {
       setError("加载失败");
     }
@@ -297,13 +301,16 @@ export default function GeoMonitorPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* V4.7.2:AI 与搜索引擎两个口径合并到**同一张表** —— 此前两张表各自计算列宽,
+              点击/访客列上下错位;合并后列宽天然一致,用一行小标题分隔两个口径。
+              数字列统一 tabular-nums(等宽),纵向才能对齐 */}
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
                 <th className="py-2">渠道</th>
-                <th className="py-2">落地页</th>
-                <th className="py-2 text-right">点击</th>
-                <th className="py-2 text-right">访客</th>
+                <th className="w-[38%] py-2">落地页</th>
+                <th className="py-2 text-right tabular-nums">点击</th>
+                <th className="py-2 text-right tabular-nums">访客</th>
               </tr>
             </thead>
             <tbody>
@@ -313,8 +320,8 @@ export default function GeoMonitorPage() {
                   <td className="max-w-72 truncate py-2 text-muted-foreground" title={r.landing}>
                     {r.landing}
                   </td>
-                  <td className="py-2 text-right">{r.count}</td>
-                  <td className="py-2 text-right">{r.visitors}</td>
+                  <td className="py-2 text-right tabular-nums">{r.count}</td>
+                  <td className="py-2 text-right tabular-nums">{r.visitors}</td>
                 </tr>
               ))}
               {(ai?.referrals?.length ?? 0) === 0 && (
@@ -324,25 +331,46 @@ export default function GeoMonitorPage() {
                   </td>
                 </tr>
               )}
+          {(unknown?.referrals?.length ?? 0) > 0 && (
+            <>
+              <tr className="border-b bg-muted/40">
+                <td colSpan={4} className="py-1.5 text-xs font-medium text-muted-foreground">
+                  未识别来源 Top5(仅供参考,<strong>不等于 AI 渠道</strong>:Referer 存在但未命中白名单)
+                </td>
+              </tr>
+              {unknown!.referrals.slice(0, 5).map((r, i) => (
+                <tr key={`unknown-${r.source}-${i}`} className="border-b">
+                  <td className="py-2 font-medium">{r.source}</td>
+                  <td className="max-w-72 truncate py-2 text-muted-foreground" title={r.landing}>
+                    {r.landing}
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{r.count}</td>
+                  <td className="py-2 text-right tabular-nums text-muted-foreground">{r.visitors}</td>
+                </tr>
+              ))}
+            </>
+          )}
+          {(search?.referrals?.length ?? 0) > 0 && (
+            <>
+              <tr className="border-b bg-muted/40">
+                <td colSpan={4} className="py-1.5 text-xs font-medium text-muted-foreground">
+                  搜索引擎引荐(单独口径,不计入 AI)
+                </td>
+              </tr>
+              {search!.referrals.map((r, i) => (
+                <tr key={`${r.source}-${r.landing}-${i}`} className="border-b">
+                  <td className="py-2 font-medium">{r.source}</td>
+                  <td className="max-w-72 truncate py-2 text-muted-foreground" title={r.landing}>
+                    {r.landing}
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{r.count}</td>
+                  <td className="py-2 text-right tabular-nums text-muted-foreground">{r.visitors}</td>
+                </tr>
+              ))}
+            </>
+          )}
             </tbody>
           </table>
-          {(search?.referrals?.length ?? 0) > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-sm font-medium">搜索引擎引荐(单独口径,不计入 AI)</p>
-              <table className="w-full text-sm">
-                <tbody>
-                  {search!.referrals.map((r, i) => (
-                    <tr key={`${r.source}-${r.landing}-${i}`} className="border-b">
-                      <td className="py-2 font-medium">{r.source}</td>
-                      <td className="max-w-72 truncate py-2 text-muted-foreground">{r.landing}</td>
-                      <td className="py-2 text-right">{r.count}</td>
-                      <td className="py-2 text-right text-muted-foreground">{r.visitors}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </CardContent>
       </Card>
 

@@ -18,7 +18,7 @@ import { prisma } from "@/lib/db";
  */
 
 /** 统计口径(V4.6.4):ai=AI 引擎 | search=传统搜索引擎 | suspected=疑似 AI 抓取(推测) */
-export type GeoKind = "ai" | "search" | "suspected";
+export type GeoKind = "ai" | "search" | "suspected" | "unknown";
 
 /** 已知 AI 爬虫 UA 关键字 → 引擎显示名(小写包含匹配) */
 export const AI_BOTS: ReadonlyArray<{ match: string; name: string }> = [
@@ -245,24 +245,84 @@ function bumpSuspectedSampling(): boolean {
 export async function recordReferral(
   source: string,
   landing: string,
-  isNewVisitor: boolean,
   kind: GeoKind = "ai"
 ): Promise<void> {
   const p = landing.slice(0, 200) || "/";
+  const date = today();
+  // 访客口径(V4.7.2):按「来源 + 日期」去重 —— 同一来源当天只在**首次到达**时计 1 个访客。
+  // 此前由调用方恒传 true,导致「访客」列等于「点击」列,容易被误读为"N 个不同访客"。
+  const firstToday = await prisma.aIReferralStat
+    .aggregate({ where: { source, date }, _sum: { visitors: true } })
+    .then((r) => (r._sum.visitors ?? 0) === 0)
+    .catch(() => false);
   try {
     await prisma.$transaction([
       prisma.aIReferralStat.upsert({
-        where: { source_landing_date: { source, landing: p, date: today() } },
+        where: { source_landing_date: { source, landing: p, date } },
         update: {
           count: { increment: 1 },
-          ...(isNewVisitor ? { visitors: { increment: 1 } } : {}),
+          ...(firstToday ? { visitors: { increment: 1 } } : {}),
         },
-        create: { source, landing: p, date: today(), count: 1, visitors: 1, kind },
+        create: { source, landing: p, date, count: 1, visitors: firstToday ? 1 : 0, kind },
       }),
       prisma.aIReferralEvent.create({ data: { source, landing: p, kind } }),
     ]);
   } catch (e) {
     console.error("[geo] 引荐记录失败:", e);
+  }
+}
+
+/** 未识别来源日采样上限(V4.7.2):明细事件上限,聚合计数不受限 */
+export const UNKNOWN_REFERRAL_DAILY_LIMIT = 200;
+const gu = globalThis as unknown as { __unknownRefSample?: { date: string; n: number } };
+function bumpUnknownSampling(): boolean {
+  const d = today();
+  const cur = gu.__unknownRefSample ?? (gu.__unknownRefSample = { date: d, n: 0 });
+  if (cur.date !== d) {
+    cur.date = d;
+    cur.n = 0;
+  }
+  cur.n += 1;
+  return cur.n <= UNKNOWN_REFERRAL_DAILY_LIMIT;
+}
+
+/** 从 Referer 提取主机名(小写,去端口);无法解析返回 null */
+export function refererHostname(referer: string | null | undefined): string | null {
+  if (!referer) return null;
+  try {
+    const h = new URL(referer).hostname.toLowerCase();
+    return h || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 未识别来源(V4.7.2):Referer 存在、不属于本站、也没命中任何白名单时,**只记录主机名**。
+ *
+ * 用途:判断"为什么某家 AI 没有引荐记录" —— 若这里出现 `chat.deepseek.com`,说明它带了
+ * Referer 只是格式与白名单不符;若连这里都没有,则确证它**未发送 Referer**(客户端/`noreferrer`),
+ * 那是对方行为,服务端无法补记。
+ *
+ * 隐私:只存主机名,不存完整 URL、路径与查询串;明细事件有日采样上限。
+ */
+export async function recordUnknownReferral(host: string, landing: string): Promise<void> {
+  const source = host.slice(0, 120);
+  const p = landing.slice(0, 200) || "/";
+  const storeEvent = bumpUnknownSampling();
+  try {
+    await prisma.$transaction([
+      prisma.aIReferralStat.upsert({
+        where: { source_landing_date: { source, landing: p, date: today() } },
+        update: { count: { increment: 1 } },
+        create: { source, landing: p, date: today(), count: 1, visitors: 0, kind: "unknown" },
+      }),
+      ...(storeEvent
+        ? [prisma.aIReferralEvent.create({ data: { source, landing: p, kind: "unknown" } })]
+        : []),
+    ]);
+  } catch (e) {
+    console.error("[geo] 未识别来源记录失败:", e);
   }
 }
 
@@ -284,6 +344,7 @@ export async function getGeoMonitorStats(from: string, to: string, kind: GeoKind
     }),
     prisma.aIReferralStat.groupBy({
       by: ["source", "landing"],
+      // 引荐只有 ai / search / unknown 三种口径(suspected 无引荐,回落 ai)
       where: { date: { gte: from, lte: to }, kind: kind === "suspected" ? "ai" : kind },
       _sum: { count: true, visitors: true },
       orderBy: { _sum: { count: "desc" } },

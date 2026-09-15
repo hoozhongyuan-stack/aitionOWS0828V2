@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   // 口径(V4.6.4):ai(默认) | search | suspected——AI 与传统搜索分开统计
   const kindParam = sp.get("kind");
   const kind: GeoKind =
-    kindParam === "search" || kindParam === "suspected" ? kindParam : "ai";
+    kindParam === "search" || kindParam === "suspected" || kindParam === "unknown" ? kindParam : "ai";
 
   // 明细查询(V3.2.1):type=events 时返回爬虫/引荐事件明细分页
   if (sp.get("type") === "events") {

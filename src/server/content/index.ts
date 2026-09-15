@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { CONTENT_STATUS, CONTENT_SOURCE, TARGET_TYPE, type ContentStatus } from "@/types/domain";
 import { invalidateNavCache } from "./nav";
 import { parseSpecs, type ProductSpec } from "./product";
+import { parseKeywords } from "@/lib/keywords";
 
 /**
  * CMS 内容服务(需求 4.4):栏目 / 导航 / 内容 全量读写。
@@ -183,7 +184,8 @@ export interface ContentListQuery {
 export async function listContentsAdmin(q: ContentListQuery) {
   await promoteScheduled();
   const page = Math.max(1, q.page ?? 1);
-  const pageSize = Math.min(100, q.pageSize ?? 20);
+  // V4.7.2:默认与后台界面的「每页」一致(10),并补下界防止传 0 取到空页
+  const pageSize = Math.min(100, Math.max(1, q.pageSize ?? 10));
   const createdAt =
     q.dateFrom || q.dateTo
       ? {
@@ -655,6 +657,142 @@ export async function listLatestPublished(locale: string, take = 6) {
     include: { translations: true, category: { select: { moduleType: true } } },
   });
   return items.map((c) => shapeCard(c, locale, c.category?.moduleType));
+}
+
+/** 站内搜索单条结果(卡片数据 + 是否命中标题,供排序与高亮) */
+export interface SearchHit {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string | null;
+  coverUrl: string | null;
+  authorName: string | null;
+  publishedAt: Date;
+  moduleType: string;
+  categoryName: string;
+  /** 标题命中(用于"标题命中优先"排序) */
+  titleHit: boolean;
+}
+
+/** 搜索引擎内匹配上限:超出部分不参与排序(规模上限,超过再评估 FTS5) */
+const SEARCH_SCAN_LIMIT = 200;
+
+/**
+ * 站内全站搜索(V4.7.2)。
+ *
+ * 范围:可见栏目下的已发布内容;匹配 标题 / 摘要 / 关键词(seoKeywords)/ 栏目名
+ * (标题命中优先,其次发布时间倒序)。
+ * 有意**不搜正文**:正文是大字段,SQLite `LIKE '%x%'` 无法走索引,量大后是性能坑
+ * —— 待内容量级上来再评估 FTS5(中文需 trigram/jieba 分词,成本较高)。
+ * 实现上先取匹配集(上限 SEARCH_SCAN_LIMIT),再在服务端排序后分页。
+ */
+export async function searchPublished(
+  locale: string,
+  q: string,
+  opts: { type?: "all" | "article" | "product"; page?: number; pageSize?: number } = {}
+): Promise<{ total: number; page: number; pageSize: number; items: SearchHit[]; hitLimit: boolean }> {
+  await promoteScheduled();
+  const kw = q.trim();
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = Math.min(50, Math.max(1, opts.pageSize ?? 12));
+  if (!kw) return { total: 0, page, pageSize, items: [], hitLimit: false };
+
+  const matches = await prisma.content.findMany({
+    where: {
+      status: CONTENT_STATUS.PUBLISHED,
+      category: { visible: true },
+      OR: [
+        {
+          translations: {
+            some: {
+              locale,
+              OR: [
+                { title: { contains: kw } },
+                { summary: { contains: kw } },
+                // 关键词也参与匹配(V4.7.2):详情页的关键词 chip 会跳到 /search?q=<关键词>,
+                // 若只搜标题/摘要,点了 chip 却查无结果 —— seoKeywords 是小字段,代价可忽略。
+                { seoKeywords: { contains: kw } },
+              ],
+            },
+          },
+        },
+        { category: { translations: { some: { name: { contains: kw } } } } },
+      ],
+    },
+    orderBy: [{ publishAt: "desc" }, { id: "desc" }],
+    take: SEARCH_SCAN_LIMIT,
+    select: {
+      id: true,
+      slug: true,
+      coverUrl: true,
+      authorName: true,
+      publishAt: true,
+      createdAt: true,
+      translations: { select: { locale: true, title: true, summary: true } },
+      category: {
+        select: { moduleType: true, translations: { select: { locale: true, name: true } } },
+      },
+    },
+  });
+
+  const shaped: SearchHit[] = matches.map((c) => {
+    const t = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
+    const catName =
+      c.category.translations.find((x) => x.locale === locale)?.name ??
+      c.category.translations[0]?.name ??
+      "";
+    const title = t?.title ?? "";
+    return {
+      id: c.id,
+      slug: c.slug,
+      title,
+      summary: t?.summary ?? null,
+      coverUrl: c.coverUrl,
+      authorName: c.authorName ?? null,
+      publishedAt: c.publishAt ?? c.createdAt,
+      moduleType: c.category.moduleType,
+      categoryName: catName,
+      titleHit: title.toLowerCase().includes(kw.toLowerCase()),
+    };
+  });
+
+  // 类型过滤(在匹配集内过滤:type 只影响展示分组,不改变"匹配"语义)
+  const type = opts.type ?? "all";
+  const filtered =
+    type === "all" ? shaped : shaped.filter((h) => (type === "product" ? h.moduleType === "product" : h.moduleType !== "product"));
+
+  // 标题命中优先,其次发布时间倒序(已按 publishAt 取回,这里只做稳定分组)
+  const sorted = [...filtered].sort((a, b) => {
+    if (a.titleHit !== b.titleHit) return a.titleHit ? -1 : 1;
+    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+  });
+
+  return {
+    total: sorted.length,
+    page,
+    pageSize,
+    items: sorted.slice((page - 1) * pageSize, page * pageSize),
+    hitLimit: matches.length >= SEARCH_SCAN_LIMIT,
+  };
+}
+
+/** 热门关键词(V4.7.2):聚合已发布内容的 seoKeywords,按出现频次取前 N(搜索页空态兜底) */
+export async function getPopularKeywords(locale: string, limit = 12): Promise<string[]> {
+  const rows = await prisma.content.findMany({
+    where: { status: CONTENT_STATUS.PUBLISHED, category: { visible: true } },
+    select: { translations: { select: { locale: true, seoKeywords: true } } },
+  });
+  const freq = new Map<string, number>();
+  for (const c of rows) {
+    const t = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
+    for (const k of parseKeywords(t?.seoKeywords)) {
+      freq.set(k, (freq.get(k) ?? 0) + 1);
+    }
+  }
+  return [...freq.entries()]
+    .sort((a, b) => (b[1] - a[1] !== 0 ? b[1] - a[1] : a[0].localeCompare(b[0], "zh-CN")))
+    .slice(0, limit)
+    .map(([k]) => k);
 }
 
 /** 站点地图数据:全部已发布内容与可见栏目 */

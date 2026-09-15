@@ -49,6 +49,23 @@
   "article": {
     "keywords": "关键词"
   },
+  "search": {
+    "title": "站内搜索",
+    "placeholder": "搜索文章、商品…",
+    "submit": "搜索",
+    "all": "全部",
+    "article": "文章",
+    "product": "商品",
+    "count": "共 {n} 条",
+    "empty": "没有找到相关内容",
+    "emptyHint": "换个关键词试试,或看看这些热门方向:",
+    "popular": "热门关键词",
+    "viewAll": "查看全部",
+    "noQuery": "输入关键词,搜索站内的文章与商品",
+    "prev": "上一页",
+    "next": "下一页",
+    "pageOf": "第 {page} / {total} 页"
+  },
   "auth": {
     "login": "登录",
     "register": "注册",
