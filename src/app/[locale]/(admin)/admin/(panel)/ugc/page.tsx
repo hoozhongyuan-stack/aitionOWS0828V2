@@ -77,7 +77,8 @@ function CommentsTab() {
 
   async function review(id: number, s: "APPROVED" | "REJECTED") {
     try {
-      await apiPost("/api/admin/ugc/comments", { id, status: s });
+      // action 必带(V4.7.4 路由升级为 review|reply 判别联合;此前漏改导致单条审核报「Invalid discriminator value」)
+      await apiPost("/api/admin/ugc/comments", { action: "review", id, status: s });
       toast.success(s === "APPROVED" ? "已通过,前台可见" : "已驳回");
       load();
     } catch (e) {
