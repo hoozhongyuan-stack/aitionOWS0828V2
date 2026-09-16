@@ -203,7 +203,7 @@ export default async function ArticlePage({ params, searchParams }: Props) {
       )}
 
       {/* 版权/转载声明(V4.7.4):可转载但须保留出处;网址用纯文本 —— 复制正文时才会带走链接 */}
-      <section className="mt-8 border-t pt-4 text-xs text-muted-foreground" aria-label={tArticle("copyrightNotice")}>
+      <section className="mt-8 border-t pt-4 text-xs text-muted-foreground" aria-label={tArticle("copyrightNotice", { site: brand.siteName })}>
         <p>{tArticle("copyrightNotice", { site: brand.siteName })}</p>
         <p className="mt-1 select-all break-all font-mono text-[11px]">
           {`${siteBaseUrl()}/${locale}/article/${content.slug}`}
