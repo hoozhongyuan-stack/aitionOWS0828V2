@@ -92,11 +92,14 @@ export default function SeoPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>详细地址</Label>
+            <Label>详细地址(已停用)</Label>
             <Input
               value={String(v.address ?? "")}
               onChange={(e) => setS("address", e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">
+              结构化数据地址现在取自「品牌信息 → 联系地址」;此处仅历史兼容,新站点无需填写
+            </p>
           </div>
           <div className="space-y-2">
             <Label>纬度(lat)</Label>

@@ -8,6 +8,14 @@ export interface LlmsTextInput {
   base: string;
   locale: string;
   siteName: string;
+  /** 运营主体名称(V4.7.3):个人姓名或公司全称 */
+  ownerName?: string;
+  /** 站点一句话定位(V4.7.3) */
+  tagline?: string;
+  /** 服务区域(V4.7.3,来自 SEO 设置 areaServed) */
+  serviceArea?: string;
+  /** ICP 备案号(V4.7.3):空则不输出备案行 */
+  icp?: string;
   contactPhone?: string;
   contactEmail?: string;
   otherLocales: string[];
@@ -20,11 +28,23 @@ export function buildLlmsText(input: LlmsTextInput): string {
   const { base, locale } = input;
   const lines: string[] = [];
   lines.push(`# ${input.siteName}`);
-  lines.push(
-    `> ${input.siteName} 企业官网:产品与服务介绍、新闻动态、联系方式。` +
-      (input.contactPhone ? ` 电话:${input.contactPhone}。` : "") +
-      (input.contactEmail ? ` 邮箱:${input.contactEmail}。` : "")
-  );
+  // 自述段(V4.7.3):把"你是谁、做什么、哪里可信"直接讲给 AI ——
+  // 此前这里是模板套话(「企业官网:产品与服务介绍…」),是站点被 AI 判定"不可信"的原因之一。
+  lines.push(`> ${input.tagline || `${input.siteName} 企业官网:产品与服务介绍、新闻动态、联系方式。`}`);
+  const meta: string[] = [];
+  if (input.ownerName) meta.push(`运营主体:${input.ownerName}`);
+  if (input.serviceArea) meta.push(`服务区域:${input.serviceArea}`);
+  if (input.contactPhone) meta.push(`电话:${input.contactPhone}`);
+  if (input.contactEmail) meta.push(`邮箱:${input.contactEmail}`);
+  if (meta.length) lines.push(`> ${meta.join(" · ")}`);
+  if (input.icp) {
+    lines.push(`> 备案信息:${input.icp}(查询:https://beian.miit.gov.cn/)`);
+  }
+  if (input.categories.length) {
+    lines.push(
+      `> 内容范围:${input.categories.slice(0, 6).map((c) => c.name).join(" / ")} 等`
+    );
+  }
   lines.push("");
   lines.push(
     `主要语言:${locale}(其他语言:${input.otherLocales.join(", ") || "无"})`

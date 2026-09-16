@@ -1,4 +1,4 @@
-import { getBrandConfig } from "@/lib/config";
+import { getBrandConfig, getSeoConfig } from "@/lib/config";
 import { listForLlms, listCategoriesWithNames } from "@/server/content";
 import { getEnabledLocales } from "@/server/i18n";
 import { routing } from "@/i18n/routing";
@@ -19,17 +19,22 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
   const locale = routing.defaultLocale;
-  const [brand, enabled, cats, contents] = await Promise.all([
+  const [brand, enabled, cats, contents, seo] = await Promise.all([
     getBrandConfig(),
     getEnabledLocales(),
     listCategoriesWithNames(locale).catch(() => []),
     listForLlms(locale).catch(() => []),
+    getSeoConfig(),
   ]);
 
   const body = buildLlmsText({
     base,
     locale,
     siteName: brand.siteName,
+    ownerName: brand.ownerName || undefined,
+    tagline: brand.tagline || undefined,
+    serviceArea: seo.serviceArea || undefined,
+    icp: brand.icp || undefined,
     contactPhone: brand.contactPhone,
     contactEmail: brand.contactEmail,
     otherLocales: enabled.map((l) => l.code).filter((c) => c !== locale),

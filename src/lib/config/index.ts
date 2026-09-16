@@ -59,6 +59,10 @@ export const THEME_PRESETS_ALLOWED = ["classic", "aurora", "harvest", "cellar", 
 // —— 品牌 ——
 export interface BrandConfig {
   siteName: string;
+  /** 运营主体名称(V4.7.3):个人姓名或公司全称,用于 llms.txt 自述与信任信号 */
+  ownerName: string;
+  /** 站点一句话定位(V4.7.3):约 60 字,一处填写、两处使用(llms.txt 自述 + JSON-LD description) */
+  tagline: string;
   logoUrl: string;
   footerLogoUrl: string; // 页脚 LOGO(深底用,V4.6.2);空=回落 logoUrl
   faviconUrl: string;
@@ -76,12 +80,16 @@ export interface BrandConfig {
 }
 const BRAND_DEFAULTS: BrandConfig = {
   siteName: "AitionOWS",
+  ownerName: "",
+  tagline: "",
   logoUrl: "",
   footerLogoUrl: "",
   faviconUrl: "",
   shareImageUrl: "",
   icp: "",
-  copyright: `© ${new Date().getFullYear()} AitionOWS. All rights reserved.`,
+  // 中性兜底(V4.7.3):不再硬编码模板产品名 —— 此前凡未改该字段的部署,页脚都会
+  // 显示 "AitionOWS",被 AI 与访客读成"套模板的小站"。空值时页脚用 `© {年} {站点名}` 渲染。
+  copyright: "",
   contactPhone: "",
   contactEmail: "",
   contactAddress: "",

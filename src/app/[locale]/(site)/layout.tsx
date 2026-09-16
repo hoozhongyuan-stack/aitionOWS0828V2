@@ -70,6 +70,10 @@ export default async function SiteLayout({
         phone={brand.contactPhone}
         email={brand.contactEmail}
         seo={seo}
+        tagline={brand.tagline || undefined}
+        icp={brand.icp || undefined}
+        contactAddress={brand.contactAddress || undefined}
+        sameAs={brand.socials.map((x) => x.url).filter((u) => /^https?:\/\//.test(u))}
       />
       <SiteHeader
         siteName={brand.siteName}

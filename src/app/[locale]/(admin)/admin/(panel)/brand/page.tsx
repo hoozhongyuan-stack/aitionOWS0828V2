@@ -25,6 +25,8 @@ interface Social {
 }
 interface BrandValues {
   siteName: string;
+  ownerName: string;
+  tagline: string;
   logoUrl: string;
   footerLogoUrl: string;
   faviconUrl: string;
@@ -49,6 +51,8 @@ export default function BrandPage() {
       .then((d) =>
         setV({
           siteName: d.siteName ?? "",
+          ownerName: d.ownerName ?? "",
+          tagline: d.tagline ?? "",
           logoUrl: d.logoUrl ?? "",
           footerLogoUrl: d.footerLogoUrl ?? "",
           faviconUrl: d.faviconUrl ?? "",
@@ -99,6 +103,32 @@ export default function BrandPage() {
           <div className="space-y-2">
             <Label>品牌名称</Label>
             <Input value={v.siteName} onChange={(e) => setV({ ...v, siteName: e.target.value })} />
+            <p className="text-xs text-muted-foreground">
+              将出现在页脚署名、分享卡片与结构化数据 —— 建议用对外品牌名,不要留模板默认值
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>运营主体(选填)</Label>
+              <Input
+                value={v.ownerName}
+                onChange={(e) => setV({ ...v, ownerName: e.target.value })}
+                placeholder="个人姓名或公司全称"
+              />
+              <p className="text-xs text-muted-foreground">用于 llms.txt 自述,向 AI 说明站点由谁运营</p>
+            </div>
+            <div className="space-y-2">
+              <Label>站点一句话定位(选填)</Label>
+              <Input
+                value={v.tagline}
+                onChange={(e) => setV({ ...v, tagline: e.target.value })}
+                placeholder="例:酒业数智增长观察站"
+                maxLength={60}
+              />
+              <p className="text-xs text-muted-foreground">
+                一处填写、两处使用:llms.txt 自述与结构化数据的 description(AI 判断「你是谁」的直接依据)
+              </p>
+            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -173,6 +203,9 @@ export default function BrandPage() {
           <div className="space-y-2 sm:col-span-2">
             <Label>联系地址</Label>
             <Input value={v.contactAddress} onChange={(e) => setV({ ...v, contactAddress: e.target.value })} />
+            <p className="text-xs text-muted-foreground">
+              地址的唯一来源:页脚与结构化数据(给 AI 看的)都使用这里填的地址,请填真实经营地址
+            </p>
           </div>
         </CardContent>
       </Card>

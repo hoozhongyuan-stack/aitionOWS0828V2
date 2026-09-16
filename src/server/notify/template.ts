@@ -87,6 +87,8 @@ export interface UgcPendingNotifyOptions {
 // —— 内置兜底配置(与 src/lib/config 的默认值保持一致;仅模板用到的字段有意义) ——
 const FALLBACK_BRAND: BrandConfig = {
   siteName: "AitionOWS",
+  ownerName: "",
+  tagline: "",
   logoUrl: "",
   footerLogoUrl: "",
   faviconUrl: "",

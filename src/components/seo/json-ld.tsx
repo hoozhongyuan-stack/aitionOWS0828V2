@@ -20,6 +20,10 @@ export function OrganizationJsonLd({
   phone,
   email,
   seo,
+  tagline,
+  icp,
+  contactAddress,
+  sameAs,
 }: {
   siteName: string;
   siteUrl: string;
@@ -27,6 +31,14 @@ export function OrganizationJsonLd({
   phone: string;
   email: string;
   seo: { city: string; address: string; lat: string; lng: string; serviceArea: string };
+  /** 站点一句话定位(V4.7.3):AI 判断"你是谁、做什么"的最直接字段 */
+  tagline?: string;
+  /** ICP 备案号(V4.7.3):作为通用 identifier 暴露(schema.org 无 ICP 专用属性) */
+  icp?: string;
+  /** 经营地址(V4.7.3):地址的单一事实来源 = 品牌信息.contactAddress,与页脚一致 */
+  contactAddress?: string;
+  /** 外部主页(V4.7.3):公众号等,给 AI 提供实体锚点 */
+  sameAs?: string[];
 }) {
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -34,6 +46,11 @@ export function OrganizationJsonLd({
     name: siteName,
     url: siteUrl,
   };
+  if (tagline) data.description = tagline;
+  if (icp) {
+    // 备案号:对 AI/搜索引擎而言是站点的官方登记标识;中文 name 便于理解取值含义
+    data.identifier = { "@type": "PropertyValue", name: "ICP备案号", value: icp };
+  }
   if (logoUrl) data.logo = new URL(logoUrl, siteUrl).toString();
   if (phone || email) {
     data.contactPoint = {
@@ -43,17 +60,19 @@ export function OrganizationJsonLd({
       contactType: "customer service",
     };
   }
-  if (seo.city || seo.address) {
+  const street = contactAddress || seo.address; // V4.7.3:地址单一事实来源 = 品牌信息
+  if (seo.city || street) {
     data.address = {
       "@type": "PostalAddress",
       ...(seo.city ? { addressLocality: seo.city } : {}),
-      ...(seo.address ? { streetAddress: seo.address } : {}),
+      ...(street ? { streetAddress: street } : {}),
     };
   }
   if (seo.lat && seo.lng) {
     data.geo = { "@type": "GeoCoordinates", latitude: seo.lat, longitude: seo.lng };
   }
   if (seo.serviceArea) data.areaServed = seo.serviceArea;
+  if (sameAs && sameAs.length > 0) data.sameAs = sameAs;
   return <JsonLd data={data} />;
 }
 

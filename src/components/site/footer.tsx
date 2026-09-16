@@ -108,7 +108,8 @@ export function SiteFooter({
             rel="noopener"
             className="block text-muted-foreground transition-colors hover:text-primary"
           >
-            {brand.copyright}
+            {/* V4.7.3:后台未填版权时,用「© 年 站点名」中性兜底 —— 不再默认显示模板产品名 */}
+            {brand.copyright || `© ${new Date().getFullYear()} ${brand.siteName}`}
           </a>
           {brand.icp && (
             <a

@@ -158,6 +158,33 @@ describe("buildLlmsText 纯函数组装(新模块 @/server/content/llms 直测)"
     expect(text.indexOf("## 产品")).toBeLessThan(text.indexOf("## 文章"));
   });
 
+  it("信任自述(V4.7.3):定位/主体/服务区域/备案号进入自述段,备案附工信部查询链接", async () => {
+    const { buildLlmsText } = await loadBuild();
+    const text = buildLlmsText({
+      ...baseInput,
+      tagline: "酒业数智增长观察站",
+      ownerName: "胡中圆",
+      serviceArea: "中国",
+      icp: "粤ICP备2026086168号",
+      contactPhone: "400-000-0000",
+      contactEmail: "hi@geo.test",
+    });
+    expect(text).toContain("> 酒业数智增长观察站");
+    expect(text).toContain("运营主体:胡中圆");
+    expect(text).toContain("服务区域:中国");
+    expect(text).toContain("备案信息:粤ICP备2026086168号");
+    expect(text).toContain("https://beian.miit.gov.cn/");
+    expect(text).toContain("内容范围:");
+  });
+
+  it("信任自述缺省(V4.7.3):未填 tagline 回落旧套话;无备案不输出备案行", async () => {
+    const { buildLlmsText } = await loadBuild();
+    const text = buildLlmsText({ ...baseInput });
+    expect(text).toContain("企业官网:产品与服务介绍");
+    expect(text).not.toContain("备案信息");
+    expect(text).not.toContain("运营主体");
+  });
+
   it("极简输入:无联系方式/无其他语言/无栏目 → 兜底文案且不渲染对应分区", async () => {
     const { buildLlmsText } = await loadBuild();
     const text = buildLlmsText({
