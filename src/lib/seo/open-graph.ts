@@ -90,11 +90,35 @@ export async function pickShareImage(
   }
   if (usable.length === 0) return null;
 
+  // V4.7.4:webp 显示版优先取其 .jpg 分享伴生(微信分享卡不吃 WebP)。
+  // 伴生命名两种约定都识别:同名 .jpg(上传链路)与 -share.jpg(存量回填脚本,
+  // 同名会与原 .jpg 资产撞路径 —— 首跑实测教训)。
+  const expanded = usable.map((c) => {
+    if (c.mediaPath && c.mediaPath.toLowerCase().endsWith(".webp")) {
+      const stem = c.mediaPath.replace(/\.webp$/i, "");
+      const stemUrl = c.url.replace(/\.webp$/i, "");
+      return {
+        ...c,
+        // -share.jpg(回填,≤1200 宽)优先于同名 .jpg(原图,可能更大)
+        sharePaths: [`${stem}-share.jpg`, `${stem}.jpg`],
+        shareUrls: [`${stemUrl}-share.jpg`, `${stemUrl}.jpg`],
+      };
+    }
+    return { ...c, sharePaths: [] as string[], shareUrls: [] as string[] };
+  });
+
   const dims = await getMediaDimensions(
-    usable.map((u) => u.mediaPath).filter((x): x is string => !!x)
+    expanded.flatMap((u) => [u.mediaPath, ...u.sharePaths]).filter((x): x is string => !!x)
   );
   let lastResort: ShareImage | null = null;
-  for (const c of usable) {
+  for (const c of expanded) {
+    // 伴生存在 → 直接用它(它专为分享而生,尺寸与主图一致)
+    for (let i = 0; i < c.sharePaths.length; i++) {
+      const sd = dims.get(c.sharePaths[i]);
+      if (sd?.width && sd.height && sd.width >= MIN_SHARE_IMAGE_SIDE && sd.height >= MIN_SHARE_IMAGE_SIDE) {
+        return { url: c.shareUrls[i], width: sd.width, height: sd.height };
+      }
+    }
     const d = c.mediaPath ? dims.get(c.mediaPath) : undefined;
     const w = d?.width ?? null;
     const h = d?.height ?? null;

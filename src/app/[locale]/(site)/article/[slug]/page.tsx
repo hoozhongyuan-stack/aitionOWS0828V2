@@ -4,14 +4,15 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getPublishedBySlug } from "@/server/content";
 import { buildAlternates } from "@/lib/seo/alternates";
-import { buildOpenGraph } from "@/lib/seo/open-graph";
+import { buildOpenGraph, siteBaseUrl } from "@/lib/seo/open-graph";
 import { getForm } from "@/server/form";
-import { getFeatureFlags } from "@/lib/config";
+import { getBrandConfig, getFeatureFlags } from "@/lib/config";
 import { hasFavorited } from "@/server/ugc";
 import { getActiveUserSession, getGuardedAdmin } from "@/lib/auth/session";
 import { sanitizeRichHtml } from "@/lib/sanitize";
 import { safeDateLocale } from "@/lib/utils";
 import { parseKeywords } from "@/lib/keywords";
+import { CopyAttribution } from "@/components/site/copy-attribution";
 import { InteractionBar } from "@/components/site/interaction-bar";
 import { CommentsSection } from "@/components/site/comments-section";
 import { ViewTracker } from "@/components/site/view-tracker";
@@ -66,11 +67,12 @@ export default async function ArticlePage({ params, searchParams }: Props) {
   setRequestLocale(locale);
   const previewAllowed = (await searchParams)?.preview === "1" ? await canPreview() : false;
 
-  const [content, features, t, tArticle, user] = await Promise.all([
+  const [content, features, t, tArticle, brand, user] = await Promise.all([
     getPublishedBySlug(slug, locale, { allowUnpublished: previewAllowed }),
     getFeatureFlags(),
     getTranslations("interaction"),
     getTranslations("article"),
+    getBrandConfig(),
     // 与页头/写接口同口径:被禁用账号即使持有效 JWT 也按未登录对待
     getActiveUserSession(),
   ]);
@@ -112,6 +114,7 @@ export default async function ArticlePage({ params, searchParams }: Props) {
         title={content.title}
         description={content.summary || content.seoDesc || ""}
         keywords={keywords}
+        license="https://creativecommons.org/licenses/by-nc/4.0/"
         cover={content.coverUrl}
         publishedAt={date.toISOString()}
         authorName={content.authorName}
@@ -161,10 +164,12 @@ export default async function ArticlePage({ params, searchParams }: Props) {
         )}
 
         {/* 渲染端兜底消毒:正文可能来自 UGC 投稿,防存储型 XSS */}
-        <div
-          className="rich-content"
-          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(content.body) }}
-        />
+        <CopyAttribution site={brand.siteName} title={content.title} url={`${siteBaseUrl()}/${locale}/article/${content.slug}`}>
+          <div
+            className="rich-content"
+            dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(content.body) }}
+          />
+        </CopyAttribution>
       </article>
 
       {/* 编辑器挂载的获客表单(可选) */}
@@ -196,6 +201,14 @@ export default async function ArticlePage({ params, searchParams }: Props) {
           </div>
         </section>
       )}
+
+      {/* 版权/转载声明(V4.7.4):可转载但须保留出处;网址用纯文本 —— 复制正文时才会带走链接 */}
+      <section className="mt-8 border-t pt-4 text-xs text-muted-foreground" aria-label={tArticle("copyrightNotice")}>
+        <p>{tArticle("copyrightNotice", { site: brand.siteName })}</p>
+        <p className="mt-1 select-all break-all font-mono text-[11px]">
+          {`${siteBaseUrl()}/${locale}/article/${content.slug}`}
+        </p>
+      </section>
 
       {/* 互动条(收藏恒展示 REQ-006;点赞/转发受总开关控制,需求 4.8) */}
       <InteractionBar

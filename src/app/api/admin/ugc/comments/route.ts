@@ -2,14 +2,16 @@ import { z } from "zod";
 import { logAdmin } from "@/server/admin";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { requirePerm } from "@/lib/auth/session";
-import { listCommentsAdmin, reviewComment, deleteComment } from "@/server/ugc";
+import { listCommentsAdmin, reviewComment, deleteComment, replyAsAuthor } from "@/server/ugc";
+import { getBrandConfig } from "@/lib/config";
 
 /** 评论审核:GET ?status=&page= / POST {id,status}(通过/驳回)/ DELETE ?id= */
 
-const postSchema = z.object({
-  id: z.number().int(),
-  status: z.enum(["APPROVED", "REJECTED"]),
-});
+const postSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("review"), id: z.number().int(), status: z.enum(["APPROVED", "REJECTED"]) }),
+  // V4.7.4:作者回复 —— 以站点名落 APPROVED 评论,挂到目标评论下
+  z.object({ action: z.literal("reply"), commentId: z.number().int(), body: z.string().trim().min(1).max(1000) }),
+]);
 
 export async function GET(req: Request) {
   const guard = await requirePerm("moderation");
@@ -34,7 +36,16 @@ export async function POST(req: Request) {
   const parsed = await parseBody(req, postSchema);
   if (parsed.error) return parsed.error;
   try {
-    await reviewComment(parsed.data.id, parsed.data.status);
+    if (parsed.data.action === "reply") {
+      const brand = await getBrandConfig();
+      await replyAsAuthor({
+        commentId: parsed.data.commentId,
+        body: parsed.data.body,
+        siteName: brand.siteName || "作者",
+      });
+    } else {
+      await reviewComment(parsed.data.id, parsed.data.status);
+    }
     return jsonOk();
   } catch (e) {
     return jsonErr(e instanceof Error ? e.message : "操作失败");

@@ -172,6 +172,18 @@ describe("文章详情页呈现(V4.7.0)", () => {
     expect(data.description).toBe(SUMMARY);
   });
 
+  it("版权/转载声明块(V4.7.4):含站点名与纯文本文章 URL,JSON-LD 带 CC BY-NC license", async () => {
+    const html = await getHtml(`/zh-CN/article/${SLUG}`);
+    expect(html).toContain("本文由"); // 声明文案(站点名来自品牌配置)
+    expect(html).toContain(`/zh-CN/article/${SLUG}`); // 纯文本网址
+    expect(html).toContain("creativecommons.org/licenses/by-nc/4.0"); // meta 或 JSON-LD
+    const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(
+      (m) => JSON.parse(m[1]) as Record<string, unknown>
+    );
+    const article = blocks.find((b) => b["@type"] === "Article");
+    if (article) expect(String(article.license)).toContain("creativecommons.org");
+  });
+
   it("og:image 输出宽高(V4.7.1),便于社交爬虫判定卡片版式", async () => {
     const html = await getHtml(`/zh-CN/article/${SLUG}`);
     expect(html).toMatch(/property="og:image" content="[^"]*v470-cover\.png/);

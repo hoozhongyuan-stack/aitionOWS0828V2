@@ -101,18 +101,61 @@ export async function recordShare(contentId: number, ip: string | null): Promise
 // ---------------- 评论 ----------------
 
 /** 前台:已审核评论列表 */
-export async function listApprovedComments(contentId: number) {
+export interface CommentView {
+  id: number;
+  body: string;
+  createdAt: Date;
+  author: string;
+  isAuthorReply: boolean;
+  replies: { id: number; body: string; createdAt: Date; author: string; isAuthorReply: boolean }[];
+}
+
+/**
+ * 已通过评论,两层结构(V4.7.4):回复(parentId 非空)一律归拢到其**顶层祖先**下。
+ * 现阶段只有后台能回复,深度最多两层;归拢保证未来即使出现"回复的回复",
+ * 前台也不会出现楼中楼(目标评论本身是回复时,挂到它所属的顶层下)。
+ */
+export async function listApprovedComments(contentId: number): Promise<CommentView[]> {
   const rows = await prisma.comment.findMany({
     where: { contentId, status: COMMENT_STATUS.APPROVED },
     orderBy: { id: "desc" },
     include: { user: { select: { nickname: true, email: true } } },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    body: r.body,
-    createdAt: r.createdAt,
-    author: r.user?.nickname || r.user?.email?.split("@")[0] || r.guestName || "游客",
-  }));
+  const author = (r: (typeof rows)[number]) =>
+    r.user?.nickname || r.user?.email?.split("@")[0] || r.guestName || "游客";
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const rootOf = (r: (typeof rows)[number]): (typeof rows)[number] => {
+    let cur = r;
+    while (cur.parentId != null) {
+      const p = byId.get(cur.parentId);
+      if (!p) break;
+      cur = p;
+    }
+    return cur;
+  };
+
+  const tops = new Map<number, CommentView>();
+  for (const r of rows) {
+    if (r.parentId == null) {
+      tops.set(r.id, {
+        id: r.id, body: r.body, createdAt: r.createdAt, author: author(r),
+        isAuthorReply: r.isAuthorReply, replies: [],
+      });
+    }
+  }
+  for (const r of rows) {
+    if (r.parentId == null) continue;
+    const root = rootOf(r);
+    const top = tops.get(root.id);
+    if (!top) continue; // 顶层被删/未通过:其回复随之上屏消失(语义一致)
+    top.replies.push({
+      id: r.id, body: r.body, createdAt: r.createdAt, author: author(r),
+      isAuthorReply: r.isAuthorReply,
+    });
+  }
+  const list = [...tops.values()].sort((a, b) => b.id - a.id);
+  for (const t of list) t.replies.sort((a, b) => a.id - b.id); // 对话内旧→新
+  return list;
 }
 
 /** 提交评论:敏感词拦截 → 入库 PENDING(绝不直接可见) */
@@ -188,7 +231,29 @@ export async function reviewComment(id: number, status: string) {
   await prisma.comment.update({ where: { id }, data: { status } });
 }
 
+/** 后台作者回复(V4.7.4):以站点名落一条 APPROVED 评论,挂到目标评论下。
+ *  不查敏感词、不受投稿开关限制 —— 站长对自己的站点内容回复。 */
+export async function replyAsAuthor(input: { commentId: number; body: string; siteName: string }) {
+  const body = input.body.trim();
+  if (!body) throw new Error("回复内容不能为空");
+  if (body.length > 1000) throw new Error("回复过长(最多 1000 字)");
+  const parent = await prisma.comment.findUnique({ where: { id: input.commentId } });
+  if (!parent) throw new Error("目标评论不存在");
+  return prisma.comment.create({
+    data: {
+      contentId: parent.contentId,
+      parentId: parent.parentId ?? parent.id, // 目标本身是回复时,仍挂到同一顶层下
+      isAuthorReply: true,
+      guestName: input.siteName,
+      body,
+      status: COMMENT_STATUS.APPROVED,
+    },
+  });
+}
+
 export async function deleteComment(id: number) {
+  // 先删回复再删本体(FK 级联也会兜底,显式删除语义更清晰)
+  await prisma.comment.deleteMany({ where: { parentId: id } });
   await prisma.comment.delete({ where: { id } });
 }
 

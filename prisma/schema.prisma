@@ -372,17 +372,24 @@ model Comment {
   id        Int      @id @default(autoincrement())
   contentId Int
   userId    Int? // 登录用户;游客评论为空
-  guestName String? // 游客昵称(游客评论时使用)
+  guestName String? // 游客昵称(游客评论时使用);作者回复时存站点名
   body      String
   status    String   @default("PENDING") // PENDING / APPROVED / REJECTED
+  // —— 两层回复(V4.7.4):后台回复指向被回复的评论;访客评论恒为顶层(null)——
+  parentId      Int?
+  isAuthorReply Boolean @default(false) // 作者回复:前台带「作者」徽标
+
   ip        String?
   createdAt DateTime @default(now())
 
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
   user    User?   @relation(fields: [userId], references: [id])
+  parent  Comment? @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentThread")
 
   @@index([contentId, status])
   @@index([status])
+  @@index([parentId])
 }
 
 /// 点赞记录:用于去重/防刷(登录用 userId,游客用 guestKey 指纹)

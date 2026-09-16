@@ -22,6 +22,8 @@ interface CommentItem {
   body: string;
   createdAt: string;
   author: string;
+  isAuthorReply?: boolean;
+  replies?: { id: number; body: string; createdAt: string; author: string; isAuthorReply?: boolean }[];
 }
 
 export function CommentsSection({
@@ -122,12 +124,41 @@ export function CommentsSection({
           {comments.map((c) => (
             <li key={c.id} className="rounded-lg border p-4">
               <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="font-medium">{c.author}</span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  {c.author}
+                  {c.isAuthorReply && (
+                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                      {t("authorBadge")}
+                    </span>
+                  )}
+                </span>
                 <time className="text-xs text-muted-foreground">
                   {new Date(c.createdAt).toLocaleString(safeDateLocale(locale))}
                 </time>
               </div>
               <p className="whitespace-pre-wrap text-sm">{c.body}</p>
+              {(c.replies?.length ?? 0) > 0 && (
+                <ul className="mt-3 space-y-3 border-l-2 pl-4">
+                  {c.replies!.map((r) => (
+                    <li key={r.id}>
+                      <div className="mb-1 flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-1.5 text-sm font-medium">
+                          {r.author}
+                          {r.isAuthorReply && (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              {t("authorBadge")}
+                            </span>
+                          )}
+                        </span>
+                        <time className="text-xs text-muted-foreground">
+                          {new Date(r.createdAt).toLocaleString(safeDateLocale(locale))}
+                        </time>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm">{r.body}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>

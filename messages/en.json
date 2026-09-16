@@ -44,10 +44,12 @@
     "noComments": "No comments yet — be the first",
     "submitComment": "Post comment",
     "favorite": "Favorite",
-    "favorited": "Favorited"
+    "favorited": "Favorited",
+    "authorBadge": "Author"
   },
   "article": {
-    "keywords": "Keywords"
+    "keywords": "Keywords",
+    "copyrightNotice": "Original work by {site}. Reproduction welcome — please keep the source and link:"
   },
   "search": {
     "title": "Search",

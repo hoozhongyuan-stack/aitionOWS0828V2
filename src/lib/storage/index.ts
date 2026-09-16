@@ -2,6 +2,7 @@ import { mkdir, writeFile, unlink, stat } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import sharp from "sharp";
+import { buildImageVariants } from "@/lib/storage/variants";
 import { getUploadConfig, VIDEO_MAX_SIZE_MB } from "@/lib/config";
 
 /**
@@ -49,6 +50,9 @@ export interface SavedFile {
   size: number;
   width: number | null;
   height: number | null;
+  /** 分享伴生图(V4.7.4,JPG ≤1200):专供 og:image —— 微信分享卡不吃 WebP;无则未生成 */
+  shareRelPath?: string;
+  shareSize?: number;
 }
 
 /**
@@ -75,41 +79,56 @@ export async function saveUpload(input: {
   }
 
   let buffer = input.buffer;
+  let outMime = input.mime; // V4.7.4:转 WebP 显示版时随之变为 image/webp
   let width: number | null = null;
   let height: number | null = null;
 
   // 图片压缩(gif 动图 / svg 矢量图 / ico 图标跳过 —— svg 是矢量文本格式、ico 是多尺寸容器格式,
   // sharp 均无法处理,原样保存)
+  let shareRelPath: string | undefined;
+  let shareSize: number | undefined;
   const isImage =
     input.mime.startsWith("image/") &&
     input.mime !== "image/gif" &&
     input.mime !== "image/svg+xml" &&
     !ICO_MIMES.includes(input.mime);
   if (isImage) {
+    // 解码校验保留在此(带友好报错);变体生成见 ./variants(V4.7.4 单一来源,可单测)
     try {
-      let img = sharp(buffer, { failOn: "none" });
-      const meta = await img.metadata();
-      // 声明为图片但无法解码(典型:把 .ico 改名 .png 绕过校验)→ 拒绝,
-      // 避免产出"扩展名/mime 与真实内容不符"的脏文件(favicon 黑块缺陷的根因)
+      const meta = await sharp(buffer, { failOn: "none" }).metadata();
       if (!meta.format) throw new Error("unrecognized image");
-      if (meta.width && meta.width > 2560) img = img.resize({ width: 2560 });
-      if (input.mime === "image/jpeg")
-        buffer = Buffer.from(await img.jpeg({ quality: 80 }).toBuffer());
-      else if (input.mime === "image/png")
-        buffer = Buffer.from(await img.png({ compressionLevel: 8 }).toBuffer());
-      else if (input.mime === "image/webp")
-        buffer = Buffer.from(await img.webp({ quality: 80 }).toBuffer());
-      const outMeta = await sharp(buffer).metadata();
-      width = outMeta.width ?? null;
-      height = outMeta.height ?? null;
     } catch {
       throw new Error("图片文件无法识别或已损坏,请上传有效的图片文件");
+    }
+    const variants = await buildImageVariants({ buffer, mime: input.mime });
+    if (variants) {
+      buffer = variants.display.buffer;
+      outMime = "image/webp"; // 内容与扩展名/mime 必须一致(favicon 黑块同类事故的防范)
+      width = variants.width;
+      height = variants.height;
+      if (variants.share) {
+        const now0 = new Date();
+        shareRelPath = `${now0.getFullYear()}/${String(now0.getMonth() + 1).padStart(2, "0")}/${crypto.randomUUID()}.jpg`;
+        const shareAbs = path.join(uploadRoot(), shareRelPath);
+        await mkdir(path.dirname(shareAbs), { recursive: true });
+        await writeFile(shareAbs, variants.share.buffer);
+        shareSize = variants.share.buffer.length;
+      }
+    } else {
+      // 未产出变体:沿用旧尺寸读取(保留原图时也需要宽高)
+      try {
+        const m = await sharp(buffer, { failOn: "none" }).metadata();
+        width = m.width ?? null;
+        height = m.height ?? null;
+      } catch {
+        /* 不可解码已在上面拦截 */
+      }
     }
   }
 
   const now = new Date();
   const ext =
-    EXT_BY_MIME[input.mime] ||
+    EXT_BY_MIME[outMime] ||
     path.extname(input.originalName).replace(".", "").toLowerCase() ||
     "bin";
   const rel = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${crypto.randomUUID()}.${ext}`;
@@ -120,10 +139,11 @@ export async function saveUpload(input: {
   return {
     relPath: rel.replace(/\\/g, "/"),
     filename: input.originalName,
-    mime: input.mime,
+    mime: outMime,
     size: buffer.length,
     width,
     height,
+    ...(shareRelPath ? { shareRelPath, shareSize } : {}),
   };
 }
 

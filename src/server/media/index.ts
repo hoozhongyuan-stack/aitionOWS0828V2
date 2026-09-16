@@ -18,6 +18,7 @@ export async function createMedia(
   meta: UploadMeta & { folderId?: number | null } // V4.2:上传时可归档到文件夹
 ) {
   const saved = await saveUpload(input);
+  const alt = meta.alt || saved.filename.replace(/\.[^.]+$/, ""); // 默认用文件名做 alt,后台可改
   const asset = await prisma.mediaAsset.create({
     data: {
       path: saved.relPath,
@@ -26,13 +27,32 @@ export async function createMedia(
       size: saved.size,
       width: saved.width,
       height: saved.height,
-      alt: meta.alt || saved.filename.replace(/\.[^.]+$/, ""), // 默认用文件名做 alt,后台可改
+      alt,
       uploaderType: meta.uploaderType,
       uploaderId: meta.uploaderId ?? null,
       folderId: meta.folderId ?? null,
     },
   });
-  return { ...asset, url: `/uploads/${asset.path}` };
+  // 分享伴生(V4.7.4):JPG 版登记为独立资产(同尺寸),og:image 优先取它 —— 微信分享卡不吃 WebP
+  let shareUrl: string | undefined;
+  if (saved.shareRelPath) {
+    const share = await prisma.mediaAsset.create({
+      data: {
+        path: saved.shareRelPath,
+        filename: saved.filename.replace(/\.[^.]+$/, "") + ".jpg",
+        mime: "image/jpeg",
+        size: saved.shareSize ?? 0,
+        width: saved.width,
+        height: saved.height,
+        alt,
+        uploaderType: meta.uploaderType,
+        uploaderId: meta.uploaderId ?? null,
+        folderId: meta.folderId ?? null,
+      },
+    });
+    shareUrl = `/uploads/${share.path}`;
+  }
+  return { ...asset, url: `/uploads/${asset.path}`, ...(shareUrl ? { shareUrl } : {}) };
 }
 
 /**
@@ -97,7 +117,15 @@ export async function getMediaDimensions(
     where: { path: { in: clean } },
     select: { path: true, width: true, height: true },
   });
-  return new Map(rows.map((r) => [r.path, { width: r.width, height: r.height }]));
+  // 同 path 多行(历史脏数据)时优先取**非空尺寸**的行,避免被空值行覆盖导致误判
+  const map = new Map();
+  for (const r of rows) {
+    const cur = map.get(r.path);
+    if (!cur || (cur.width == null && r.width != null)) {
+      map.set(r.path, { width: r.width, height: r.height });
+    }
+  }
+  return map;
 }
 
 /**

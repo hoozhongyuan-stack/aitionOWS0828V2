@@ -44,10 +44,12 @@
     "noComments": "暂无评论,来抢沙发",
     "submitComment": "发表评论",
     "favorite": "收藏",
-    "favorited": "已收藏"
+    "favorited": "已收藏",
+    "authorBadge": "作者"
   },
   "article": {
-    "keywords": "关键词"
+    "keywords": "关键词",
+    "copyrightNotice": "本文由 {site} 原创，欢迎转载 —— 转载请保留出处与链接："
   },
   "search": {
     "title": "站内搜索",

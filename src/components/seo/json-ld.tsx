@@ -86,6 +86,7 @@ export function ArticleJsonLd({
   publishedAt,
   authorName,
   keywords,
+  license,
 }: {
   locale: string;
   slug: string;
@@ -96,6 +97,8 @@ export function ArticleJsonLd({
   authorName?: string | null;
   /** 关键词标签(V4.7.0):写入结构化数据,利于 AI 引擎摘录与相关推荐 */
   keywords?: string[];
+  /** 内容许可(V4.7.4):如 CC BY-NC 4.0,告诉 AI/转载者引用规则 */
+  license?: string;
 }) {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   return (
@@ -112,6 +115,7 @@ export function ArticleJsonLd({
         // 作者(新增需求①):写入结构化数据,利于搜索引擎与 AI 检索展示署名
         ...(authorName ? { author: { "@type": "Person", name: authorName } } : {}),
         ...(keywords && keywords.length > 0 ? { keywords: keywords.join(", ") } : {}),
+        ...(license ? { license } : {}),
       }}
     />
   );

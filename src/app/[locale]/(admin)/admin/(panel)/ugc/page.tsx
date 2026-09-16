@@ -11,13 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiGet, apiPost, apiDelete } from "@/components/admin/api-client";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { useBatchSelection } from "@/components/admin/use-batch-selection";
 import { BatchActionBar, runBatchAction } from "@/components/admin/batch-action-bar";
 import { sanitizeRichHtml } from "@/lib/sanitize";
-import { Check, X, Trash2, Eye, Plus } from "lucide-react";
+import { Check, X, Trash2, Eye, Plus, MessageSquare } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 /**
  * 互动审核中心(需求 4.8):
@@ -83,6 +84,26 @@ function CommentsTab() {
       toast.error(e instanceof Error ? e.message : "操作失败");
     }
   }
+  // 作者回复(V4.7.4):以站点名落一条 APPROVED 评论,挂到目标评论下
+  const [replyTarget, setReplyTarget] = useState<CommentRow | null>(null);
+  const [replyBody, setReplyBody] = useState("");
+  const [replying, setReplying] = useState(false);
+  async function submitReply() {
+    if (!replyTarget || !replyBody.trim() || replying) return;
+    setReplying(true);
+    try {
+      await apiPost("/api/admin/ugc/comments", { action: "reply", commentId: replyTarget.id, body: replyBody.trim() });
+      toast.success("已回复,前台可见");
+      setReplyTarget(null);
+      setReplyBody("");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "回复失败");
+    } finally {
+      setReplying(false);
+    }
+  }
+
   async function remove(id: number) {
     if (!await confirmDialog({ title: "确认删除该评论?", destructive: true })) return;
     try {
@@ -234,6 +255,9 @@ function CommentsTab() {
                           <X className="h-4 w-4 text-destructive" />
                         </Button>
                       )}
+                      <Button variant="ghost" size="sm" onClick={() => { setReplyTarget(c); setReplyBody(""); }} title="回复">
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => remove(c.id)} title="删除">
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -244,6 +268,30 @@ function CommentsTab() {
             </TableBody>
           </Table>
         </div>
+        {/* 作者回复弹窗(V4.7.4) */}
+        <Dialog open={!!replyTarget} onOpenChange={(o) => !o && setReplyTarget(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>回复评论</DialogTitle>
+              <DialogDescription className="min-w-0 break-words">
+                {replyTarget ? `${replyTarget.guestName || "游客"}:${replyTarget.body.slice(0, 60)}` : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={replyBody}
+              onChange={(e) => setReplyBody(e.target.value)}
+              rows={4}
+              maxLength={1000}
+              placeholder="以「数字中圆」的名义回复,发布后前台立即可见"
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReplyTarget(null)} disabled={replying}>取消</Button>
+              <Button onClick={submitReply} disabled={replying || !replyBody.trim()}>
+                {replying ? "发布中…" : "发布回复"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
