@@ -5,7 +5,8 @@
  * 注意:本脚本**不在** prisma/seed.ts 中,容器启动/生产构建都不会执行它。
  * 幂等:同 slug 已存在则跳过(可重复运行)。
  *
- * 用法:npx tsx scripts/demo-virtual-stats-seed.ts
+ * ⚠️ 防误触:必须显式带 --yes 才会执行(红线:演示数据绝不进生产)。
+ * 用法:npx tsx scripts/demo-virtual-stats-seed.ts --yes
  */
 import { PrismaClient } from "@prisma/client";
 
@@ -27,6 +28,15 @@ const ARTICLES: [string, string, number, string, number | null][] = [
 ];
 
 async function main() {
+  if (!process.argv.includes("--yes")) {
+    console.error(
+      "拒绝执行:本脚本会写入演示内容。\n" +
+        "确认当前 DATABASE_URL 指向的是本地库后,显式加 --yes 再运行:\n" +
+        "  npx tsx scripts/demo-virtual-stats-seed.ts --yes"
+    );
+    process.exit(1);
+  }
+  console.log(`目标库:${process.env.DATABASE_URL ?? "(默认 .env 配置)"}`);
   const cat = await prisma.category.upsert({
     where: { slug: CAT_SLUG },
     update: {},
