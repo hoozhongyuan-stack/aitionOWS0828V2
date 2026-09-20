@@ -3,6 +3,7 @@ import { CONTENT_STATUS, CONTENT_SOURCE, TARGET_TYPE, type ContentStatus } from 
 import { invalidateNavCache } from "./nav";
 import { parseSpecs, type ProductSpec } from "./product";
 import { parseKeywords } from "@/lib/keywords";
+import { resolveDisplayCounts, type DisplayCounts } from "@/server/stats";
 
 /**
  * CMS 内容服务(需求 4.4):栏目 / 导航 / 内容 全量读写。
@@ -213,7 +214,26 @@ export async function listContentsAdmin(q: ContentListQuery) {
       },
     }),
   ]);
-  return { total, page, pageSize, items };
+  // V4.8.0:附上拟真展示值,后台列表「真实 / 展示」并排核对(真实计数列本身不改)
+  const display = await resolveDisplayCounts(
+    items.map((c) => ({
+      id: c.id,
+      publishedAt: c.publishAt ?? c.createdAt,
+      viewCount: c.viewCount,
+      likeCount: c.likeCount,
+      shareCount: c.shareCount,
+      statsMode: c.statsMode,
+      statsBase: c.statsBase,
+      statsSalt: c.statsSalt,
+      status: c.status, // 草稿/下架内容不参与拟真
+    }))
+  );
+  return {
+    total,
+    page,
+    pageSize,
+    items: items.map((c) => ({ ...c, display: display.get(c.id) ?? null })),
+  };
 }
 
 export interface ContentInput {
@@ -229,6 +249,10 @@ export interface ContentInput {
   specs?: ProductSpec[] | null; // 商品规格参数(有序键值对);未传=不改动
   price?: { priceCents: number | null; currency: string | null } | null; // 交易字段(V4.0);未传=不改动;null 值=清除价格(转仅询盘)
   spu?: string | null; // 商品货号(V4.0.2);未传=不改动;null=清除
+  // 拟真互动数据(V4.8.0):拟真参数,只影响展示值,不触碰真实计数;未传=不改动
+  statsMode?: string; // AUTO | OFF | CUSTOM
+  statsBase?: number | null; // CUSTOM 基数
+  statsSalt?: string | null; // 单篇重掷盐
   translations: {
     locale: string;
     title: string;
@@ -327,6 +351,19 @@ export async function saveContent(
     ...(specsJson !== undefined ? { specs: specsJson } : {}),
     // SPU(V4.0.2):传了才写
     ...(input.spu !== undefined ? { spu: input.spu?.trim().slice(0, 60) || null } : {}),
+    // 拟真参数(V4.8.0):传了才写,非法模式一律回落 AUTO(展示层另有兜底)
+    ...(input.statsMode !== undefined
+      ? { statsMode: ["AUTO", "OFF", "CUSTOM"].includes(input.statsMode) ? input.statsMode : "AUTO" }
+      : {}),
+    ...(input.statsBase !== undefined
+      ? {
+          statsBase:
+            input.statsBase == null ? null : Math.min(1_000_000, Math.max(1, Math.floor(input.statsBase))),
+        }
+      : {}),
+    ...(input.statsSalt !== undefined
+      ? { statsSalt: input.statsSalt?.toString().slice(0, 64) || null }
+      : {}),
     // 交易字段(V4.0):传了才写;currency 缺省跟随站点默认(null)
     ...(input.price
       ? {
@@ -421,10 +458,27 @@ export async function getContentForEdit(id: number) {
     include: { translations: true },
   });
   if (!content) return null;
+  // V4.8.0:附拟真展示值,编辑页「真实 / 展示」并排可见(真实计数列本身仍是唯一事实源)
+  const display = (
+    await resolveDisplayCounts([
+      {
+        id: content.id,
+        publishedAt: content.publishAt ?? content.createdAt,
+        viewCount: content.viewCount,
+        likeCount: content.likeCount,
+        shareCount: content.shareCount,
+        statsMode: content.statsMode,
+        statsBase: content.statsBase,
+        statsSalt: content.statsSalt,
+        status: content.status,
+      },
+    ])
+  ).get(content.id);
   // V3.1 REQ-001:每语言 translation 返回解析后的 specs 数组(供编辑器全量往返;
   // NULL/非法 JSON 沿 parseSpecs 容错为 [],编辑器回显空编辑器)
   return {
     ...content,
+    display: display ?? null,
     translations: content.translations.map((t) => ({
       ...t,
       specs: parseSpecs(t.specs),
@@ -561,10 +615,28 @@ export async function listPublishedByCategory(
         createdAt: true,
         priceCents: true,
         currency: true,
+        // V4.8.0 拟真:合成展示值所需的单篇参数
+        statsMode: true,
+        statsBase: true,
+        statsSalt: true,
         translations: { select: { locale: true, title: true, summary: true } },
       },
     }),
   ]);
+
+  // 展示值(V4.8.0):开关关闭时零查询直返真实值
+  const display = await resolveDisplayCounts(
+    items.map((c) => ({
+      id: c.id,
+      publishedAt: c.publishAt ?? c.createdAt,
+      viewCount: c.viewCount,
+      likeCount: c.likeCount,
+      shareCount: 0,
+      statsMode: c.statsMode,
+      statsBase: c.statsBase,
+      statsSalt: c.statsSalt,
+    }))
+  );
 
   return {
     category: {
@@ -595,7 +667,7 @@ export async function listPublishedByCategory(
     total,
     page,
     pageSize,
-    items: items.map((c) => shapeCard(c, locale)),
+    items: items.map((c) => shapeCard(c, locale, undefined, display.get(c.id))),
   };
 }
 
@@ -619,15 +691,31 @@ export async function getPublishedBySlug(
 
   const t = content.translations.find((x) => x.locale === locale) ?? content.translations[0];
   if (!t) return null;
+  // 展示值(V4.8.0):详情页与列表卡片同源,不会出现两处数字对不上
+  const display = (
+    await resolveDisplayCounts([
+      {
+        id: content.id,
+        publishedAt: content.publishAt ?? content.createdAt,
+        viewCount: content.viewCount,
+        likeCount: content.likeCount,
+        shareCount: content.shareCount,
+        statsMode: content.statsMode,
+        statsBase: content.statsBase,
+        statsSalt: content.statsSalt,
+        status: content.status,
+      },
+    ])
+  ).get(content.id);
   return {
     id: content.id,
     slug: content.slug,
     coverUrl: content.coverUrl,
     formId: content.formId,
     authorName: content.authorName,
-    viewCount: content.viewCount,
-    likeCount: content.likeCount,
-    shareCount: content.shareCount,
+    viewCount: display?.views ?? content.viewCount,
+    likeCount: display?.likes ?? content.likeCount,
+    shareCount: display?.shares ?? content.shareCount,
     publishedAt: content.publishAt ?? content.createdAt,
     category: {
       slug: content.category.slug,
@@ -656,7 +744,19 @@ export async function listLatestPublished(locale: string, take = 6) {
     take,
     include: { translations: true, category: { select: { moduleType: true } } },
   });
-  return items.map((c) => shapeCard(c, locale, c.category?.moduleType));
+  const display = await resolveDisplayCounts(
+    items.map((c) => ({
+      id: c.id,
+      publishedAt: c.publishAt ?? c.createdAt,
+      viewCount: c.viewCount,
+      likeCount: c.likeCount,
+      shareCount: c.shareCount,
+      statsMode: c.statsMode,
+      statsBase: c.statsBase,
+      statsSalt: c.statsSalt,
+    }))
+  );
+  return items.map((c) => shapeCard(c, locale, c.category?.moduleType, display.get(c.id)));
 }
 
 /** 站内搜索单条结果(卡片数据 + 是否命中标题,供排序与高亮) */
@@ -828,7 +928,9 @@ function shapeCard(
     category?: { moduleType: string };
   },
   locale: string,
-  moduleType?: string
+  moduleType?: string,
+  /** V4.8.0 拟真展示值:缺省(或开关关闭)时用真实计数 */
+  display?: DisplayCounts
 ) {
   const t = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
   return {
@@ -836,8 +938,8 @@ function shapeCard(
     slug: c.slug,
     coverUrl: c.coverUrl,
     authorName: c.authorName ?? null,
-    viewCount: c.viewCount,
-    likeCount: c.likeCount,
+    viewCount: display?.views ?? c.viewCount,
+    likeCount: display?.likes ?? c.likeCount,
     publishedAt: c.publishAt ?? c.createdAt,
     title: t?.title ?? "",
     summary: t?.summary ?? null,

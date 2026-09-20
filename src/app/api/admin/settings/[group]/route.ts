@@ -23,6 +23,7 @@ const ALLOWED_GROUPS = new Set([
   "notify",
   "errors",
   "shop",
+  "stats", // V4.8.0 拟真互动数据
 ]);
 
 const SECRET_KEYS: Record<string, string[]> = {
@@ -111,10 +112,35 @@ const shopSchema = z
   })
   .partial();
 
+// V4.8.0 拟真互动数据:写入侧边界兜底(算法内部另有 clamp,双保险防脏配置)
+const statsSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    scale: z.number().min(0.05).max(20).optional(),
+    baseViews: z.number().int().min(1).max(1_000_000).optional(),
+    spread: z.number().min(0).max(2).optional(),
+    decay: z.number().min(0.3).max(2).optional(),
+    amplify: z.number().min(0).max(500).optional(),
+    likeRate: z.number().min(0).max(0.5).optional(),
+    shareRate: z.number().min(0).max(1).optional(),
+    seedSalt: z.string().max(64).optional(),
+  })
+  .partial();
+
 function validateGroup(
   group: string,
   values: Record<string, unknown>
 ): ReturnType<typeof jsonErr> | null {
+  if (group === "stats") {
+    const r = statsSchema.safeParse(values);
+    if (!r.success) {
+      const first = r.error.issues[0];
+      return jsonErr(
+        `拟真数据配置格式不正确:${first?.path?.join(".") ?? ""} ${first?.message ?? ""}`.trim()
+      );
+    }
+    return null;
+  }
   if (group === "layout") {
     const r = layoutSchema.safeParse(values);
     if (!r.success) {

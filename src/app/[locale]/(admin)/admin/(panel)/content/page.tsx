@@ -43,6 +43,8 @@ interface ContentRow {
   likeCount: number;
   shareCount: number;
   favoriteCount: number;
+  /** V4.8.0:拟真展示值(与真实值不同时列表并排显示,便于随时核对) */
+  display?: { views: number; likes: number; shares: number } | null;
   publishAt: string | null;
   createdAt: string;
   translations: { locale: string; title: string }[];
@@ -364,7 +366,25 @@ export default function ContentAdminPage() {
                 </TableCell>
                 <TableCell>{row.source === "UGC" ? <Badge variant="outline">投稿</Badge> : "后台"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {row.viewCount} / {row.likeCount} / {row.shareCount} / {row.favoriteCount}
+                  {/* V4.8.0:拟真开启时并排显示「展示 / 真实(小字)」,避免把展示值误当真实数据 */}
+                  {row.display &&
+                  (row.display.views !== row.viewCount ||
+                    row.display.likes !== row.likeCount ||
+                    row.display.shares !== row.shareCount) ? (
+                    <span
+                      title={`真实:阅读 ${row.viewCount} / 赞 ${row.likeCount} / 转发 ${row.shareCount}`}
+                    >
+                      {row.display.views} / {row.display.likes} / {row.display.shares} /{" "}
+                      {row.favoriteCount}
+                      <span className="block text-xs">
+                        真实 {row.viewCount} / {row.likeCount} / {row.shareCount} / {row.favoriteCount}
+                      </span>
+                    </span>
+                  ) : (
+                    <>
+                      {row.viewCount} / {row.likeCount} / {row.shareCount} / {row.favoriteCount}
+                    </>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(row.createdAt).toLocaleDateString("zh-CN")}

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { COMMENT_STATUS, TARGET_TYPE, CONTENT_STATUS } from "@/types/domain";
 import { findSensitiveWord, invalidateWordsCache } from "@/lib/ugc/filter";
 import { sanitizeRichHtml } from "@/lib/sanitize";
+import { recordRealViewDay } from "@/server/stats";
 
 /**
  * UGC 服务(需求 4.8):阅读/点赞/转发计数、评论全流程、敏感词管理。
@@ -20,10 +21,15 @@ export {
 // ---------------- 阅读量 ----------------
 
 export async function increaseView(contentId: number): Promise<void> {
-  await prisma.content.updateMany({
+  const res = await prisma.content.updateMany({
     where: { id: contentId, status: CONTENT_STATUS.PUBLISHED },
     data: { viewCount: { increment: 1 } },
   });
+  // V4.8.0:同时记下"这次真实阅读发生在哪天"——拟真放大要按天分 5 天释放(不是立刻跳变)。
+  // 判定与真实计数保持一致(未发布内容两者都不计);失败不影响真实计数。
+  if (res.count > 0) {
+    await recordRealViewDay(contentId).catch(() => {});
+  }
 }
 
 // ---------------- 点赞 ----------------

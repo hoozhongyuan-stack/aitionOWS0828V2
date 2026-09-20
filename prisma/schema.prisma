@@ -159,17 +159,22 @@ model Content {
   priceCents   Int? // 价格(最小货币单位);商品类型栏目使用
   currency     String? // ISO 4217(USD/EUR…);null=用站点默认币种(Setting group=shop)
   spu          String? // 商品货号(V4.0.2,自由文本选填);下单时快照进 OrderItem
-  // —— 互动统计计数(后台可手动改/清零)——
+  // —— 互动统计计数:真实值,只读(后台无写接口,见 api/admin/contents 注释)——
   viewCount    Int       @default(0)
   likeCount    Int       @default(0)
   shareCount   Int       @default(0)
   favoriteCount Int      @default(0) // 收藏数:随 Favorite 表增删由应用层同步维护
+  // —— 拟真互动数据(V4.8.0):只影响前台展示值,绝不改写上面三列 ——
+  statsMode    String    @default("AUTO") // AUTO=跟随全局 | OFF=此篇不拟真 | CUSTOM=用 statsBase
+  statsBase    Int? // CUSTOM 模式的 30 天累计阅读基数
+  statsSalt    String? // 单篇种子盐:后台「重新随机」写入新值 → 该篇曲线重掷
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   category     Category             @relation(fields: [categoryId], references: [id])
   translations ContentTranslation[]
   comments     Comment[]
+  dailyViews   ContentDailyView[]
 
   @@index([categoryId, status])
   @@index([status, publishAt])
@@ -533,6 +538,22 @@ model DailyStat {
 
   @@unique([date, path])
   @@index([date])
+}
+
+/// 真实阅读逐日明细(V4.8.0):拟真放大要按"真实事件发生在哪天"分 5 天释放,
+/// 故记到天粒度。只有发生过真实阅读的内容才会有行(通常极少),列表页批量查询代价可忽略。
+model ContentDailyView {
+  id        Int      @id @default(autoincrement())
+  contentId Int
+  date      String // 本地时区 YYYY-MM-DD
+  views     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, date])
+  @@index([contentId])
 }
 
 /// 备份记录:一键数据库 + 文件备份

@@ -63,6 +63,10 @@ const putSchema = z.object({
     .max(60)
     .nullable()
     .optional(),
+  // 拟真互动数据(V4.8.0):不声明会被 zod 剥除 → "保存不报错但不生效"(历史事故同款)
+  statsMode: z.enum(["AUTO", "OFF", "CUSTOM"]).optional(),
+  statsBase: z.number().int().min(1).max(1_000_000).nullable().optional(),
+  statsSalt: z.string().max(64).nullable().optional(),
   translations: z.array(
     z.object({
       locale: z.string(),

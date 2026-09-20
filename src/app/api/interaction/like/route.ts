@@ -3,6 +3,7 @@ import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { getUserSession, getActiveUserSession, GUEST_COOKIE } from "@/lib/auth/session";
 import { getFeatureFlags } from "@/lib/config";
 import { toggleLike, hasLiked } from "@/server/ugc";
+import { resolveDisplayCountsById } from "@/server/stats";
 import { getOrCreateGuestKey, guestCookieOptions, rateLimit } from "@/lib/ugc/anti-spam";
 
 /**
@@ -33,7 +34,11 @@ export async function POST(req: Request) {
       userId: user?.id ?? null,
       guestKey: guest?.key ?? null,
     });
-    const res = jsonOk(result);
+    // V4.8.0:回包用展示值(拟真层)+ 本次真实操作 —— 前台点一下正好 +1,不会跳回真实值
+    const display = await resolveDisplayCountsById(parsed.data.contentId);
+    const res = jsonOk(
+      display ? { liked: result.liked, likeCount: display.likes } : result
+    );
     if (guest?.isNew) res.cookies.set(GUEST_COOKIE, guest.key, guestCookieOptions());
     return res;
   } catch (e) {

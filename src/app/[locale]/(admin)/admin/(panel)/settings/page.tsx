@@ -417,12 +417,168 @@ function ErrorsTab() {
   );
 }
 
+/**
+ * 拟真互动数据(V4.8.0)。
+ * 说明先行:本页所有参数只影响前台"展示出来的"阅读/点赞/转发数字,
+ * 真实计数(Content.viewCount 等)永不被改写;关闭总开关后前台立即回到真实值。
+ */
+function StatsTab() {
+  const { values: v, setValues, save, saving } = useGroup("stats");
+  if (!v) return <div className="text-sm text-muted-foreground">加载中…</div>;
+  const set = (k: string, val: unknown) => setValues({ ...v, [k]: val });
+  const num = (k: string, fallback: number) => {
+    const n = Number(v[k]);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>拟真互动数据</CardTitle>
+        <CardDescription>
+          为阅读量/点赞量/转发量生成拟真增长的展示值:发布越久自然越长,真实阅读再按随机系数放大。
+          只影响前台展示,真实计数不改动;关闭后前台立即显示真实值。
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <SwitchRow
+          label="启用拟真数据"
+          desc="关闭(默认)= 前台显示真实计数,与未升级时完全一致"
+          checked={!!v.enabled}
+          onChange={(c) => set("enabled", c)}
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label>篇均基数(30 天累计阅读中位数)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={String(num("baseViews", 300))}
+              onChange={(e) => set("baseViews", Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">
+              一篇内容发布后 30 天的累计阅读量中位数。300 ≈ 头一天约 70、一周约 200。
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label>全局强度倍数</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min={0.05}
+              value={String(num("scale", 1))}
+              onChange={(e) => set("scale", Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">整体放大/缩小自然增长量,1 = 不做额外缩放。</p>
+          </div>
+          <div className="space-y-1">
+            <Label>篇间差异(σ)</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min={0}
+              max={2}
+              value={String(num("spread", 0.8))}
+              onChange={(e) => set("spread", Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">
+              越大越分散(0.8 ≈ 多数在基数的 0.45~2.2 倍之间,少数爆款更高)。
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label>冷却速度</Label>
+            <Input
+              type="number"
+              step="0.05"
+              min={0.3}
+              max={2}
+              value={String(num("decay", 0.95))}
+              onChange={(e) => set("decay", Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">
+              决定多久冷下来:0.8 长尾更长,1.2 冷得更快。
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label>真实阅读放大系数</Label>
+            <Input
+              type="number"
+              step="1"
+              min={0}
+              max={500}
+              value={String(num("amplify", 12))}
+              onChange={(e) => set("amplify", Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">
+              1 次真实阅读 ≈ 多少次展示阅读(每天系数独立随机,并分 5 天慢慢释放)。
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label>种子盐</Label>
+            <div className="flex gap-2">
+              <Input
+                value={String(v.seedSalt ?? "v1")}
+                onChange={(e) => set("seedSalt", e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => set("seedSalt", Math.random().toString(36).slice(2, 10))}
+              >
+                重掷
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              换一个值 = 全站曲线重排(量级不变)。对某篇文章单独重掷,在内容编辑页。
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label>点赞率(%)</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min={0}
+              max={50}
+              value={String(Number((num("likeRate", 0.022) * 100).toFixed(2)))}
+              onChange={(e) => set("likeRate", Number(e.target.value) / 100)}
+            />
+            <p className="text-xs text-muted-foreground">点赞量 ≈ 展示阅读 × 该比例。</p>
+          </div>
+          <div className="space-y-1">
+            <Label>转发率(%)</Label>
+            <Input
+              type="number"
+              step="1"
+              min={0}
+              max={100}
+              value={String(Number((num("shareRate", 0.22) * 100).toFixed(1)))}
+              onChange={(e) => set("shareRate", Number(e.target.value) / 100)}
+            />
+            <p className="text-xs text-muted-foreground">转发量 ≈ 展示点赞 × 该比例。</p>
+          </div>
+        </div>
+
+        <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+          拟真数据只作用于前台展示层;后台内容列表会并排显示「真实 / 展示」两组数字,随时可核对。
+          真实阅读的放大部分会在 5 天内陆续涨出来(不是立刻跳变),单篇可在内容编辑页关闭或指定基数。
+        </p>
+
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "保存中…" : "保存"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">功能设置</h1>
-        <p className="text-sm text-muted-foreground">互动开关、上传限制、第三方登录与错误页。</p>
+        <p className="text-sm text-muted-foreground">互动开关、上传限制、第三方登录、错误页与拟真数据。</p>
       </div>
       <Tabs defaultValue="features">
         <TabsList>
@@ -431,6 +587,7 @@ export default function SettingsPage() {
           <TabsTrigger value="wechat">微信登录</TabsTrigger>
           <TabsTrigger value="notify">通知</TabsTrigger>
           <TabsTrigger value="errors">错误页</TabsTrigger>
+          <TabsTrigger value="stats">拟真数据</TabsTrigger>
         </TabsList>
         <TabsContent value="features">
           <FeaturesTab />
@@ -446,6 +603,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="errors">
           <ErrorsTab />
+        </TabsContent>
+        <TabsContent value="stats">
+          <StatsTab />
         </TabsContent>
       </Tabs>
     </div>

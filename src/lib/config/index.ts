@@ -116,6 +116,43 @@ const FEATURE_DEFAULTS: FeatureFlags = {
   forceLogin: false,
 };
 
+// —— 拟真互动数据(V4.8.0)——
+/**
+ * 前台展示值 = 自然增长曲线 + 真实阅读放大(延迟释放),默认**关闭**:
+ * 未开启时展示值恒等于真实计数,升级到本版本对存量站点零可见变化。
+ */
+export interface StatsConfig {
+  /** 总开关(默认 false:前台一律显示真实计数) */
+  enabled: boolean;
+  /** 全局强度倍数:整体放大/缩小自然增长量 */
+  scale: number;
+  /** 篇均基数:一篇内容发布后 30 天的累计阅读中位数 */
+  baseViews: number;
+  /** 篇间离散度 σ:越大越"几家欢乐几家愁" */
+  spread: number;
+  /** 冷却速度(幂律指数):越大冷得越快、长尾越短 */
+  decay: number;
+  /** 真实阅读放大系数中位数:1 次真实阅读 ≈ 多少次展示阅读 */
+  amplify: number;
+  /** 点赞率(占展示阅读) */
+  likeRate: number;
+  /** 转发率(占展示点赞) */
+  shareRate: number;
+  /** 全局种子盐:改值 = 全站曲线重掷(量级不变,分布重排) */
+  seedSalt: string;
+}
+const STATS_DEFAULTS: StatsConfig = {
+  enabled: false,
+  scale: 1,
+  baseViews: 300,
+  spread: 0.8,
+  decay: 0.95,
+  amplify: 12,
+  likeRate: 0.022,
+  shareRate: 0.22,
+  seedSalt: "v1",
+};
+
 // —— 上传限制 ——
 export const VIDEO_MAX_SIZE_MB = 400; // 视频单文件上限(固定值,不随后台 maxSizeMB 配置)
 export interface UploadConfig {
@@ -236,6 +273,7 @@ async function merged<T extends object>(group: string, defaults: T): Promise<T> 
 export const getThemeConfig = () => merged("theme", THEME_DEFAULTS);
 export const getBrandConfig = () => merged("brand", BRAND_DEFAULTS);
 export const getFeatureFlags = () => merged("features", FEATURE_DEFAULTS);
+export const getStatsConfig = () => merged("stats", STATS_DEFAULTS);
 export const getUploadConfig = () => merged("upload", UPLOAD_DEFAULTS);
 export const getSeoConfig = () => merged("seo", SEO_DEFAULTS);
 export const getWechatConfig = () => merged("wechat", WECHAT_DEFAULTS);

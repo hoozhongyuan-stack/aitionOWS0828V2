@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { CONTENT_STATUS } from "@/types/domain";
 import { parseFormFields } from "@/types/form";
 import { promoteScheduled } from "./index";
+import { resolveDisplayCounts } from "@/server/stats";
 
 /**
  * 商品域(需求 V3.0 REQ-001/002,独立可测量模块——NFR-005 覆盖率口径)。
@@ -120,6 +121,23 @@ export async function getProductDetail(
     }
   }
 
+  // 拟真展示值(V4.8.0):与文章详情/列表卡片同源
+  const display = (
+    await resolveDisplayCounts([
+      {
+        id: content.id,
+        publishedAt: content.publishAt ?? content.createdAt,
+        viewCount: content.viewCount,
+        likeCount: content.likeCount,
+        shareCount: content.shareCount,
+        statsMode: content.statsMode,
+        statsBase: content.statsBase,
+        statsSalt: content.statsSalt,
+        status: content.status,
+      },
+    ])
+  ).get(content.id);
+
   return {
     id: content.id,
     slug: content.slug,
@@ -127,11 +145,11 @@ export async function getProductDetail(
     formId: content.formId,
     authorName: content.authorName,
     favoriteCount: content.favoriteCount,
-    viewCount: content.viewCount,
+    viewCount: display?.views ?? content.viewCount,
     priceCents: content.priceCents,
     currency: content.currency,
-    likeCount: content.likeCount,
-    shareCount: content.shareCount,
+    likeCount: display?.likes ?? content.likeCount,
+    shareCount: display?.shares ?? content.shareCount,
     publishedAt: content.publishAt ?? content.createdAt,
     category: {
       slug: content.category.slug,

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { getFeatureFlags } from "@/lib/config";
 import { recordShare } from "@/server/ugc";
+import { resolveDisplayCountsById } from "@/server/stats";
 import { rateLimit } from "@/lib/ugc/anti-spam";
 
 /**
@@ -21,6 +22,8 @@ export async function POST(req: Request) {
   if (!rateLimit(`share:${ip}:${parsed.data.contentId}`, 5, 60_000)) {
     return jsonOk({ shareCount: null }); // 限频命中静默处理
   }
-  const shareCount = await recordShare(parsed.data.contentId, ip);
-  return jsonOk({ shareCount });
+  await recordShare(parsed.data.contentId, ip);
+  // V4.8.0:回包用展示值(拟真层),否则前台点一次转发数字会从拟真值掉回真实值
+  const display = await resolveDisplayCountsById(parsed.data.contentId);
+  return jsonOk({ shareCount: display ? display.shares : null });
 }

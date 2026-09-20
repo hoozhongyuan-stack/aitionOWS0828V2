@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { CURRENCIES } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -135,6 +135,12 @@ export default function ContentEditPage() {
   const [spuInput, setSpuInput] = useState(""); // 商品货号(V4.0.2)
   const [defaultLocale, setDefaultLocale] = useState("zh-CN"); // 默认语言 Tab(顶层兜底列同步源)
   const [favoriteCount, setFavoriteCount] = useState(0); // 只读展示,与阅读/赞/转对称
+  // —— 拟真互动数据(V4.8.0):只影响前台展示值,真实计数只读 ——
+  const [statsMode, setStatsMode] = useState("AUTO");
+  const [statsBaseInput, setStatsBaseInput] = useState(""); // CUSTOM 基数(留空=不指定)
+  const [statsSalt, setStatsSalt] = useState<string | null>(null);
+  const [realStats, setRealStats] = useState({ views: 0, likes: 0, shares: 0 });
+  const [displayStats, setDisplayStats] = useState<{ views: number; likes: number; shares: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -168,6 +174,13 @@ export default function ContentEditPage() {
             currency: string | null;
             spu: string | null;
             favoriteCount: number;
+            viewCount: number;
+            likeCount: number;
+            shareCount: number;
+            statsMode: string;
+            statsBase: number | null;
+            statsSalt: string | null;
+            display: { views: number; likes: number; shares: number } | null;
             translations: (Partial<Translation> & { specs?: SpecRow[] | null })[];
           }>(`/api/admin/contents?id=${id}`);
           setSlug(c.slug);
@@ -179,6 +192,15 @@ export default function ContentEditPage() {
           setPublishAt(c.publishAt ? toLocalInput(new Date(c.publishAt)) : "");
           setGallery(parseGalleryJson(c.gallery)); // 保存后重开即回显(AC-001)
           setFavoriteCount(c.favoriteCount ?? 0);
+          setStatsMode(c.statsMode ?? "AUTO");
+          setStatsBaseInput(c.statsBase != null ? String(c.statsBase) : "");
+          setStatsSalt(c.statsSalt ?? null);
+          setRealStats({
+            views: c.viewCount ?? 0,
+            likes: c.likeCount ?? 0,
+            shares: c.shareCount ?? 0,
+          });
+          setDisplayStats(c.display ?? null);
           setPriceInput(c.priceCents != null ? String(c.priceCents / 100) : "");
           setCurrencyInput(c.currency || "USD");
           setSpuInput(c.spu ?? "");
@@ -244,6 +266,14 @@ export default function ContentEditPage() {
         authorName: authorName.trim(),
         coverUrl: coverUrl || null,
         publishAt: st === "SCHEDULED" && publishAt ? new Date(publishAt).toISOString() : null,
+        // 拟真参数(V4.8.0):新建时不需要(默认 AUTO),编辑时全量往返
+        ...(isNew
+          ? {}
+          : {
+              statsMode,
+              statsBase: statsMode === "CUSTOM" && statsBaseInput.trim() !== "" ? Number(statsBaseInput) : null,
+              statsSalt,
+            }),
         // 商品字段:仅商品栏目提交(切回 article 栏目时不传,服务层保留既有值)。
         // specs=默认语言 Tab 同步顶层兜底列;translations[].specs=各语言 Tab 全量往返(V3.1 REQ-001)
         ...(isProduct
@@ -528,6 +558,76 @@ export default function ContentEditPage() {
               <Input value={String(favoriteCount)} readOnly disabled className="w-24" />
               <p className="text-xs text-muted-foreground">
                 与阅读/点赞/转发一致:互动统计仅展示,后台不可修改。
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 拟真互动数据(V4.8.0):只改前台展示值,真实计数只读;总开关在「功能设置 → 拟真数据」 */}
+      {!isNew && (
+        <Card>
+          <CardHeader>
+            <CardTitle>拟真互动数据</CardTitle>
+            <CardDescription>
+              只影响前台展示的阅读/点赞/转发数字,真实计数不变。整站开关与参数在「功能设置 → 拟真数据」。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>本篇策略</Label>
+              <Select value={statsMode} onValueChange={setStatsMode}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AUTO">跟随全局(推荐)</SelectItem>
+                  <SelectItem value="OFF">不拟真(前台只显示真实值)</SelectItem>
+                  <SelectItem value="CUSTOM">自定义基数</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {statsMode === "CUSTOM" && (
+              <div className="space-y-2">
+                <Label>30 天累计阅读基数</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={statsBaseInput}
+                  onChange={(e) => setStatsBaseInput(e.target.value)}
+                  placeholder="例如 1200"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>本篇曲线重掷</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStatsSalt(Math.random().toString(36).slice(2, 10))}
+                >
+                  重新随机
+                </Button>
+                <span className="font-mono text-xs text-muted-foreground">{statsSalt ?? "未重掷"}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                量级不变,只重排本篇的日内分布与篇间随机项(保存后生效)。
+              </p>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>计数对照(只读)</Label>
+              <p className="text-sm">
+                真实:阅读 {realStats.views} / 赞 {realStats.likes} / 转发 {realStats.shares}
+                {displayStats && (
+                  <span className="ml-3 text-muted-foreground">
+                    前台展示:阅读 {displayStats.views} / 赞 {displayStats.likes} / 转发{" "}
+                    {displayStats.shares}
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                真实计数由访客行为产生,后台不可修改;展示值每次打开按算法重算,只增不减。
               </p>
             </div>
           </CardContent>
