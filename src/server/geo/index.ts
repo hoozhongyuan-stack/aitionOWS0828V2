@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { AI_CRAWLERS } from "@/lib/seo/ai-crawlers";
 
 /**
  * GEO 监测服务(V3.2 一期):AI 爬虫与 AI 渠道引荐的自控数据监测。
@@ -20,30 +21,15 @@ import { prisma } from "@/lib/db";
 /** 统计口径(V4.6.4):ai=AI 引擎 | search=传统搜索引擎 | suspected=疑似 AI 抓取(推测) */
 export type GeoKind = "ai" | "search" | "suspected" | "unknown";
 
-/** 已知 AI 爬虫 UA 关键字 → 引擎显示名(小写包含匹配) */
-export const AI_BOTS: ReadonlyArray<{ match: string; name: string }> = [
-  { match: "gptbot", name: "GPTBot (OpenAI)" },
-  { match: "oai-searchbot", name: "OAI-SearchBot (OpenAI 检索)" },
-  { match: "chatgpt-user", name: "ChatGPT-User (OpenAI 用户触发)" },
-  { match: "perplexitybot", name: "PerplexityBot" },
-  { match: "perplexity-user", name: "Perplexity-User" },
-  { match: "claudebot", name: "ClaudeBot (Anthropic)" },
-  { match: "claude-user", name: "Claude-User (Anthropic 用户触发)" },
-  { match: "google-extended", name: "Google-Extended (Gemini 训练)" },
-  { match: "googleother", name: "GoogleOther" },
-  { match: "applebot-extended", name: "Applebot-Extended (Apple 智能)" },
-  { match: "bytespider", name: "Bytespider (字节·豆包)" },
-  { match: "deepseekbot", name: "DeepSeekBot" },
-  // 国内引擎增补(V3.3 C3,UA 已核实自 ai-robots-txt 清单):
-  // 腾讯混元/元宝与百度无公开声明的 AI 爬虫 UA(EdgeOne 官方清单亦未收录),故不入表;
-  // Baiduspider 属传统搜索爬虫,计入会污染 GEO 口径。
-  { match: "kimibot", name: "KimiBot (月之暗面 Kimi)" },
-  { match: "kimi-searchbot", name: "Kimi-SearchBot (Kimi 检索)" },
-  { match: "kimi-user", name: "Kimi-User (Kimi 用户触发)" },
-  { match: "chatglm-spider", name: "ChatGLM-Spider (智谱清言)" },
-  { match: "tongyibot", name: "TongyiBot (阿里通义)" },
-  { match: "pangubot", name: "PanguBot (华为盘古)" },
-];
+/**
+ * 已知 AI 爬虫 UA 关键字 → 引擎显示名(小写包含匹配)。
+ * V4.8.2:与 robots.txt 的分组**同源**(@/lib/seo/ai-crawlers),不再各自维护;
+ * 数组顺序即匹配优先级(子串关系需长词在前),故这里原样保序映射。
+ */
+export const AI_BOTS: ReadonlyArray<{ match: string; name: string }> = AI_CRAWLERS.map((c) => ({
+  match: c.token.toLowerCase(),
+  name: c.name,
+}));
 
 /** 传统搜索引擎爬虫 UA 关键字 → 显示名(V4.6.4;与 AI 口径隔离统计) */
 export const SEARCH_BOTS: ReadonlyArray<{ match: string; name: string }> = [
@@ -241,29 +227,66 @@ function bumpSuspectedSampling(): boolean {
   return cur.n <= SUSPECTED_DAILY_SAMPLE_LIMIT;
 }
 
-/** 记录一次引荐(渠道+落地页+日期 upsert 累加);kind: ai | search */
+/**
+ * GEO 记录白名单(V4.8.2 修复):是否应把这次请求记入 GEO。
+ *
+ * 此前用子串正则 `/\/admin|\/_next|\/uploads|\/api/` 判断,**不是按路径段匹配**:
+ * `/zh-CN/article/api-design`、`/zh-CN/c/api-case`、`/zh-CN/article/admin-guide`、
+ * `/zh-CN/c/uploads-guide` 这类正常内容页会被误判为后台/接口路径 → AI 抓取与引荐静默不记录。
+ *
+ * 现在只看 locale 之后**第一段**是不是路由级排除段;内容 slug 无论叫什么都能记录
+ * (注意:正则加锚点也解决不了"栏目 slug 恰好叫 api"的情况,按段判断才可以)。
+ */
+const GEO_EXCLUDED_SECTIONS = new Set(["admin", "api", "_next", "uploads"]);
+
+export function isGeoRecordablePath(reqPath: string, locale: string): boolean {
+  const segments = reqPath.split("/").filter(Boolean);
+  const section = segments[0] === locale ? segments[1] ?? "" : segments[0] ?? "";
+  return !GEO_EXCLUDED_SECTIONS.has(section);
+}
+
+/**
+ * 记录一次引荐(渠道+落地页+日期 upsert 累加);kind: ai | search。
+ *
+ * 独立访客口径(V4.8.2,含历史修复):
+ * - 由调用方传入前台匿名访客标识(`visitorId`,客户端 localStorage 里的 aition_vid);
+ *   服务端看不到它,所以引荐识别在 `/api/track`(客户端上报)发起。
+ * - 判定"新访客"靠 **AIReferralVisitor 的唯一约束**(source+date+visitorId):
+ *   插入成功 = 该访客当天首次从该渠道到达 → visitors +1;唯一冲突 = 老访客 → 只累加 count。
+ *   这取代了此前"先 aggregate 再写"的写法 —— 那种写法有并发竞态(同一天两个首访可能双计/漏计),
+ *   且 visitors 只会落在当天第一个落地页上,后台读起来像"每个落地页的访客数"。
+ * - 未传 visitorId 时只累加 count(兼容旧调用/非浏览器路径),visitors 不动。
+ */
 export async function recordReferral(
   source: string,
   landing: string,
-  kind: GeoKind = "ai"
+  kind: GeoKind = "ai",
+  visitorId?: string | null
 ): Promise<void> {
   const p = landing.slice(0, 200) || "/";
   const date = today();
-  // 访客口径(V4.7.2):按「来源 + 日期」去重 —— 同一来源当天只在**首次到达**时计 1 个访客。
-  // 此前由调用方恒传 true,导致「访客」列等于「点击」列,容易被误读为"N 个不同访客"。
-  const firstToday = await prisma.aIReferralStat
-    .aggregate({ where: { source, date }, _sum: { visitors: true } })
-    .then((r) => (r._sum.visitors ?? 0) === 0)
-    .catch(() => false);
+
+  let newVisitor = false;
+  if (visitorId) {
+    try {
+      await prisma.aIReferralVisitor.create({
+        data: { source, date, visitorId: visitorId.slice(0, 64), landing: p },
+      });
+      newVisitor = true;
+    } catch {
+      newVisitor = false; // 唯一约束冲突 = 今天这个访客已经从该渠道来过
+    }
+  }
+
   try {
     await prisma.$transaction([
       prisma.aIReferralStat.upsert({
         where: { source_landing_date: { source, landing: p, date } },
         update: {
           count: { increment: 1 },
-          ...(firstToday ? { visitors: { increment: 1 } } : {}),
+          ...(newVisitor ? { visitors: { increment: 1 } } : {}),
         },
-        create: { source, landing: p, date, count: 1, visitors: firstToday ? 1 : 0, kind },
+        create: { source, landing: p, date, count: 1, visitors: newVisitor ? 1 : 0, kind },
       }),
       prisma.aIReferralEvent.create({ data: { source, landing: p, kind } }),
     ]);
@@ -443,13 +466,19 @@ function dateRange(from?: string, to?: string) {
 }
 
 /** 明细保留清理:删除 before(YYYY-MM-DD) 之前的明细行(运维/定时任务调用) */
-export async function purgeEventsBefore(before: string): Promise<{ crawl: number; referral: number }> {
+export async function purgeEventsBefore(
+  before: string
+): Promise<{ crawl: number; referral: number; visitors: number }> {
   const lt = new Date(`${before}T00:00:00`);
-  const [crawl, referral] = await Promise.all([
+  // 独立访客表按 date(YYYY-MM-DD 字符串)归档,字典序即时间序,可直接字符串比较
+  const day = before.slice(0, 10);
+  const [crawl, referral, visitors] = await Promise.all([
     prisma.aICrawlEvent.deleteMany({ where: { ts: { lt } } }),
     prisma.aIReferralEvent.deleteMany({ where: { ts: { lt } } }),
+    // V4.8.2:访客去重表属明细层,同样按保留策略清理(否则只增不减)
+    prisma.aIReferralVisitor.deleteMany({ where: { date: { lt: day } } }),
   ]);
-  return { crawl: crawl.count, referral: referral.count };
+  return { crawl: crawl.count, referral: referral.count, visitors: visitors.count };
 }
 
 /** 保留策略:180 天(与方案确认一致) */

@@ -174,3 +174,87 @@ describe("V4.6.4 口径分区:传统搜索白名单 + 疑似抓取启发式 + ki
     void to;
   });
 });
+
+describe("独立访客口径(V4.8.2):按 渠道+日期+匿名访客标识 去重", () => {
+  afterEach(async () => {
+    const { prisma } = await import("@/lib/db");
+    await prisma.aIReferralVisitor.deleteMany();
+    await prisma.aIReferralStat.deleteMany();
+    await prisma.aIReferralEvent.deleteMany();
+    await prisma.$disconnect();
+  });
+
+  const today = () => {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  };
+
+  it("同一访客当天两次到达:count 累加 2,visitors 只 +1", async () => {
+    const { recordReferral } = await import("@/server/geo");
+    const { prisma } = await import("@/lib/db");
+    await recordReferral("DeepSeek", "/zh-CN/article/a", "ai", "visitor-aaa");
+    await recordReferral("DeepSeek", "/zh-CN/article/a", "ai", "visitor-aaa");
+    const row = await prisma.aIReferralStat.findFirst({ where: { source: "DeepSeek" } });
+    expect(row?.count).toBe(2);
+    expect(row?.visitors).toBe(1);
+    expect(await prisma.aIReferralVisitor.count()).toBe(1);
+  });
+
+  it("不同访客:各自 +1(这是能对外说的独立访客数)", async () => {
+    const { recordReferral } = await import("@/server/geo");
+    const { prisma } = await import("@/lib/db");
+    for (const v of ["v1", "v2", "v3"]) {
+      await recordReferral("DeepSeek", "/zh-CN/article/a", "ai", v);
+    }
+    const row = await prisma.aIReferralStat.findFirst({ where: { source: "DeepSeek" } });
+    expect(row?.count).toBe(3);
+    expect(row?.visitors).toBe(3);
+  });
+
+  it("跨天重新计:同一访客昨日来过,今天再来仍算 1 个访客", async () => {
+    const { recordReferral } = await import("@/server/geo");
+    const { prisma } = await import("@/lib/db");
+    const y = new Date(Date.now() - 86_400_000);
+    const p = (n: number) => String(n).padStart(2, "0");
+    const yesterday = `${y.getFullYear()}-${p(y.getMonth() + 1)}-${p(y.getDate())}`;
+    await prisma.aIReferralVisitor.create({
+      data: { source: "DeepSeek", date: yesterday, visitorId: "v-same", landing: "/old" },
+    });
+    await recordReferral("DeepSeek", "/zh-CN/article/a", "ai", "v-same");
+    const row = await prisma.aIReferralStat.findFirst({ where: { date: today() } });
+    expect(row?.visitors).toBe(1);
+  });
+
+  it("并发首访只计 1(唯一约束取代先查后写,消除竞态)", async () => {
+    const { recordReferral } = await import("@/server/geo");
+    const { prisma } = await import("@/lib/db");
+    await Promise.all(
+      Array.from({ length: 10 }, () => recordReferral("DeepSeek", "/zh-CN/article/a", "ai", "v-race"))
+    );
+    const row = await prisma.aIReferralStat.findFirst({ where: { source: "DeepSeek" } });
+    expect(row?.count).toBe(10);
+    expect(row?.visitors).toBe(1);
+    expect(await prisma.aIReferralVisitor.count()).toBe(1);
+  });
+
+  it("未传访客标识(旧调用/非浏览器路径):只累加 count,不动 visitors", async () => {
+    const { recordReferral } = await import("@/server/geo");
+    const { prisma } = await import("@/lib/db");
+    await recordReferral("豆包", "/zh-CN/article/a");
+    const row = await prisma.aIReferralStat.findFirst({ where: { source: "豆包" } });
+    expect(row?.count).toBe(1);
+    expect(row?.visitors).toBe(0);
+  });
+
+  it("保留策略清理覆盖访客表(否则只增不减)", async () => {
+    const geo = await import("@/server/geo");
+    const { prisma } = await import("@/lib/db");
+    await prisma.aIReferralVisitor.create({
+      data: { source: "DeepSeek", date: "2020-01-01", visitorId: "old", landing: "/x" },
+    });
+    const res = await geo.purgeEventsBefore(today());
+    expect(res.visitors).toBe(1);
+    expect(await prisma.aIReferralVisitor.count()).toBe(0);
+  });
+});

@@ -44,16 +44,18 @@ describe("GEO 监测服务", () => {
     expect(stats.topPages.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("getGeoMonitorStats:引荐表返回来源/落地/次数", async () => {
+  it("getGeoMonitorStats:引荐表返回来源/落地/次数/独立访客", async () => {
     const { recordReferral, getGeoMonitorStats } = await import("@/server/geo");
-    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway");
-    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway");
+    // V4.8.2:独立访客按 渠道+日期+匿名访客标识 去重 —— 同访客两次到达只计 1 个访客
+    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway", "ai", "vm-1");
+    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway", "ai", "vm-1");
+    await recordReferral("豆包", "/zh-CN/product/demo-product-gateway", "ai", "vm-2");
     const today = new Date();
     const fmt = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const stats = await getGeoMonitorStats(fmt, fmt);
     const row = stats.referrals.find((r: { source: string }) => r.source === "豆包");
-    expect(row?.count).toBe(2);
-    expect(row?.visitors).toBeGreaterThanOrEqual(1);
+    expect(row?.count).toBe(3);
+    expect(row?.visitors).toBe(2); // 两个不同访客
     expect(row?.landing).toBe("/zh-CN/product/demo-product-gateway");
   });
 });

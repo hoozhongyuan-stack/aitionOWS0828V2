@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AI_CRAWLERS } from "@/lib/seo/ai-crawlers";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -238,7 +239,7 @@ export default function GeoMonitorPage() {
       <StatsBlock
         title="AI 引擎抓取"
         accent="#8e1c2e"
-        desc="GEO 正式指标:各 AI 引擎对本站的抓取次数(按天);白名单覆盖国内外 18 个引擎"
+        desc={`GEO 正式指标:各 AI 引擎对本站的抓取次数(按天);白名单覆盖国内外 ${AI_CRAWLERS.length} 个引擎`}
         stats={ai}
         extra={
           <p className="text-xs text-muted-foreground">
@@ -297,7 +298,8 @@ export default function GeoMonitorPage() {
         <CardHeader>
           <CardTitle>AI 渠道引荐</CardTitle>
           <CardDescription>
-            从 AI 渠道点击链接来到站点的访客(渠道 × 落地页)——「被引用后带来流量」的直接证据
+            从 AI 渠道点击链接来到站点的独立访客(渠道 × 落地页)——「被引用后带来流量」的直接证据。
+            独立访客按「渠道 + 日期 + 匿名访客标识」去重:同一人当天从同一渠道来多次只计 1,跨天重新计
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -310,7 +312,12 @@ export default function GeoMonitorPage() {
                 <th className="py-2">渠道</th>
                 <th className="w-[38%] py-2">落地页</th>
                 <th className="py-2 text-right tabular-nums">点击</th>
-                <th className="py-2 text-right tabular-nums">访客</th>
+                <th
+                  className="py-2 text-right tabular-nums"
+                  title="按 渠道 + 日期 + 匿名访客标识(aition_vid)去重;同一人当天从同一渠道多次到访只计 1"
+                >
+                  独立访客
+                </th>
               </tr>
             </thead>
             <tbody>

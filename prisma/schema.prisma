@@ -487,6 +487,21 @@ model AIReferralEvent {
 }
 
 /// AI 渠道引荐统计:来源×落地页×日期 计数(referer 白名单命中)
+/// GEO 引荐独立访客(V4.8.2):按「渠道 + 日期 + 匿名访客标识」唯一。
+/// 插入成功 = 该访客当天首次从该渠道到达(landing 记其落地页);
+/// 唯一冲突 = 老访客 —— 用唯一约束代替"先 aggregate 再写",天然消除并发竞态。
+model AIReferralVisitor {
+  id        Int      @id @default(autoincrement())
+  source    String // 来源(与 AIReferralStat.source 同口径)
+  date      String // 服务器时区 YYYY-MM-DD(与其它统计同口径)
+  visitorId String // 前台匿名访客标识(aition_vid,存 localStorage;服务端看不到,故引荐识别在客户端发起)
+  landing   String   @default("/")
+  createdAt DateTime @default(now())
+
+  @@unique([source, date, visitorId])
+  @@index([date])
+}
+
 model AIReferralStat {
   id       Int    @id @default(autoincrement())
   source   String // 来源域名(AI 渠道 或 传统搜索引擎;V4.6.4 起含后者)

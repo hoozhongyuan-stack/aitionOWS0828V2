@@ -5,17 +5,7 @@ import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getBrandConfig } from "@/lib/config";
-import {
-  matchBot,
-  matchReferral,
-  matchSearchBot,
-  matchSearchReferral,
-  isGenericClient,
-  recordCrawl,
-  recordReferral,
-  recordUnknownReferral,
-  refererHostname,
-} from "@/server/geo";
+import { matchBot, matchSearchBot, isGenericClient, recordCrawl, isGeoRecordablePath } from "@/server/geo";
 import { cookies } from "next/headers";
 
 /**
@@ -89,33 +79,21 @@ export default async function LocaleLayout({
   const h = await headers();
   // x-geo-path 由 middleware 注入,已含完整 pathname(含 locale 前缀)——不再重复拼接(DEF-013)
   const reqPath = h.get("x-geo-path") ?? `/${locale}`;
-  const isSitePath = !/\/admin|\/_next|\/uploads|\/api/.test(reqPath);
+  // V4.8.2:改按路径段判断(见 isGeoRecordablePath)——子串匹配会误伤 slug 含 api/admin 的内容页
+  const isSitePath = isGeoRecordablePath(reqPath, locale);
   if (isSitePath) {
     const ua = h.get("user-agent");
-    const referer = h.get("referer");
-    // 三级判定(V4.6.4):AI 引擎 → 传统搜索引擎 → 疑似 AI 抓取(启发式,推测口径)
+    const referer = h.get("referer"); // 仅用于下面的"疑似抓取"启发式(判断是否站内 referer)
+    // 爬虫三级判定(V4.6.4):AI 引擎 → 传统搜索引擎 → 疑似 AI 抓取(启发式,推测口径)。
+    // 注意:引荐判定自 V4.8.2 起**移到客户端**(见 /api/track)—— 独立访客必须按人去重,
+    // 而只有浏览器拿得到匿名访客标识(localStorage)与初始来源;爬虫不执行 JS,故爬虫识别留在此处。
     const bot = matchBot(ua);
     const searchBot = bot ? null : matchSearchBot(ua);
-    const referral = matchReferral(referer);
-    const searchReferral = referral ? null : matchSearchReferral(referer);
     if (bot) {
       void recordCrawl(bot, reqPath, ua ?? undefined, "ai");
     } else if (searchBot) {
       void recordCrawl(searchBot, reqPath, ua ?? undefined, "search");
-    } else if (referral) {
-      void recordReferral(referral, reqPath, "ai");
-    } else if (searchReferral) {
-      void recordReferral(searchReferral, reqPath, "search");
     } else {
-      // 未识别来源(V4.7.2):Referer 存在、非本站、且没命中任何白名单时,只记主机名 ——
-      // 用于查清"某家 AI 为什么没有引荐记录"(带了但没收录 vs 压根没带 Referer)。
-      // 仅记真实浏览器(通用 HTTP 客户端视为抓取,交给下面的疑似分区,避免两个桶重复计数)。
-      const refHost = refererHostname(referer);
-      const hostOnly = (h.get("host") ?? "").split(":")[0].toLowerCase();
-      if (refHost && refHost !== hostOnly && !isGenericClient(ua)) {
-        void recordUnknownReferral(refHost, reqPath);
-      }
-
       // 疑似 AI 抓取:通用客户端 UA + 无 Cookie + 无站内 referer(仅可观测信号)
       const c = await cookies();
       const hasCookie =
