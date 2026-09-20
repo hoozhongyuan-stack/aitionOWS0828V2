@@ -41,8 +41,9 @@ export default function AdminLoginPage() {
         password,
       });
       toast.success("登录成功");
+      // V4.8.1:不再写死看板 —— 交 /admin 入口按角色与权限决定(子账号不再吃 403 红条)
       router.replace(
-        r.mustChangePw ? `/${locale}/admin/security?force=1` : `/${locale}/admin/dashboard`
+        r.mustChangePw ? `/${locale}/admin/security?force=1` : `/${locale}/admin`
       );
       router.refresh();
     } catch (err) {

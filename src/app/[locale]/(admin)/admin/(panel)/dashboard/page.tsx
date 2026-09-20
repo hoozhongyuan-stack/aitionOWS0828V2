@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiGet } from "@/components/admin/api-client";
+import { apiGet, isForbiddenError } from "@/components/admin/api-client";
 import { TrendChart } from "@/components/admin/trend-chart";
 import {
   PRESET_DAYS,
@@ -57,10 +57,25 @@ export default function DashboardPage() {
   const [fromInput, setFromInput] = useState("");
   const [toInput, setToInput] = useState("");
 
+  /**
+   * V4.8.1:数据看板仅主账号可见。子账号(或被直接输 URL 打开时)会拿到 403 ——
+   * 这类「权限不足」渲染成页面内空态,而不是弹红条(红条会被误读成系统故障)。
+   */
+  const [forbidden, setForbidden] = useState(false);
   useEffect(() => {
     apiGet<Stats>(dashboardRangeQuery(range))
-      .then(setStats)
-      .catch((e) => toast.error(e.message));
+      .then((d) => {
+        setForbidden(false);
+        setStats(d);
+      })
+      .catch((e) => {
+        if (isForbiddenError(e)) {
+          setForbidden(true);
+          setStats(null);
+          return;
+        }
+        toast.error(e.message);
+      });
   }, [range]);
 
   const applyPreset = (days: RangePresetDays) => {
@@ -79,6 +94,19 @@ export default function DashboardPage() {
     setStats(null);
     setRange(next);
   };
+
+  if (forbidden)
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">数据看板</h1>
+          <p className="text-sm text-muted-foreground">站点访问与业务概览。</p>
+        </div>
+        <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+          数据看板仅主账号可见。子账号可在「内容 / 表单 / 互动审核 / GEO 监测」等已授权菜单里工作。
+        </div>
+      </div>
+    );
 
   if (!stats) return <div className="text-sm text-muted-foreground">加载中…</div>;
 

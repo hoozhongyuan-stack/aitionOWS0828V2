@@ -28,11 +28,22 @@ import {
   Redo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 /**
  * Tiptap 富文本编辑器(需求 4.4):
  * 图文混排 / 视频 / 链接 / 列表 / 引用等可视化编辑,输出干净语义化 HTML(SEO 友好)。
- * 图片经后台上传接口存本地 uploads/;视频以受控 <video> 标签插入。
+ * 图片与视频存本地 uploads/(视频以受控 <video> 标签插入)。
+ *
+ * 两条上传通道(V4.8.1 修复):
+ * - **管理员**(后台编辑页):不传 uploader → 按钮拉起素材选择器(素材库 | 本地上传),
+ *   走 /api/admin/upload 与 /api/admin/media;
+ * - **前台用户**(投稿表单):传 uploader → 按钮走本地文件选择 + 该通道(投稿用
+ *   /api/upload?purpose=submission)。前台用户不该也不能访问管理员素材库。
+ *
+ * 回归教训:V4.1.1「素材选择器统一入口」把 uploader 通道删掉、按钮一律拉起素材库,
+ * 而 uploader 参数只留了类型声明(类型检查发现不了未使用的 props) → 前台投稿插图
+ * 一直报 401。改动此处务必保留「有 uploader 走用户通道」这条分支。
  */
 
 function ToolbarButton({
@@ -144,6 +155,7 @@ export function RichTextEditor({
   onChange,
   placeholder,
   minHeight = 280,
+  uploader,
 }: {
   value: string;
   onChange: (html: string) => void;
@@ -152,7 +164,10 @@ export function RichTextEditor({
   /** 自定义上传通道(默认走后台管理员上传;前台投稿传入用户上传) */
   uploader?: (file: File) => Promise<{ url: string }>;
 }) {
-  const [pickerMode, setPickerMode] = useState<null | "image" | "video">(null); // 素材库选择(V4.2)
+  const [pickerMode, setPickerMode] = useState<null | "image" | "video">(null); // 素材库选择(V4.2,管理员通道)
+  const [uploading, setUploading] = useState(false); // 前台用户通道上传中
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     immediatelyRender: false, // SSR 环境必需
@@ -172,7 +187,35 @@ export function RichTextEditor({
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),
   });
 
-  // 素材库选中插入(V4.2)
+  /**
+   * 前台用户通道(V4.8.1):选文件 → uploader(file) → 插入正文。
+   * uploader 由调用方提供(投稿直传用户通道),失败时给出中文提示。
+   */
+  async function uploadAndInsert(file: File | undefined, kind: "image" | "video") {
+    if (!file || !uploader) return;
+    setUploading(true);
+    try {
+      const { url } = await uploader(file);
+      if (kind === "image") {
+        editor?.chain().focus().setImage({ src: url, alt: "" }).run();
+      } else {
+        editor
+          ?.chain()
+          .focus()
+          .insertContent(
+            `<video src="${url}" controls preload="metadata" style="max-width:100%"></video><p></p>`
+          )
+          .run();
+      }
+      toast.success(kind === "image" ? "图片已插入" : "视频已插入");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "上传失败");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // 素材库选中插入(V4.2,管理员通道)
   function insertFromPicker(url: string) {
     if (!editor) return;
     if (pickerMode === "image") {
@@ -363,11 +406,19 @@ export function RichTextEditor({
         <ToolbarButton title="移除链接" disabled={!editor.isActive("link")} onClick={() => editor.chain().focus().unsetLink().run()}>
           <Unlink className="h-4 w-4" />
         </ToolbarButton>
-        {/* V4.1.1 统一入口:按钮直接拉起素材选择器(素材库|本地上传 双 Tab) */}
-        <ToolbarButton title="插入图片" onClick={() => setPickerMode("image")}>
+        {/* 管理员:素材选择器(素材库|本地上传 双 Tab);前台用户:本地选文件走用户上传通道 */}
+        <ToolbarButton
+          title={uploader ? "插入图片(上传到本站)" : "插入图片"}
+          disabled={uploading}
+          onClick={() => (uploader ? imageInputRef.current?.click() : setPickerMode("image"))}
+        >
           <ImagePlus className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton title="插入视频" onClick={() => setPickerMode("video")}>
+        <ToolbarButton
+          title={uploader ? "插入视频(上传到本站)" : "插入视频"}
+          disabled={uploading}
+          onClick={() => (uploader ? videoInputRef.current?.click() : setPickerMode("video"))}
+        >
           <Video className="h-4 w-4" />
         </ToolbarButton>
         <span className="mx-1 h-5 w-px bg-border" />
@@ -384,12 +435,40 @@ export function RichTextEditor({
         )}
         <EditorContent editor={editor} />
       </div>
-      <MediaPicker
-        open={pickerMode !== null}
-        onOpenChange={(v) => !v && setPickerMode(null)}
-        accept={pickerMode === "video" ? "video/mp4" : "image/*"}
-        onPick={insertFromPicker}
-      />
+      {uploader ? (
+        <>
+          {/* 前台用户通道:本地文件选择(类型白名单与上传限制一致) */}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              void uploadAndInsert(f, "image");
+            }}
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              void uploadAndInsert(f, "video");
+            }}
+          />
+        </>
+      ) : (
+        <MediaPicker
+          open={pickerMode !== null}
+          onOpenChange={(v) => !v && setPickerMode(null)}
+          accept={pickerMode === "video" ? "video/mp4" : "image/*"}
+          onPick={insertFromPicker}
+        />
+      )}
     </div>
   );
 }

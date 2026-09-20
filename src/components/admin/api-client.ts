@@ -14,9 +14,17 @@ async function handle<T>(res: Response): Promise<T> {
     /* 非 JSON 响应 */
   }
   if (!res.ok || body.ok === false) {
-    throw new Error(body.message || `请求失败(${res.status})`);
+    // V4.8.1:错误对象携带 HTTP 状态 —— 调用方可据此区分「无权限(403)」与其他失败
+    const err = new Error(body.message || `请求失败(${res.status})`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
   return body.data as T;
+}
+
+/** 是否为「无权限」失败(403):用于把权限不足渲染成空态而不是红条提示 */
+export function isForbiddenError(e: unknown): boolean {
+  return typeof e === "object" && e !== null && (e as { status?: number }).status === 403;
 }
 
 export async function apiGet<T = unknown>(url: string): Promise<T> {
