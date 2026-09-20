@@ -138,6 +138,8 @@ export interface StatsConfig {
   likeRate: number;
   /** 转发率(占展示点赞) */
   shareRate: number;
+  /** 收藏率(占展示阅读):收藏与点赞谁多谁少不设限,由该比例决定 */
+  favoriteRate: number;
   /** 全局种子盐:改值 = 全站曲线重掷(量级不变,分布重排) */
   seedSalt: string;
 }
@@ -150,6 +152,7 @@ const STATS_DEFAULTS: StatsConfig = {
   amplify: 12,
   likeRate: 0.022,
   shareRate: 0.22,
+  favoriteRate: 0.01,
   seedSalt: "v1",
 };
 

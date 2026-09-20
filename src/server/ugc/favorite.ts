@@ -2,6 +2,7 @@ import { z } from "zod";
 import { jsonOk, jsonErr, parseBody } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { TARGET_TYPE, CONTENT_STATUS } from "@/types/domain";
+import { resolveDisplayCounts, resolveDisplayCountsById } from "@/server/stats";
 
 /**
  * 收藏域(需求 V3.0 REQ-005,独立可测量模块——NFR-005 覆盖率口径)。
@@ -113,6 +114,21 @@ export async function listMyFavorites(userId: number, locale: string) {
     },
   });
   const byId = new Map(contents.map((c) => [c.id, c]));
+  // V4.8.0:个人中心也走展示值,避免"详情页显示 300+,我的收藏里显示 3"的自相矛盾
+  const display = await resolveDisplayCounts(
+    contents.map((c) => ({
+      id: c.id,
+      publishedAt: c.publishAt ?? c.createdAt,
+      viewCount: c.viewCount,
+      likeCount: c.likeCount,
+      shareCount: c.shareCount,
+      favoriteCount: c.favoriteCount,
+      statsMode: c.statsMode,
+      statsBase: c.statsBase,
+      statsSalt: c.statsSalt,
+      status: c.status,
+    }))
+  );
   const items: {
     contentId: number;
     slug: string;
@@ -136,7 +152,7 @@ export async function listMyFavorites(userId: number, locale: string) {
       moduleType: c.category.moduleType,
       categoryName: cat?.name ?? c.category.slug,
       coverUrl: c.coverUrl,
-      favoriteCount: c.favoriteCount,
+      favoriteCount: display.get(c.id)?.favorites ?? c.favoriteCount,
       favoritedAt: f.createdAt,
     });
   }
@@ -172,7 +188,11 @@ export async function postFavorite(actor: FavoriteActor, req: Request) {
       contentId: parsed.data.contentId,
       userId: actor.userId,
     });
-    return jsonOk(result);
+    // V4.8.0:回包用展示值(拟真层)+ 本次真实操作 —— 前台点一下正好 +1,不会跳回真实值
+    const display = await resolveDisplayCountsById(parsed.data.contentId);
+    return jsonOk(
+      display ? { favorited: result.favorited, favoriteCount: display.favorites } : result
+    );
   } catch (e) {
     if (e instanceof FavoriteTargetNotFoundError) return jsonErr(e.message, 404);
     return jsonErr(e instanceof Error ? e.message : "操作失败");

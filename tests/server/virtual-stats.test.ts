@@ -25,6 +25,7 @@ const CFG: Cfg = {
   amplify: 12,
   likeRate: 0.022,
   shareRate: 0.22,
+  favoriteRate: 0.01,
   seedSalt: "v1",
 };
 
@@ -37,6 +38,7 @@ function facts(over: Partial<ContentStatFacts> = {}): ContentStatFacts {
     realViews: 0,
     realLikes: 0,
     realShares: 0,
+    realFavorites: 0,
     statsMode: "AUTO",
     statsBase: null,
     statsSalt: null,
@@ -83,18 +85,18 @@ describe("开关与模式:关闭时逐字节等于真实值", () => {
 
   it("总开关关闭 → 真实值", () => {
     const got = computeDisplayCounts(facts(real), [], { ...CFG, enabled: false }, atDay(30));
-    expect(got).toEqual({ views: 17, likes: 3, shares: 1 });
+    expect(got).toEqual({ views: 17, likes: 3, shares: 1, favorites: 0 });
   });
 
   it("单篇 OFF → 真实值(即使总开关打开)", () => {
     const got = computeDisplayCounts(facts({ ...real, statsMode: "OFF" }), [], CFG, atDay(30));
-    expect(got).toEqual({ views: 17, likes: 3, shares: 1 });
+    expect(got).toEqual({ views: 17, likes: 3, shares: 1, favorites: 0 });
   });
 
   it("未发布(发布时间在未来)→ 真实值", () => {
     const future = new Date("2027-01-01T00:00:00");
     const got = computeDisplayCounts(facts({ ...real, publishedAt: future }), [], CFG, atDay(0));
-    expect(got).toEqual({ views: 17, likes: 3, shares: 1 });
+    expect(got).toEqual({ views: 17, likes: 3, shares: 1, favorites: 0 });
   });
 
   it("真实值兜底:曲线量小于真实计数时取真实计数", () => {
@@ -117,13 +119,14 @@ describe("拟真不变量", () => {
   it("单调不减:时间推进时三个值都不回退", () => {
     for (const id of [1, 2, 33, 512]) {
       const f = facts({ id });
-      let prev = { views: 0, likes: 0, shares: 0 };
+      let prev = { views: 0, likes: 0, shares: 0, favorites: 0 };
       for (let hour = 1; hour <= 24 * 40; hour += 7) {
         const now = new Date(PUBLISHED.getTime() + hour * 3600_000);
         const got = computeDisplayCounts(f, [], CFG, now);
         expect(got.views).toBeGreaterThanOrEqual(prev.views);
         expect(got.likes).toBeGreaterThanOrEqual(prev.likes);
         expect(got.shares).toBeGreaterThanOrEqual(prev.shares);
+        expect(got.favorites).toBeGreaterThanOrEqual(prev.favorites);
         prev = got;
       }
     }
@@ -292,7 +295,7 @@ describe("未发布内容不拟真(V4.8.0 闸门)", () => {
         CFG,
         atDay(30)
       );
-      expect(got).toEqual({ views: 0, likes: 0, shares: 0 });
+      expect(got).toEqual({ views: 0, likes: 0, shares: 0, favorites: 0 });
     }
   });
 
@@ -304,5 +307,54 @@ describe("未发布内容不拟真(V4.8.0 闸门)", () => {
   it("未传状态(前台列表/详情内部调用)时不误伤", () => {
     const got = computeDisplayCounts(facts({ id: 9 }), [], CFG, atDay(30));
     expect(got.views).toBeGreaterThan(100);
+  });
+});
+
+describe("收藏量纳入拟真(V4.8.0)", () => {
+  it("展示收藏 = 阅读 × 收藏率 + 真实收藏,且不超过阅读", () => {
+    for (const id of [7, 71, 707]) {
+      const got = computeDisplayCounts(
+        facts({ id, realFavorites: 2 }),
+        [],
+        CFG,
+        atDay(30)
+      );
+      expect(Number.isInteger(got.favorites)).toBe(true);
+      expect(got.favorites).toBeGreaterThanOrEqual(2); // 真实收藏 1:1 兜底
+      expect(got.favorites).toBeLessThanOrEqual(got.views);
+      // 派生部分(扣掉 1:1 叠加的真实收藏 2 次)应落在 收藏率 × 抖动区间内
+      const derived = got.favorites - 2;
+      expect(derived).toBeGreaterThanOrEqual(Math.floor(got.views * 0.008) - 1);
+      expect(derived).toBeLessThanOrEqual(Math.ceil(got.views * 0.0125) + 1);
+    }
+  });
+
+  it("默认参数下收藏低于点赞(1% vs 2.2%),且比例稳定", () => {
+    for (const id of [7, 71, 707, 7007]) {
+      const got = computeDisplayCounts(facts({ id }), [], CFG, atDay(30));
+      expect(got.favorites).toBeLessThanOrEqual(got.likes);
+    }
+  });
+
+  it("关闭开关 / 单篇 OFF / 未发布:收藏回落真实值", () => {
+    const f = facts({ id: 5, realFavorites: 4 });
+    expect(computeDisplayCounts(f, [], { ...CFG, enabled: false }, atDay(30)).favorites).toBe(4);
+    expect(computeDisplayCounts({ ...f, statsMode: "OFF" }, [], CFG, atDay(30)).favorites).toBe(4);
+    expect(computeDisplayCounts({ ...f, status: "DRAFT" }, [], CFG, atDay(30)).favorites).toBe(4);
+  });
+
+  it("收藏率可调:提高参数 → 收藏变多", () => {
+    const base = computeDisplayCounts(facts({ id: 88 }), [], CFG, atDay(30)).favorites;
+    const more = computeDisplayCounts(facts({ id: 88 }), [], { ...CFG, favoriteRate: 0.05 }, atDay(30))
+      .favorites;
+    expect(more).toBeGreaterThan(base);
+  });
+
+  it("收藏与点赞用不同随机盐:两篇不会完全同步变化", () => {
+    const a = computeDisplayCounts(facts({ id: 12 }), [], CFG, atDay(30));
+    const b = computeDisplayCounts(facts({ id: 13 }), [], CFG, atDay(30));
+    const ratioA = a.favorites / a.likes;
+    const ratioB = b.favorites / b.likes;
+    expect(Math.abs(ratioA - ratioB)).toBeGreaterThan(0.0005);
   });
 });

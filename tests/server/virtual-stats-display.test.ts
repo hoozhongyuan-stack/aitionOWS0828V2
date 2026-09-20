@@ -18,6 +18,7 @@ const CFG = {
   amplify: 10,
   likeRate: 0.05,
   shareRate: 0.2,
+  favoriteRate: 0.02,
   seedSalt: "test-salt",
 };
 
@@ -114,7 +115,7 @@ describe("服务层:展示值合成", () => {
   it("单篇 OFF:即使总开关打开也只回真实值", async () => {
     const c = await makeContent("v480-off-1", { viewCount: 7, likeCount: 1, shareCount: 0, statsMode: "OFF" });
     const got = (await stats.resolveDisplayCountsById(c.id))!;
-    expect(got).toEqual({ views: 7, likes: 1, shares: 0 });
+    expect(got).toEqual({ views: 7, likes: 1, shares: 0, favorites: 0 });
   });
 
   it("总开关关闭:所有内容回落真实值", async () => {
@@ -123,7 +124,7 @@ describe("服务层:展示值合成", () => {
     CFG.enabled = false;
     try {
       const got = (await stats.resolveDisplayCountsById(c.id))!;
-      expect(got).toEqual({ views: 11, likes: 2, shares: 1 });
+      expect(got).toEqual({ views: 11, likes: 2, shares: 1, favorites: 0 });
     } finally {
       CFG.enabled = prev;
     }
@@ -241,5 +242,42 @@ describe("点赞接口:回包是展示值(含本次真实操作)", () => {
     // 真实列仍然只是 1(拟真不改真实计数)
     const row = await db.content.findUnique({ where: { id: c.id } });
     expect(row?.likeCount).toBe(1);
+  });
+});
+
+describe("收藏接口:回包是展示值(V4.8.0)", () => {
+  it("前台收藏切换:展示收藏数比操作前恰好 +1,真实列仍只 +1", async () => {
+    const c = await makeContent("v480-fav-route-1");
+    const user = await db.user.create({
+      data: { email: "v480-fav-route@example.com", nickname: "收藏测试", status: "ACTIVE" },
+    });
+    const fav = await import("@/server/ugc/favorite");
+    const before = (await stats.resolveDisplayCountsById(c.id))!;
+
+    const res = await fav.postFavorite(
+      { userId: user.id },
+      new Request("http://localhost/api/interaction/favorite", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ contentId: c.id }),
+      })
+    );
+    const body = (await res.json()) as {
+      ok: boolean;
+      data: { favorited: boolean; favoriteCount: number };
+    };
+    expect(res.status).toBe(200);
+    expect(body.data.favorited).toBe(true);
+    expect(body.data.favoriteCount).toBe(before.favorites + 1);
+
+    const row = await db.content.findUnique({ where: { id: c.id } });
+    expect(row?.favoriteCount).toBe(1); // 真实列只 +1,拟真不写库
+  });
+
+  it("服务层展示值含收藏,且收藏 ≤ 阅读", async () => {
+    const c = await makeContent("v480-fav-display-1");
+    const got = (await stats.resolveDisplayCountsById(c.id))!;
+    expect(got.favorites).toBeGreaterThan(0); // 10 天树龄,收藏率 2% 下非零
+    expect(got.favorites).toBeLessThanOrEqual(got.views);
   });
 });

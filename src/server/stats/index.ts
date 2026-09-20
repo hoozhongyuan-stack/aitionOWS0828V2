@@ -26,6 +26,8 @@ export interface StatSource {
   viewCount: number;
   likeCount: number;
   shareCount: number;
+  /** 真实收藏数(V4.8.0 起纳入拟真) */
+  favoriteCount?: number;
   statsMode?: string | null;
   statsBase?: number | null;
   statsSalt?: string | null;
@@ -40,6 +42,7 @@ function toFacts(item: StatSource): ContentStatFacts {
     realViews: item.viewCount,
     realLikes: item.likeCount,
     realShares: item.shareCount,
+    realFavorites: item.favoriteCount ?? 0,
     statsMode: item.statsMode ?? "AUTO",
     statsBase: item.statsBase ?? null,
     statsSalt: item.statsSalt ?? null,
@@ -48,7 +51,12 @@ function toFacts(item: StatSource): ContentStatFacts {
 }
 
 function realCounts(item: StatSource): DisplayCounts {
-  return { views: item.viewCount, likes: item.likeCount, shares: item.shareCount };
+  return {
+    views: item.viewCount,
+    likes: item.likeCount,
+    shares: item.shareCount,
+    favorites: item.favoriteCount ?? 0,
+  };
 }
 
 /**
@@ -102,6 +110,8 @@ export async function resolveDisplayCountsById(
       viewCount: true,
       likeCount: true,
       shareCount: true,
+      favoriteCount: true, // V4.8.0:漏选曾致收藏接口回包丢失"本次 +1"
+      status: true,
       statsMode: true,
       statsBase: true,
       statsSalt: true,

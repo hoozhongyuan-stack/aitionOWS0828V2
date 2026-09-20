@@ -123,6 +123,7 @@ const statsSchema = z
     amplify: z.number().min(0).max(500).optional(),
     likeRate: z.number().min(0).max(0.5).optional(),
     shareRate: z.number().min(0).max(1).optional(),
+    favoriteRate: z.number().min(0).max(0.5).optional(),
     seedSalt: z.string().max(64).optional(),
   })
   .partial();

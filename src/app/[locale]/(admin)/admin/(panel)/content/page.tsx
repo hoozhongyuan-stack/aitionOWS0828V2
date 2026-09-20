@@ -44,7 +44,7 @@ interface ContentRow {
   shareCount: number;
   favoriteCount: number;
   /** V4.8.0:拟真展示值(与真实值不同时列表并排显示,便于随时核对) */
-  display?: { views: number; likes: number; shares: number } | null;
+  display?: { views: number; likes: number; shares: number; favorites: number } | null;
   publishAt: string | null;
   createdAt: string;
   translations: { locale: string; title: string }[];
@@ -370,12 +370,13 @@ export default function ContentAdminPage() {
                   {row.display &&
                   (row.display.views !== row.viewCount ||
                     row.display.likes !== row.likeCount ||
-                    row.display.shares !== row.shareCount) ? (
+                    row.display.shares !== row.shareCount ||
+                    row.display.favorites !== row.favoriteCount) ? (
                     <span
-                      title={`真实:阅读 ${row.viewCount} / 赞 ${row.likeCount} / 转发 ${row.shareCount}`}
+                      title={`真实:阅读 ${row.viewCount} / 赞 ${row.likeCount} / 转发 ${row.shareCount} / 藏 ${row.favoriteCount}`}
                     >
                       {row.display.views} / {row.display.likes} / {row.display.shares} /{" "}
-                      {row.favoriteCount}
+                      {row.display.favorites}
                       <span className="block text-xs">
                         真实 {row.viewCount} / {row.likeCount} / {row.shareCount} / {row.favoriteCount}
                       </span>

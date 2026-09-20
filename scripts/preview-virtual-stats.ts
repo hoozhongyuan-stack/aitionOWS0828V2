@@ -20,6 +20,7 @@ const CFG = {
   amplify: 12,
   likeRate: 0.022,
   shareRate: 0.22,
+  favoriteRate: 0.01,
   seedSalt: "v1",
 };
 
@@ -47,25 +48,26 @@ console.log("拟真互动数据 · 曲线自检(默认参数 baseViews=300 ampli
 console.log("=".repeat(78));
 
 // —— ① 发布后 30 天逐日累计(取 3 篇不同人气的文章)——
-console.log("\n【① 自然增长:累计展示值(小时/天 → 阅读 / 点赞 / 转发)】\n");
+console.log("\n【① 自然增长:累计展示值(小时/天 → 阅读 / 点赞 / 转发 / 收藏)】\n");
 const ids = [1001, 1009, 1024];
-console.log("时刻".padEnd(14) + ids.map((i) => `篇#${i}(阅/赞/转)`.padStart(24)).join(""));
+console.log("时刻".padEnd(14) + ids.map((i) => `篇#${i}(阅/赞/转/藏)`.padStart(28)).join(""));
 for (const hours of [1, 6, 24, 48, 72, 24 * 7, 24 * 14, 24 * 30, 24 * 60, 24 * 180]) {
   const row = ids.map((id) => {
     const r = computeDisplayCounts(facts(id), [], CFG, at(hours));
-    return `${fmt(r.views)}/${r.likes}/${r.shares}`.padStart(24);
+    return `${fmt(r.views)}/${r.likes}/${r.shares}/${r.favorites}`.padStart(28);
   });
   const label = hours < 24 ? `${hours} 小时` : `${hours / 24} 天`;
   console.log(label.padEnd(14) + row.join(""));
 }
 
 // —— ② 点赞/转发比例 ——
-console.log("\n【② 比例(30 天):点赞率 / 转发率 —— 拟真度关键,比例不能离谱】\n");
+console.log("\n【② 比例(30 天):点赞率 / 转发率 / 收藏率 —— 拟真度关键,比例不能离谱】\n");
 for (const id of [1001, 1003, 1009, 1017, 1024, 1033]) {
   const r = computeDisplayCounts(facts(id), [], CFG, at(24 * 30));
   const likeRate = ((r.likes / r.views) * 100).toFixed(1);
   const shareRate = ((r.shares / r.likes) * 100).toFixed(0);
-  console.log(`篇#${id}: 阅读 ${fmt(r.views)} | 点赞 ${String(r.likes).padStart(4)}(${likeRate}%) | 转发 ${String(r.shares).padStart(3)}(${shareRate}% of 赞)`);
+  const favRate = ((r.favorites / r.views) * 100).toFixed(1);
+  console.log(`篇#${id}: 阅读 ${fmt(r.views)} | 点赞 ${String(r.likes).padStart(4)}(${likeRate}%) | 转发 ${String(r.shares).padStart(3)}(${shareRate}% of 赞) | 收藏 ${String(r.favorites).padStart(3)}(${favRate}%)`);
 }
 
 // —— ③ 单次真实阅读的"慢慢涨"时间线 ——

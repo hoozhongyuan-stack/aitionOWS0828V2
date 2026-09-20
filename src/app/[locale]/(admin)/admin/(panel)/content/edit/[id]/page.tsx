@@ -140,7 +140,12 @@ export default function ContentEditPage() {
   const [statsBaseInput, setStatsBaseInput] = useState(""); // CUSTOM 基数(留空=不指定)
   const [statsSalt, setStatsSalt] = useState<string | null>(null);
   const [realStats, setRealStats] = useState({ views: 0, likes: 0, shares: 0 });
-  const [displayStats, setDisplayStats] = useState<{ views: number; likes: number; shares: number } | null>(null);
+  const [displayStats, setDisplayStats] = useState<{
+    views: number;
+    likes: number;
+    shares: number;
+    favorites: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -180,7 +185,7 @@ export default function ContentEditPage() {
             statsMode: string;
             statsBase: number | null;
             statsSalt: string | null;
-            display: { views: number; likes: number; shares: number } | null;
+            display: { views: number; likes: number; shares: number; favorites: number } | null;
             translations: (Partial<Translation> & { specs?: SpecRow[] | null })[];
           }>(`/api/admin/contents?id=${id}`);
           setSlug(c.slug);
@@ -618,11 +623,12 @@ export default function ContentEditPage() {
             <div className="space-y-2 sm:col-span-2">
               <Label>计数对照(只读)</Label>
               <p className="text-sm">
-                真实:阅读 {realStats.views} / 赞 {realStats.likes} / 转发 {realStats.shares}
+                真实:阅读 {realStats.views} / 赞 {realStats.likes} / 转发 {realStats.shares} / 收藏{" "}
+                {favoriteCount}
                 {displayStats && (
                   <span className="ml-3 text-muted-foreground">
                     前台展示:阅读 {displayStats.views} / 赞 {displayStats.likes} / 转发{" "}
-                    {displayStats.shares}
+                    {displayStats.shares} / 收藏 {displayStats.favorites}
                   </span>
                 )}
               </p>

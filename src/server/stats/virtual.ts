@@ -131,6 +131,8 @@ export interface ContentStatFacts {
   realViews: number;
   realLikes: number;
   realShares: number;
+  /** 真实收藏数(V4.8.0 起纳入拟真:与点赞/转发同为 1:1 叠加) */
+  realFavorites?: number;
   statsMode: string;
   statsBase: number | null;
   statsSalt: string | null;
@@ -148,6 +150,7 @@ export interface DisplayCounts {
   views: number;
   likes: number;
   shares: number;
+  favorites: number;
 }
 
 // ============================================================
@@ -171,6 +174,7 @@ export function computeDisplayCounts(
     views: Math.max(0, facts.realViews),
     likes: Math.max(0, facts.realLikes),
     shares: Math.max(0, facts.realShares),
+    favorites: Math.max(0, facts.realFavorites ?? 0),
   };
   // 关闭总开关 / 该篇不拟真 / 未发布 → 原样返回真实值(逐字节等价于升级前)
   if (!cfg.enabled || facts.statsMode === "OFF") return real;
@@ -194,16 +198,19 @@ export function computeDisplayCounts(
   // 展示阅读 = 自然增长 + 放大;并保证不低于真实阅读(升级前存量真实阅读不"消失")
   const views = Math.max(Math.round(organic + amplified), real.views);
 
-  // 点赞/转发:由展示阅读按比率派生(篇内比率固定 → 篇间不同),真实互动 1:1 叠加,
+  // 点赞/转发/收藏:由展示阅读按比率派生(篇内比率固定 → 篇间不同),真实互动 1:1 叠加,
   // 保证前台"点一下 +1"的手感不变
   const likeRatio = cfg.likeRate * jitter(hash32(baseSeed, "like"), 0.8, 1.25);
   const shareRatio = cfg.shareRate * jitter(hash32(baseSeed, "share"), 0.8, 1.25);
+  const favoriteRatio = cfg.favoriteRate * jitter(hash32(baseSeed, "favorite"), 0.8, 1.25);
   let likes = Math.round(views * likeRatio) + real.likes;
   let shares = Math.round(likes * shareRatio) + real.shares;
+  let favorites = Math.round(views * favoriteRatio) + real.favorites;
   likes = Math.min(likes, views); // 点赞不可能多于阅读
   shares = Math.min(shares, likes); // 转发不可能多于点赞
+  favorites = Math.min(favorites, views); // 收藏不可能多于阅读(收藏/点赞谁多谁少不设限:干货型站点收藏常高于点赞)
 
-  return { views, likes, shares };
+  return { views, likes, shares, favorites };
 }
 
 /**

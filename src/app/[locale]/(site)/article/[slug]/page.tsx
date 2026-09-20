@@ -215,6 +215,7 @@ export default async function ArticlePage({ params, searchParams }: Props) {
         contentId={content.id}
         likeCount={content.likeCount}
         shareCount={content.shareCount}
+        favoriteCount={content.favoriteCount}
         showLike={features.like}
         showShare={features.share}
         showFavorite

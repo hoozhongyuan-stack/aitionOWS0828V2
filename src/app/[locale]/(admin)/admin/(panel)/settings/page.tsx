@@ -556,6 +556,20 @@ function StatsTab() {
             />
             <p className="text-xs text-muted-foreground">转发量 ≈ 展示点赞 × 该比例。</p>
           </div>
+          <div className="space-y-1">
+            <Label>收藏率(%)</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min={0}
+              max={50}
+              value={String(Number((num("favoriteRate", 0.01) * 100).toFixed(2)))}
+              onChange={(e) => set("favoriteRate", Number(e.target.value) / 100)}
+            />
+            <p className="text-xs text-muted-foreground">
+              收藏量 ≈ 展示阅读 × 该比例(干货型内容可调到 2~3%,高于点赞也很正常)。
+            </p>
+          </div>
         </div>
 
         <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
