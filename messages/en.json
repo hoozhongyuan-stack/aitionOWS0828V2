@@ -9,7 +9,8 @@
     "languageSwitch": "Language",
     "back": "Back",
     "empty": "No content yet",
-    "all": "All"
+    "all": "All",
+    "pinned": "Pinned"
   },
   "nav": {
     "home": "Home"

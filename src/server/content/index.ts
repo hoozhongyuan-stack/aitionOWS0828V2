@@ -31,6 +31,52 @@ export async function promoteScheduled(): Promise<void> {
   });
 }
 
+// ---------------- 内容置顶(V4.8.1) ----------------
+
+/**
+ * 置顶顺序:置顶优先(越近置顶越靠前),其余保持原有时间倒序。
+ *
+ * 为什么这样写就能"置顶在前":SQLite 把 NULL 视为最小值,`DESC` 时 NULL 自动落末尾,
+ * 于是非 NULL(已置顶)在前、NULL(未置顶)在后 —— 无需原生 SQL、无需额外排序字段。
+ * ⚠️ 若将来换 PostgreSQL(默认 NULLS FIRST),这里需改回 `{ pinnedAt: { sort: "desc", nulls: "last" } }`。
+ */
+const PIN_FIRST_ORDER: { pinnedAt: "desc" }[] = [{ pinnedAt: "desc" }];
+
+/** 摘掉过期的置顶(懒清理,与定时发布同款:读路径调用,无需常驻定时器) */
+export async function clearExpiredPins(): Promise<void> {
+  await prisma.content.updateMany({
+    where: { pinnedAt: { not: null }, pinExpiresAt: { not: null, lte: new Date() } },
+    data: { pinnedAt: null, pinExpiresAt: null },
+  });
+}
+
+/** 判断一篇内容当前是否处于置顶有效状态(过期即视为未置顶) */
+export function isPinned(row: { pinnedAt: Date | null; pinExpiresAt: Date | null }): boolean {
+  if (!row.pinnedAt) return false;
+  if (!row.pinExpiresAt) return true;
+  return row.pinExpiresAt.getTime() > Date.now();
+}
+
+/**
+ * 单条置顶/取消置顶(后台行内按钮与批量操作共用)。
+ * @param expiresAt 到期时刻;null=永久。取消置顶时一并清空到期时间。
+ */
+export async function setContentPin(input: {
+  id: number;
+  pinned: boolean;
+  expiresAt?: Date | null;
+}): Promise<{ id: number; pinned: boolean; pinExpiresAt: Date | null }> {
+  const data = input.pinned
+    ? { pinnedAt: new Date(), pinExpiresAt: input.expiresAt ?? null }
+    : { pinnedAt: null, pinExpiresAt: null };
+  const row = await prisma.content.update({
+    where: { id: input.id },
+    data,
+    select: { id: true, pinnedAt: true, pinExpiresAt: true },
+  });
+  return { id: row.id, pinned: !!row.pinnedAt, pinExpiresAt: row.pinExpiresAt };
+}
+
 // ---------------- 栏目 ----------------
 
 export interface CategoryInput {
@@ -201,7 +247,8 @@ export async function listContentsAdmin(q: ContentListQuery) {
     ...(q.keyword ? { translations: { some: { title: { contains: q.keyword } } } } : {}),
     ...(createdAt ? { createdAt } : {}),
   };
-  const [total, items] = await Promise.all([
+  await clearExpiredPins(); // V4.8.1:后台看到的就是清理后的真实置顶态
+  const [total, items, pinnedCount] = await Promise.all([
     prisma.content.count({ where }),
     prisma.content.findMany({
       where,
@@ -213,6 +260,8 @@ export async function listContentsAdmin(q: ContentListQuery) {
         category: { include: { translations: true } },
       },
     }),
+    // 全站置顶篇数(V4.8.1):列表顶部提示用,避免"置顶太多把首页占满"而不自知
+    prisma.content.count({ where: { pinnedAt: { not: null } } }),
   ]);
   // V4.8.0:附上拟真展示值,后台列表「真实 / 展示」并排核对(真实计数列本身不改)
   const display = await resolveDisplayCounts(
@@ -233,6 +282,7 @@ export async function listContentsAdmin(q: ContentListQuery) {
     total,
     page,
     pageSize,
+    pinnedCount,
     items: items.map((c) => ({ ...c, display: display.get(c.id) ?? null })),
   };
 }
@@ -254,6 +304,9 @@ export interface ContentInput {
   statsMode?: string; // AUTO | OFF | CUSTOM
   statsBase?: number | null; // CUSTOM 基数
   statsSalt?: string | null; // 单篇重掷盐
+  // 置顶(V4.8.1):未传=不改动
+  pinnedAt?: string | null; // ISO 字符串;null=取消置顶
+  pinExpiresAt?: string | null; // ISO 字符串;null=永久
   translations: {
     locale: string;
     title: string;
@@ -364,6 +417,15 @@ export async function saveContent(
       : {}),
     ...(input.statsSalt !== undefined
       ? { statsSalt: input.statsSalt?.toString().slice(0, 64) || null }
+      : {}),
+    // 置顶(V4.8.1):传了才写;取消置顶同时清空到期时间(避免残留脏值)
+    ...(input.pinnedAt !== undefined
+      ? input.pinnedAt
+        ? {
+            pinnedAt: new Date(input.pinnedAt),
+            pinExpiresAt: input.pinExpiresAt ? new Date(input.pinExpiresAt) : null,
+          }
+        : { pinnedAt: null, pinExpiresAt: null }
       : {}),
     // 交易字段(V4.0):传了才写;currency 缺省跟随站点默认(null)
     ...(input.price
@@ -565,6 +627,7 @@ export async function listPublishedByCategory(
   filter: CategoryListFilter = {}
 ) {
   await promoteScheduled();
+  await clearExpiredPins();
   const category = await prisma.category.findUnique({
     where: { slug: categorySlug },
     include: {
@@ -593,10 +656,11 @@ export async function listPublishedByCategory(
   if (filter.maxPriceCents != null) and.push({ priceCents: { lte: filter.maxPriceCents } });
   if (and.length) where.AND = and;
   // 价格排序只对有价商品生效(点价格排序即想比价;无价商品仍出现在最新排序)
+  // 价格排序分支刻意不含置顶(V4.8.1 B1):用户此刻在比价,运营位不该抢在前面
   const orderBy: Record<string, "asc" | "desc">[] =
     filter.sort === "priceAsc" || filter.sort === "priceDesc"
       ? [{ priceCents: filter.sort === "priceAsc" ? "asc" : "desc" }, { id: "desc" }]
-      : [{ publishAt: "desc" }, { id: "desc" }];
+      : [...PIN_FIRST_ORDER, { publishAt: "desc" }, { id: "desc" }];
   const [total, items] = await Promise.all([
     prisma.content.count({ where }),
     prisma.content.findMany({
@@ -614,6 +678,8 @@ export async function listPublishedByCategory(
         viewCount: true,
         likeCount: true,
         favoriteCount: true, // V4.8.0:收藏纳入拟真,列表卡片同源取数
+        pinnedAt: true, // V4.8.1:置顶徽标
+        pinExpiresAt: true,
         publishAt: true,
         createdAt: true,
         priceCents: true,
@@ -744,9 +810,10 @@ export async function getPublishedBySlug(
 /** 首页最新已发布内容 */
 export async function listLatestPublished(locale: string, take = 6) {
   await promoteScheduled();
+  await clearExpiredPins();
   const items = await prisma.content.findMany({
     where: { status: CONTENT_STATUS.PUBLISHED, category: { visible: true } },
-    orderBy: [{ publishAt: "desc" }, { id: "desc" }],
+    orderBy: [...PIN_FIRST_ORDER, { publishAt: "desc" }, { id: "desc" }],
     take,
     include: { translations: true, category: { select: { moduleType: true } } },
   });
@@ -928,6 +995,9 @@ function shapeCard(
     likeCount: number;
     publishAt: Date | null;
     createdAt: Date;
+    /** 置顶(V4.8.1):卡片渲染「置顶」徽标用;缺省=未置顶 */
+    pinnedAt?: Date | null;
+    pinExpiresAt?: Date | null;
     priceCents?: number | null;
     currency?: string | null;
     translations: { locale: string; title: string; summary: string | null }[];
@@ -946,6 +1016,7 @@ function shapeCard(
     authorName: c.authorName ?? null,
     viewCount: display?.views ?? c.viewCount,
     likeCount: display?.likes ?? c.likeCount,
+    pinned: c.pinnedAt ? isPinned({ pinnedAt: c.pinnedAt, pinExpiresAt: c.pinExpiresAt ?? null }) : false,
     publishedAt: c.publishAt ?? c.createdAt,
     title: t?.title ?? "",
     summary: t?.summary ?? null,

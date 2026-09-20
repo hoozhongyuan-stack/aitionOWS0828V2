@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, ThumbsUp, UserRound } from "lucide-react";
+import { Eye, Pin, ThumbsUp, UserRound } from "lucide-react";
 import { formatMoney, safeDateLocale } from "@/lib/utils";
 import { resolveContentDetailPath } from "@/server/content";
 
@@ -12,6 +12,7 @@ export function ContentCard({
   locale,
   item,
   viewsLabel,
+  pinnedLabel,
   moduleType,
   featured,
 }: {
@@ -26,11 +27,15 @@ export function ContentCard({
     viewCount: number;
     likeCount: number;
     publishedAt: Date | string;
+    /** 置顶(V4.8.1):true 时标题前显示「置顶」徽标,避免访客以为排序坏了 */
+    pinned?: boolean;
     /** V4.0 交易字段:有价商品卡片展示价格;null 不展示(仅询盘) */
     priceCents?: number | null;
     currency?: string | null;
   };
   viewsLabel: string;
+  /** 「置顶」徽标文案(V4.8.1):由调用方传入(沿用 viewsLabel 的传参模式,组件内不硬编码文案) */
+  pinnedLabel?: string;
   /** 所属栏目模块类型(product → 商品详情路由);缺省按 article 处理 */
   moduleType?: string;
   /** 杂志布局首条特写:更大的封面比例与标题 */
@@ -54,6 +59,12 @@ export function ContentCard({
         <div className="aspect-[16/9] w-full bg-muted" aria-hidden />
       )}
       <div className="flex flex-1 flex-col gap-2 p-4">
+        {item.pinned && pinnedLabel && (
+          <span className="inline-flex w-fit items-center gap-1 rounded-full border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary">
+            <Pin className="h-3 w-3" />
+            {pinnedLabel}
+          </span>
+        )}
         <h3 className={(featured ? "text-base sm:text-lg " : "") + "line-clamp-2 font-heading font-semibold group-hover:text-primary"}>{item.title}</h3>
         {item.summary && <p className="line-clamp-2 text-sm text-muted-foreground">{item.summary}</p>}
         {item.priceCents != null && moduleType === "product" && (

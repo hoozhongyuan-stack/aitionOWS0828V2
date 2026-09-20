@@ -102,7 +102,7 @@ export default async function HomePage({
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {latest.map((item) => (
-            <ContentCard key={item.id} locale={locale} item={item} viewsLabel={tInter("views")} moduleType={item.moduleType} />
+            <ContentCard key={item.id} locale={locale} item={item} viewsLabel={tInter("views")} pinnedLabel={tCommon("pinned")} moduleType={item.moduleType} />
           ))}
         </div>
       )}
@@ -119,7 +119,7 @@ export default async function HomePage({
             data={fs}
             locale={locale}
             readMoreLabel={tCommon("readMore")}
-            viewsLabel={tInter("views")}
+            viewsLabel={tInter("views")} pinnedLabel={tCommon("pinned")}
           />
         ))}
       </>
@@ -356,11 +356,13 @@ function FloorSection({
   locale,
   readMoreLabel,
   viewsLabel,
+  pinnedLabel,
 }: {
   data: HomeFloorSection;
   locale: string;
   readMoreLabel: string;
   viewsLabel: string;
+  pinnedLabel: string;
 }) {
   const { floor, slug, name, moduleType, items } = data;
   const hrefOf = (item: FloorCard) =>
@@ -399,11 +401,11 @@ function FloorSection({
         )}
         {floor.style === "feature" && (
           <div className="space-y-6">
-            <ContentCard locale={locale} item={items[0]} viewsLabel={viewsLabel} moduleType={moduleType} featured />
+            <ContentCard locale={locale} item={items[0]} viewsLabel={viewsLabel} pinnedLabel={pinnedLabel} moduleType={moduleType} featured />
             {items.length > 1 && (
               <div className="grid gap-6 sm:grid-cols-2">
                 {items.slice(1).map((item) => (
-                  <ContentCard key={item.id} locale={locale} item={item} viewsLabel={viewsLabel} moduleType={moduleType} />
+                  <ContentCard key={item.id} locale={locale} item={item} viewsLabel={viewsLabel} pinnedLabel={pinnedLabel} moduleType={moduleType} />
                 ))}
               </div>
             )}
@@ -412,7 +414,7 @@ function FloorSection({
         {floor.style === "grid3" && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
-              <ContentCard key={item.id} locale={locale} item={item} viewsLabel={viewsLabel} moduleType={moduleType} />
+              <ContentCard key={item.id} locale={locale} item={item} viewsLabel={viewsLabel} pinnedLabel={pinnedLabel} moduleType={moduleType} />
             ))}
           </div>
         )}

@@ -168,6 +168,9 @@ model Content {
   statsMode    String    @default("AUTO") // AUTO=跟随全局 | OFF=此篇不拟真 | CUSTOM=用 statsBase
   statsBase    Int? // CUSTOM 模式的 30 天累计阅读基数
   statsSalt    String? // 单篇种子盐:后台「重新随机」写入新值 → 该篇曲线重掷
+  // —— 内容置顶(V4.8.1):运营位,只影响前台列表顺序 ——
+  pinnedAt     DateTime? // 非空=已置顶;排序依据(越近置顶越靠前)。SQLite 中 DESC 排序时 NULL 落末尾 → 天然"置顶在前"
+  pinExpiresAt DateTime? // 到期时刻:null=永久;到点由 clearExpiredPins() 懒清理(无定时任务)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

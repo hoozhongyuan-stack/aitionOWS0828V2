@@ -204,3 +204,42 @@ describe("内容列表作者署名(V4.7.0)", () => {
     expect(html).toContain(AUTHOR);
   });
 });
+
+describe("内容置顶(V4.8.1)", () => {
+  it("置顶的老文排在前面并带「置顶」徽标(锁 orderBy→shapeCard→徽标 整链)", async () => {
+    // 同栏目再放一篇更新的文章:不置顶时它本该在前
+    const NEWER = "v481-inline-newer";
+    const newer = await prisma.content.create({
+      data: {
+        slug: NEWER,
+        categoryId: (await prisma.category.findUnique({ where: { slug: CAT_SLUG } }))!.id,
+        status: "PUBLISHED",
+        authorName: AUTHOR,
+        publishAt: new Date("2026-09-15T00:00:00Z"),
+        translations: { create: { locale: "zh-CN", title: "置顶对照:更新的文章", body: "<p>x</p>" } },
+      },
+    });
+    const older = await prisma.content.findUnique({ where: { slug: SLUG } });
+
+    const before = await getHtml(`/zh-CN/c/${CAT_SLUG}`);
+    expect(before.indexOf(NEWER)).toBeLessThan(before.indexOf(SLUG)); // 时间序:新文在前
+    expect(before).not.toContain(">置顶<");
+
+    await prisma.content.update({
+      where: { id: older!.id },
+      data: { pinnedAt: new Date() },
+    });
+    try {
+      const after = await getHtml(`/zh-CN/c/${CAT_SLUG}`);
+      expect(after).toContain("置顶"); // 徽标文案(common.pinned)
+      expect(after.indexOf(SLUG)).toBeLessThan(after.indexOf(NEWER)); // 置顶项插到最前
+    } finally {
+      // 置顶是全局可见状态,就地取消以免影响同进程其他文件
+      await prisma.content.update({
+        where: { id: older!.id },
+        data: { pinnedAt: null, pinExpiresAt: null },
+      });
+      await prisma.content.delete({ where: { id: newer.id } });
+    }
+  });
+});

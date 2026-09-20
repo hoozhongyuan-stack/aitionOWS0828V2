@@ -11,6 +11,7 @@ import { CURRENCIES } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -146,6 +147,9 @@ export default function ContentEditPage() {
     shares: number;
     favorites: number;
   } | null>(null);
+  // —— 置顶(V4.8.1):前台运营位,只影响列表顺序 ——
+  const [pinned, setPinned] = useState(false);
+  const [pinExpires, setPinExpires] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -186,6 +190,8 @@ export default function ContentEditPage() {
             statsBase: number | null;
             statsSalt: string | null;
             display: { views: number; likes: number; shares: number; favorites: number } | null;
+            pinnedAt: string | null;
+            pinExpiresAt: string | null;
             translations: (Partial<Translation> & { specs?: SpecRow[] | null })[];
           }>(`/api/admin/contents?id=${id}`);
           setSlug(c.slug);
@@ -206,6 +212,8 @@ export default function ContentEditPage() {
             shares: c.shareCount ?? 0,
           });
           setDisplayStats(c.display ?? null);
+          setPinned(!!c.pinnedAt);
+          setPinExpires(c.pinExpiresAt ? toLocalInput(new Date(c.pinExpiresAt)) : "");
           setPriceInput(c.priceCents != null ? String(c.priceCents / 100) : "");
           setCurrencyInput(c.currency || "USD");
           setSpuInput(c.spu ?? "");
@@ -278,6 +286,9 @@ export default function ContentEditPage() {
               statsMode,
               statsBase: statsMode === "CUSTOM" && statsBaseInput.trim() !== "" ? Number(statsBaseInput) : null,
               statsSalt,
+              // 置顶(V4.8.1):取消置顶传 null;到期时间留空=永久
+              pinnedAt: pinned ? new Date().toISOString() : null,
+              pinExpiresAt: pinned && pinExpires ? new Date(pinExpires).toISOString() : null,
             }),
         // 商品字段:仅商品栏目提交(切回 article 栏目时不传,服务层保留既有值)。
         // specs=默认语言 Tab 同步顶层兜底列;translations[].specs=各语言 Tab 全量往返(V3.1 REQ-001)
@@ -636,6 +647,48 @@ export default function ContentEditPage() {
                 真实计数由访客行为产生,后台不可修改;展示值每次打开按算法重算,只增不减。
               </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 置顶(V4.8.1):前台运营位 —— 栏目页与该篇所属列表排首位,首页「最新动态」置顶优先 */}
+      {!isNew && (
+        <Card>
+          <CardHeader>
+            <CardTitle>置顶</CardTitle>
+            <CardDescription>
+              开启后,本篇在所属栏目页与首页「最新动态」里排在最前;多条置顶时按置顶时间倒序(最近置顶的在最前)。
+              站内搜索、llms.txt、sitemap 不受影响。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="flex items-center justify-between rounded-lg border p-3 sm:col-span-2">
+              <div>
+                <div className="text-sm font-medium">置顶本篇</div>
+                <div className="text-xs text-muted-foreground">
+                  未发布(草稿/下架/定时未到点)的置顶不生效,重新发布后自动恢复
+                </div>
+              </div>
+              <Switch checked={pinned} onCheckedChange={setPinned} />
+            </div>
+            {pinned && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>到期时间(留空 = 永久置顶)</Label>
+                <Input
+                  type="datetime-local"
+                  value={pinExpires}
+                  onChange={(e) => setPinExpires(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  到点后自动取消置顶,无需手动处理(下次访问列表时生效)
+                </p>
+              </div>
+            )}
+            {pinned && (
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                提示:保存后即时生效;首页「最新动态」共 6 条,置顶过多会把其余内容挤出首屏。
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

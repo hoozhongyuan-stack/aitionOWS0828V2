@@ -3,7 +3,7 @@ import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
 import { requirePerm } from "@/lib/auth/session";
 import { logAdmin } from "@/server/admin";
 import { runBatch, normalizeBatchIds, describeOutcome } from "@/server/batch";
-import { updateContentSchedule, deleteContent } from "@/server/content";
+import { updateContentSchedule, deleteContent, setContentPin } from "@/server/content";
 
 /**
  * 内容批量操作(V4.4.0):POST /api/admin/contents/batch
@@ -12,7 +12,9 @@ import { updateContentSchedule, deleteContent } from "@/server/content";
  */
 const schema = z.object({
   ids: z.array(z.number().int()).min(1),
-  action: z.enum(["publish", "offline", "draft", "delete"]),
+  // pin/unpin(V4.8.1):置顶/取消置顶;可带 expiresAt 指定到期时刻(留空=永久)
+  action: z.enum(["publish", "offline", "draft", "delete", "pin", "unpin"]),
+  expiresAt: z.string().datetime().nullable().optional(),
 });
 
 export async function POST(req: Request) {
@@ -29,6 +31,14 @@ export async function POST(req: Request) {
   const outcome = await runBatch(norm.ids, async (id) => {
     if (action === "delete") {
       await deleteContent(id);
+      return;
+    }
+    if (action === "pin" || action === "unpin") {
+      await setContentPin({
+        id,
+        pinned: action === "pin",
+        expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      });
       return;
     }
     // publish / offline / draft 复用 V4.3.0 的轻量状态变更(不整体覆盖)

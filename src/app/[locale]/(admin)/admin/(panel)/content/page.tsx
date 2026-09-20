@@ -25,7 +25,7 @@ function adminTitle(translations: { locale: string; title: string }[], slug: str
 function adminCatName(translations: { locale: string; name: string }[] | undefined, slug: string) {
   return adminName(translations, slug);
 }
-import { Plus, Pencil, Trash2, CalendarClock, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarClock, ExternalLink, Pin, PinOff } from "lucide-react";
 
 /**
  * 内容列表(需求 4.4/4.8):筛选、增删改查入口、状态标识。
@@ -45,6 +45,9 @@ interface ContentRow {
   favoriteCount: number;
   /** V4.8.0:拟真展示值(与真实值不同时列表并排显示,便于随时核对) */
   display?: { views: number; likes: number; shares: number; favorites: number } | null;
+  /** V4.8.1:置顶标记 */
+  pinnedAt?: string | null;
+  pinExpiresAt?: string | null;
   publishAt: string | null;
   createdAt: string;
   translations: { locale: string; title: string }[];
@@ -60,6 +63,8 @@ interface ListData {
   total: number;
   page: number;
   pageSize: number;
+  /** V4.8.1:全站置顶篇数(顶部提示;≥4 篇会占满首页最新动态的 6 个位置) */
+  pinnedCount?: number;
   items: ContentRow[];
 }
 interface Category {
@@ -146,6 +151,20 @@ export default function ContentAdminPage() {
     }
   }
 
+  /**
+   * 行内置顶切换(V4.8.1):点一下即时生效。
+   * 走批量端点(单条):与批量置顶共用一条服务端逻辑,行为完全一致。
+   */
+  async function togglePin(row: ContentRow) {
+    try {
+      await runBatchAction("/api/admin/contents/batch", [row.id], row.pinnedAt ? "unpin" : "pin");
+      toast.success(row.pinnedAt ? "已取消置顶" : "已置顶,前台列表排在首位");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "操作失败");
+    }
+  }
+
   // ── 列表页「定制发布」(V4.3.0)：不进编辑页即可改发布状态与排期 ──
   const [scheduleRow, setScheduleRow] = useState<ContentRow | null>(null);
   const [scheduleAction, setScheduleAction] = useState<"publish" | "schedule" | "draft">("publish");
@@ -222,7 +241,15 @@ export default function ContentAdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">内容管理</h1>
-          <p className="text-sm text-muted-foreground">支持草稿/发布/下架/定时发布,多语言编辑。</p>
+          <p className="text-sm text-muted-foreground">
+            支持草稿/发布/下架/定时发布,多语言编辑。
+            {(data?.pinnedCount ?? 0) > 0 && (
+              <span className={data!.pinnedCount! >= 4 ? "ml-2 text-destructive" : "ml-2"}>
+                当前置顶 {data!.pinnedCount} 篇
+                {data!.pinnedCount! >= 4 && "(首页最新动态共 6 条,将基本被置顶占满)"}
+              </span>
+            )}
+          </p>
         </div>
         <Button asChild>
           <Link href={`/${locale}/admin/content/edit/new`}>
@@ -298,6 +325,12 @@ export default function ContentAdminPage() {
         <Button size="sm" variant="outline" onClick={() => doBatch("draft")}>
           批量转草稿
         </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("pin")}>
+          批量置顶
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => doBatch("unpin")}>
+          取消置顶
+        </Button>
         <Button size="sm" variant="outline" onClick={() => doBatch("delete")}>
           批量删除
         </Button>
@@ -351,7 +384,18 @@ export default function ContentAdminPage() {
                   />
                 </TableCell>
                 <TableCell className="max-w-64">
-                  <div className="truncate font-medium">{adminTitle(row.translations, row.slug)}</div>
+                  <div className="flex items-center gap-1.5">
+                    {row.pinnedAt && (
+                      <span
+                        className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-primary/40 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                        title={row.pinExpiresAt ? `置顶至 ${new Date(row.pinExpiresAt).toLocaleString("zh-CN")}` : "永久置顶"}
+                      >
+                        <Pin className="h-2.5 w-2.5" />
+                        置顶
+                      </span>
+                    )}
+                    <span className="truncate font-medium">{adminTitle(row.translations, row.slug)}</span>
+                  </div>
                   <div className="truncate font-mono text-xs text-muted-foreground">{row.slug}</div>
                 </TableCell>
                 <TableCell>{adminCatName(row.category.translations, row.category.slug)}</TableCell>
@@ -402,6 +446,15 @@ export default function ContentAdminPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => togglePin(row)}
+                    title={row.pinnedAt ? "取消置顶" : "置顶(出现在栏目页与首页最前)"}
+                    className={row.pinnedAt ? "text-primary" : ""}
+                  >
+                    {row.pinnedAt ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => openSchedule(row)} title="定制发布">
                     <CalendarClock className="h-4 w-4" />
                   </Button>

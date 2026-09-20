@@ -65,6 +65,9 @@ const putSchema = z.object({
     .optional(),
   // 拟真互动数据(V4.8.0):不声明会被 zod 剥除 → "保存不报错但不生效"(历史事故同款)
   statsMode: z.enum(["AUTO", "OFF", "CUSTOM"]).optional(),
+  // 置顶(V4.8.1):ISO 字符串;null=取消置顶 / 到期时间留空为永久
+  pinnedAt: z.string().nullable().optional(),
+  pinExpiresAt: z.string().nullable().optional(),
   statsBase: z.number().int().min(1).max(1_000_000).nullable().optional(),
   statsSalt: z.string().max(64).nullable().optional(),
   translations: z.array(

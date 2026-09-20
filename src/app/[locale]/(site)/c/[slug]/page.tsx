@@ -205,7 +205,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               <ContentCard
                 locale={locale}
                 item={featuredItem}
-                viewsLabel={tInter("views")}
+                viewsLabel={tInter("views")} pinnedLabel={t("pinned")}
                 moduleType={isProduct ? "product" : undefined}
                 featured
               />
@@ -219,7 +219,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                   key={item.id}
                   locale={locale}
                   item={item}
-                  viewsLabel={tInter("views")}
+                  viewsLabel={tInter("views")} pinnedLabel={t("pinned")}
                   moduleType={isProduct ? "product" : undefined}
                 />
               ))}
@@ -233,7 +233,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               key={item.id}
               locale={locale}
               item={item}
-              viewsLabel={tInter("views")}
+              viewsLabel={tInter("views")} pinnedLabel={t("pinned")}
               moduleType={isProduct ? "product" : undefined}
             />
           ))}
