@@ -9,6 +9,12 @@ import type { BrandConfig } from "@/lib/config";
  * 该变量已独立于主色/文字色单独配置(见「主题外观 → 次要文字色」),后台可统一调整。
  * 社交卡片(需求②):配置了 qrcodeUrl 时常驻展示 108×108 图,名称居中于图片下方。
  */
+/** 版权跳转链接白名单(V4.8.3):仅放行 http/https —— 配置由管理员填写,也要挡住 javascript: 之类 */
+function safeHref(url: string): string {
+  const u = url.trim();
+  return /^https?:\/\//i.test(u) ? u : "";
+}
+
 export function SiteFooter({
   brand,
   locale,
@@ -18,6 +24,9 @@ export function SiteFooter({
   locale: string;
   labels: { register: string; privacy: string; cookies: string; contact: string };
 }) {
+  // V4.7.3:后台未填版权时,用「© 年 站点名」中性兜底 —— 不再默认显示模板产品名
+  const copyrightText = brand.copyright || `© ${new Date().getFullYear()} ${brand.siteName}`;
+  const copyrightHref = safeHref(brand.copyrightUrl ?? "");
   return (
     <footer className="border-t bg-muted/30">
       {/* 品牌行:独占一行,左上对齐 */}
@@ -101,16 +110,21 @@ export function SiteFooter({
       </div>
       <div className="border-t">
         <div className="container flex flex-col items-center justify-between gap-2 py-4 text-xs text-muted-foreground sm:flex-row">
-          {/* 版权可点击跳品牌官网(V4.0.2);ICP 备案号按合规保持纯文本 */}
-          <a
-            href="https://www.aition.art"
-            target="_blank"
-            rel="noopener"
-            className="block text-muted-foreground transition-colors hover:text-primary"
-          >
-            {/* V4.7.3:后台未填版权时,用「© 年 站点名」中性兜底 —— 不再默认显示模板产品名 */}
-            {brand.copyright || `© ${new Date().getFullYear()} ${brand.siteName}`}
-          </a>
+          {/* 版权(V4.8.3):跳转链接改为后台可配(「功能设置 → 页脚与客服」)——
+              此前写死指向模板作者官网(V4.0.2 的遗留),部署到客户站点后是个错误外链。
+              未配置链接时渲染为纯文本;ICP 备案号按合规保持纯文本。 */}
+          {copyrightHref ? (
+            <a
+              href={copyrightHref}
+              target="_blank"
+              rel="noopener"
+              className="block text-muted-foreground transition-colors hover:text-primary"
+            >
+              {copyrightText}
+            </a>
+          ) : (
+            <span className="block">{copyrightText}</span>
+          )}
           {brand.icp && (
             <a
               href="https://beian.miit.gov.cn/"

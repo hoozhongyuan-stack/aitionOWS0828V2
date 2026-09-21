@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -31,6 +31,15 @@ export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // V4.8.3:客服邮箱取自公开运行时配置(品牌配置);取不到就不显示该行
+  const [supportEmail, setSupportEmail] = useState("");
+
+  useEffect(() => {
+    fetch("/api/flags", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setSupportEmail(typeof d?.supportEmail === "string" ? d.supportEmail : ""))
+      .catch(() => {});
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -92,7 +101,10 @@ export default function AdminLoginPage() {
         </CardContent>
         <CardFooter className="justify-center pb-5">
           <div className="space-y-1 text-center">
-            <div className="text-xs text-muted-foreground">客服邮箱:leooohu@outlook.com</div>
+            {/* V4.8.3:客服邮箱改为后台可配(「功能设置 → 页脚与客服」);未配置则不显示该行 */}
+            {supportEmail && (
+              <div className="text-xs text-muted-foreground">客服邮箱:{supportEmail}</div>
+            )}
             {/* V4.4.0:版本信息——排查问题时第一眼确认"生产跑的是哪个版本" */}
             <div className="text-[11px] text-muted-foreground/70">{versionLine()}</div>
           </div>

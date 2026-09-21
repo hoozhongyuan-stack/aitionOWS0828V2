@@ -138,3 +138,33 @@ describe("引荐识别移至客户端上报(V4.8.2)", () => {
     expect(await prisma.dailyStat.count()).toBe(before);
   });
 });
+
+describe("公开运行时配置 /api/flags(V4.8.3)", () => {
+  afterEach(async () => {
+    const { prisma } = await import("@/lib/db");
+    await prisma.setting.deleteMany({ where: { group: "brand", key: "supportEmail" } });
+    const { invalidateSettingCache } = await import("@/server/setting");
+    invalidateSettingCache("brand");
+    await prisma.$disconnect();
+  });
+
+  it("返回 supportEmail:后台配置什么就下发什么(登录页据此显示客服邮箱)", async () => {
+    const { prisma } = await import("@/lib/db");
+    const { invalidateSettingCache } = await import("@/server/setting");
+    await prisma.setting.create({
+      data: { group: "brand", key: "supportEmail", value: JSON.stringify("help@example.com") },
+    });
+    invalidateSettingCache("brand");
+    const route = await import("@/app/api/flags/route");
+    const body = (await (await route.GET()).json()) as { supportEmail?: string };
+    expect(body.supportEmail).toBe("help@example.com");
+  });
+
+  it("未配置时下发空串(登录页据此隐藏该行)", async () => {
+    const { getBrandConfig } = await import("@/lib/config");
+    expect((await getBrandConfig()).supportEmail).toBe("");
+    const route = await import("@/app/api/flags/route");
+    const body = (await (await route.GET()).json()) as { supportEmail?: string };
+    expect(body.supportEmail).toBe("");
+  });
+});

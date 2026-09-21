@@ -268,14 +268,13 @@ export async function recordReferral(
 
   let newVisitor = false;
   if (visitorId) {
-    try {
-      await prisma.aIReferralVisitor.create({
-        data: { source, date, visitorId: visitorId.slice(0, 64), landing: p },
-      });
-      newVisitor = true;
-    } catch {
-      newVisitor = false; // 唯一约束冲突 = 今天这个访客已经从该渠道来过
-    }
+    // INSERT OR IGNORE:靠唯一约束**原子**判定"首次到达" —— 影响行数 1=新访客、0=老访客。
+    // 不用 create + try/catch:冲突会抛异常并被 Prisma 记成 error 日志(生产同样记),
+    // 每个回访访客都写一行错误噪声;Prisma 的 createMany/skipDuplicates 在 SQLite 上不支持,故用原生语句。
+    const inserted = await prisma
+      .$executeRaw`INSERT OR IGNORE INTO "AIReferralVisitor" ("source", "date", "visitorId", "landing") VALUES (${source}, ${date}, ${visitorId.slice(0, 64)}, ${p})`
+      .catch(() => 0);
+    newVisitor = inserted > 0;
   }
 
   try {

@@ -71,6 +71,10 @@ export interface BrandConfig {
   shareImageUrl: string;
   icp: string; // 备案号
   copyright: string;
+  /** 页脚版权的跳转链接(V4.8.3):空=渲染为纯文本;非空时版权文字可点击(仅接受 http/https) */
+  copyrightUrl: string;
+  /** 客服邮箱(V4.8.3):显示在后台登录页卡片底部;空=该行不渲染 */
+  supportEmail: string;
   contactPhone: string;
   contactEmail: string;
   contactAddress: string;
@@ -90,6 +94,9 @@ const BRAND_DEFAULTS: BrandConfig = {
   // 中性兜底(V4.7.3):不再硬编码模板产品名 —— 此前凡未改该字段的部署,页脚都会
   // 显示 "AitionOWS",被 AI 与访客读成"套模板的小站"。空值时页脚用 `© {年} {站点名}` 渲染。
   copyright: "",
+  // 空值兜底:版权无链接(纯文本)、登录页不显示客服邮箱行
+  copyrightUrl: "",
+  supportEmail: "",
   contactPhone: "",
   contactEmail: "",
   contactAddress: "",

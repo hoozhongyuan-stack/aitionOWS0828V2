@@ -587,12 +587,65 @@ function StatsTab() {
   );
 }
 
+/**
+ * 页脚与客服(V4.8.3)。
+ * 这两个字段属于品牌配置(brand 组),只是编辑入口放在这里:
+ *  - 版权跳转链接:页脚版权文字的 href,留空则渲染为纯文本;
+ *  - 客服邮箱:显示在后台登录页卡片底部,留空则不显示该行。
+ */
+function FooterContactTab() {
+  const { values: v, setValues, save, saving } = useGroup("brand");
+  if (!v) return <div className="text-sm text-muted-foreground">加载中…</div>;
+  const set = (k: string, val: unknown) => setValues({ ...v, [k]: val });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>页脚与客服</CardTitle>
+        <CardDescription>
+          页脚版权文字的跳转链接,以及后台登录页显示的客服邮箱。保存后即时生效。
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>版权信息跳转链接</Label>
+          <Input
+            value={String(v.copyrightUrl ?? "")}
+            onChange={(e) => set("copyrightUrl", e.target.value)}
+            placeholder="https://example.com(留空 = 版权文字不可点击)"
+          />
+          <p className="text-xs text-muted-foreground">
+            只支持 http/https 开头的完整网址;版权文字本身在「品牌信息 → 版权信息」里修改。
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label>客服邮箱</Label>
+          <Input
+            value={String(v.supportEmail ?? "")}
+            onChange={(e) => set("supportEmail", e.target.value)}
+            placeholder="support@example.com(留空 = 登录页不显示该行)"
+          />
+          <p className="text-xs text-muted-foreground">
+            显示在后台登录页「客服邮箱:」那一行,方便子账号/同事遇到问题时联系。
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "保存中…" : "保存"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">功能设置</h1>
-        <p className="text-sm text-muted-foreground">互动开关、上传限制、第三方登录、错误页与拟真数据。</p>
+        <p className="text-sm text-muted-foreground">
+          互动开关、上传限制、第三方登录、错误页、拟真数据与页脚客服信息。
+        </p>
       </div>
       <Tabs defaultValue="features">
         <TabsList>
@@ -602,6 +655,7 @@ export default function SettingsPage() {
           <TabsTrigger value="notify">通知</TabsTrigger>
           <TabsTrigger value="errors">错误页</TabsTrigger>
           <TabsTrigger value="stats">拟真数据</TabsTrigger>
+          <TabsTrigger value="footer">页脚与客服</TabsTrigger>
         </TabsList>
         <TabsContent value="features">
           <FeaturesTab />
@@ -620,6 +674,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="stats">
           <StatsTab />
+        </TabsContent>
+        <TabsContent value="footer">
+          <FooterContactTab />
         </TabsContent>
       </Tabs>
     </div>

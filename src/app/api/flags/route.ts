@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRuntimeFlags } from "@/server/setting";
 import { getShopConfig } from "@/server/shop";
+import { getBrandConfig } from "@/lib/config";
 import { getDefaultLocale } from "@/server/i18n";
 import { routing } from "@/i18n/routing";
 
@@ -15,9 +16,21 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const [flags, defaultLocale, shop] = await Promise.all([getRuntimeFlags(), getDefaultLocale(), getShopConfig()]);
+    const [flags, defaultLocale, shop, brand] = await Promise.all([
+      getRuntimeFlags(),
+      getDefaultLocale(),
+      getShopConfig(),
+      getBrandConfig(),
+    ]);
     return NextResponse.json(
-      { maintenance: flags.maintenance, forceLogin: flags.forceLogin, defaultLocale, orderingEnabled: shop.orderingEnabled },
+      {
+        maintenance: flags.maintenance,
+        forceLogin: flags.forceLogin,
+        defaultLocale,
+        orderingEnabled: shop.orderingEnabled,
+        // V4.8.3:后台登录页的客服邮箱(此前写死在页面里,现由品牌配置提供;空则不显示该行)
+        supportEmail: brand.supportEmail || "",
+      },
       { headers: { "cache-control": "no-store" } }
     );
   } catch {

@@ -183,6 +183,9 @@ export default function BrandPage() {
           <div className="space-y-2">
             <Label>版权信息</Label>
             <Input value={v.copyright} onChange={(e) => setV({ ...v, copyright: e.target.value })} />
+            <p className="text-xs text-muted-foreground">
+              想让这行字可点击?跳转链接在「功能设置 → 页脚与客服」里配置。
+            </p>
           </div>
         </CardContent>
       </Card>

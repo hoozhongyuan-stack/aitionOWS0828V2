@@ -204,21 +204,21 @@ describe("真实阅读:逐日记账 + 延迟释放", () => {
     expect(gain).toBeLessThan(3 * CFG.amplify * 1.75); // 但还没释放完
   });
 
-  it("今天发生的真实阅读贡献远小于明日(慢慢涨)", async () => {
-    const c = await makeContent("v480-amp-today");
-    const base = (await stats.resolveDisplayCountsById(c.id))!.views;
-    await stats.recordRealViewDay(c.id, new Date());
-    const today = (await stats.resolveDisplayCountsById(c.id))!.views - base;
-
-    // 模拟"同一批真实阅读发生在昨天"的对照内容
-    const c2 = await makeContent("v480-amp-yesterday");
-    const base2 = (await stats.resolveDisplayCountsById(c2.id))!.views;
+  it("同一篇内的延迟释放:真实阅读的贡献随时间只增不减(确定性比较)", async () => {
+    // 说明:此用例原为"今天 vs 昨天"跨两篇内容比较取整后的差值 —— 两篇的逐日随机系数独立,
+    // 量级小时会被 ±1 取整抹平(曾偶发失败)。改为同一篇内容、同一条真实阅读在两个时刻的值:
+    // 无跨篇随机干扰,且严格单调。
+    const c = await makeContent("v480-amp-delay");
+    const at = (days: number) => new Date(Date.now() + days * 86_400_000);
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    await stats.recordRealViewDay(c2.id, d);
-    const yesterday = (await stats.resolveDisplayCountsById(c2.id))!.views - base2;
+    await stats.recordRealViewDay(c.id, d);
 
-    expect(yesterday).toBeGreaterThan(today);
+    const v0 = (await stats.resolveDisplayCountsById(c.id, at(0)))!.views;
+    const v1 = (await stats.resolveDisplayCountsById(c.id, at(1)))!.views;
+    const v5 = (await stats.resolveDisplayCountsById(c.id, at(5)))!.views;
+    expect(v1).toBeGreaterThanOrEqual(v0);
+    expect(v5).toBeGreaterThan(v1);
   });
 });
 
