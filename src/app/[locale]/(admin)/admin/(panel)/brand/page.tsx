@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UploadField } from "@/components/admin/upload-field";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { apiGet, apiPut } from "@/components/admin/api-client";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -23,6 +24,21 @@ interface Social {
   url: string;
   qrcodeUrl?: string;
 }
+/** 右侧悬浮入口(V4.8.3):三条类型共用一个编辑行,按 type 显示不同输入 */
+interface FloatingRow {
+  type: "tel" | "form" | "qrcode";
+  iconUrl: string;
+  label: string;
+  tel: string;
+  formId: number | null;
+  qrcodeUrl: string;
+}
+const FLOATING_MAX = 2;
+const FLOATING_TYPE_LABEL: Record<FloatingRow["type"], string> = {
+  tel: "拨打电话",
+  form: "关联表单(弹层填写)",
+  qrcode: "微信二维码(弹层展示)",
+};
 interface BrandValues {
   siteName: string;
   ownerName: string;
@@ -39,12 +55,15 @@ interface BrandValues {
   socials: Social[];
   maintenance: boolean;
   maintenanceText: string;
+  floating: FloatingRow[];
 }
 
 export default function BrandPage() {
   const router = useRouter();
   const [v, setV] = useState<BrandValues | null>(null);
   const [saving, setSaving] = useState(false);
+  // 悬浮入口「关联表单」下拉用:只列启用中的表单(停用的表单前台会自动丢弃该入口)
+  const [forms, setForms] = useState<{ id: number; name: string }[]>([]);
 
   useEffect(() => {
     apiGet<Partial<BrandValues>>("/api/admin/settings/brand")
@@ -67,9 +86,20 @@ export default function BrandPage() {
             : [],
           maintenance: !!d.maintenance,
           maintenanceText: d.maintenanceText ?? "网站维护中,请稍后访问。",
+          floating: (Array.isArray(d.floating) ? d.floating : []).slice(0, FLOATING_MAX).map((f) => ({
+            type: (f?.type === "form" || f?.type === "qrcode" ? f.type : "tel") as FloatingRow["type"],
+            iconUrl: f?.iconUrl ?? "",
+            label: f?.label ?? "",
+            tel: f?.tel ?? "",
+            formId: typeof f?.formId === "number" ? f.formId : null,
+            qrcodeUrl: f?.qrcodeUrl ?? "",
+          })),
         })
       )
       .catch((e) => toast.error(e.message));
+    apiGet<{ id: number; name: string; enabled: boolean }[]>("/api/admin/forms")
+      .then((rows) => setForms(rows.filter((r) => r.enabled).map((r) => ({ id: r.id, name: r.name }))))
+      .catch(() => {});
   }, []);
 
   async function save() {
@@ -272,6 +302,126 @@ export default function BrandPage() {
             onClick={() => setV({ ...v, socials: [...v.socials, { name: "", url: "", qrcodeUrl: "" }] })}
           >
             <Plus className="h-4 w-4" /> 添加社交账号
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>悬浮入口</CardTitle>
+          <CardDescription>
+            网站右侧固定悬浮的快捷入口,最多 {FLOATING_MAX} 条;不配置则不显示。
+            电话项在手机上点按直接拨号;表单项在当前页面弹层里填写提交;二维码项点开看大图。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {v.floating.map((f, i) => {
+            const update = (patch: Partial<FloatingRow>) => {
+              const floating = [...v.floating];
+              floating[i] = { ...f, ...patch };
+              setV({ ...v, floating });
+            };
+            return (
+              <div key={i} className="space-y-3 rounded-lg border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="w-56">
+                    <AdminSelect
+                      value={f.type}
+                      onChange={(val) => update({ type: val as FloatingRow["type"] })}
+                      options={[
+                        { value: "tel", label: FLOATING_TYPE_LABEL.tel },
+                        { value: "form", label: FLOATING_TYPE_LABEL.form },
+                        { value: "qrcode", label: FLOATING_TYPE_LABEL.qrcode },
+                      ]}
+                      placeholder="选择类型"
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="删除该入口"
+                    onClick={() => setV({ ...v, floating: v.floating.filter((_, idx) => idx !== i) })}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-start gap-4">
+                  <UploadField
+                    value={f.iconUrl}
+                    onChange={(url) => update({ iconUrl: url })}
+                    label="图标(必填)"
+                    hint="建议 48×48px 的正方形图标(线条或实底均可),PNG/SVG"
+                  />
+                  {f.type === "qrcode" && (
+                    <UploadField
+                      value={f.qrcodeUrl}
+                      onChange={(url) => update({ qrcodeUrl: url })}
+                      label="二维码图片(必填)"
+                      hint="建议 500×500px 正方形,微信个人/企微二维码均可"
+                    />
+                  )}
+                </div>
+                {f.type === "tel" && (
+                  <div className="space-y-1">
+                    <Label>电话号码</Label>
+                    <Input
+                      value={f.tel}
+                      onChange={(e) => update({ tel: e.target.value })}
+                      placeholder="例如 18688720565"
+                      className="max-w-60"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      只保留数字与 + - 空格 括号;手机点按会拉起拨号盘
+                    </p>
+                  </div>
+                )}
+                {f.type === "form" && (
+                  <div className="space-y-1">
+                    <Label>关联表单</Label>
+                    <div className="max-w-72">
+                      <AdminSelect
+                        value={f.formId != null ? String(f.formId) : ""}
+                        onChange={(val) => update({ formId: val ? Number(val) : null })}
+                        options={forms.map((fm) => ({ value: String(fm.id), label: fm.name }))}
+                        placeholder={forms.length ? "选择表单" : "暂无可选表单(先在「表单」里新建)"}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      表单停用或删除后,该入口会自动消失(不留死链)
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <Label>提示文字</Label>
+                  <Input
+                    value={f.label}
+                    onChange={(e) => update({ label: e.target.value })}
+                    placeholder="例如 电话咨询 / 微信咨询"
+                    className="max-w-60"
+                    maxLength={20}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    鼠标悬停(手机端展开)时显示;中英双语站点建议写成「电话咨询 · Call」这种混排
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={v.floating.length >= FLOATING_MAX}
+            onClick={() =>
+              setV({
+                ...v,
+                floating: [
+                  ...v.floating,
+                  { type: "tel", iconUrl: "", label: "", tel: "", formId: null, qrcodeUrl: "" },
+                ],
+              })
+            }
+          >
+            <Plus className="h-4 w-4" /> 添加一条(最多 {FLOATING_MAX} 条)
           </Button>
         </CardContent>
       </Card>

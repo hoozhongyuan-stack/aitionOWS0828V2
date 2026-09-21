@@ -75,6 +75,18 @@ export async function getFormByRelatedKey(relatedKey: string) {
   return { id: form.id, slug: form.slug, name: form.name, fields: parseFormFields(form.schema) };
 }
 
+/** 按 id 批量取**启用中**的表单(仅 slug/name):悬浮入口把 formId 解析成可跳转/可加载的表单用 */
+export async function getEnabledFormsByIds(
+  ids: readonly number[]
+): Promise<Map<number, { slug: string; name: string }>> {
+  if (ids.length === 0) return new Map();
+  const rows = await prisma.form.findMany({
+    where: { id: { in: [...ids] }, enabled: true },
+    select: { id: true, slug: true, name: true },
+  });
+  return new Map(rows.map((r) => [r.id, { slug: r.slug, name: r.name }]));
+}
+
 export async function getFormBySlugPublic(slug: string) {
   const form = await prisma.form.findUnique({ where: { slug } });
   if (!form || !form.enabled) return null;

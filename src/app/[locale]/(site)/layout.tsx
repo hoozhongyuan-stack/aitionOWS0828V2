@@ -11,6 +11,9 @@ import { SiteFooter } from "@/components/site/footer";
 import { CookieConsent } from "@/components/site/cookie-consent";
 import { OrganizationJsonLd } from "@/components/seo/json-ld";
 import { PageTracker } from "@/components/site/page-tracker";
+import { FloatingActions } from "@/components/site/floating-actions";
+import { buildFloatingItems } from "@/lib/floating";
+import { getEnabledFormsByIds } from "@/server/form";
 
 /**
  * 前台布局:页头 + 内容 + 页脚。
@@ -46,6 +49,15 @@ export default async function SiteLayout({
     getTranslations("submission"),
     getShopConfig(), // V4.3:下单开关下发页头
   ]);
+
+  // 右侧悬浮入口(V4.8.3):把配置里的 formId 解析成表单(仅启用中的),未配置则为空数组
+  const floatingFormIds = (brand.floating ?? [])
+    .filter((e) => e.type === "form" && typeof e.formId === "number")
+    .map((e) => e.formId as number);
+  const floatingItems = buildFloatingItems(
+    brand.floating,
+    await getEnabledFormsByIds(floatingFormIds)
+  );
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -103,6 +115,15 @@ export default async function SiteLayout({
         }}
       />
       <CookieConsent />
+      <FloatingActions
+        items={floatingItems}
+        labels={{
+          open: tFooter("floatingOpen"),
+          close: tFooter("floatingClose"),
+          loading: tFooter("floatingLoading"),
+          loadFailed: tFooter("floatingLoadFailed"),
+        }}
+      />
     </div>
   );
 }

@@ -29,7 +29,11 @@
     "contact": "联系我们",
     "agreementRegister": "用户注册协议",
     "agreementPrivacy": "用户隐私政策",
-    "agreementCookies": "Cookie 政策"
+    "agreementCookies": "Cookie 政策",
+    "floatingOpen": "联系我们",
+    "floatingClose": "关闭",
+    "floatingLoading": "加载中…",
+    "floatingLoadFailed": "表单暂时无法加载,请稍后再试"
   },
   "interaction": {
     "like": "点赞",

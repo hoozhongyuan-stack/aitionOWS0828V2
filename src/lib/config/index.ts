@@ -57,6 +57,25 @@ const THEME_DEFAULTS: ThemeConfig = {
 export const THEME_PRESETS_ALLOWED = ["classic", "aurora", "harvest", "cellar", "burgundy"] as const;
 
 // —— 品牌 ——
+/**
+ * 右侧悬浮入口(V4.8.3):最多 2 条,三条类型各取所需 ——
+ * tel 拨号 / form 弹层填表 / qrcode 弹层展示二维码(加微信)。
+ * 配置入口在后台「品牌信息」页;未配置 = 前台不渲染任何悬浮元素(存量站点零变化)。
+ */
+export interface FloatingEntry {
+  type: "tel" | "form" | "qrcode";
+  /** 图标(素材库路径);必填,缺了该条不渲染 */
+  iconUrl: string;
+  /** 悬停提示 / 移动端展开后显示的文字 */
+  label: string;
+  /** type=tel:号码(净化后生成 tel: 链接) */
+  tel?: string;
+  /** type=form:关联的表单 id(表单停用/删除后该入口自动消失) */
+  formId?: number;
+  /** type=qrcode:二维码图片 */
+  qrcodeUrl?: string;
+}
+
 export interface BrandConfig {
   siteName: string;
   /** 运营主体名称(V4.7.3):个人姓名或公司全称,用于 llms.txt 自述与信任信号 */
@@ -81,6 +100,8 @@ export interface BrandConfig {
   socials: { name: string; url: string; qrcodeUrl?: string }[];
   maintenance: boolean; // 维护模式
   maintenanceText: string;
+  /** 右侧悬浮入口(V4.8.3):最多 2 条,空数组 = 不显示 */
+  floating: FloatingEntry[];
 }
 const BRAND_DEFAULTS: BrandConfig = {
   siteName: "AitionOWS",
@@ -103,6 +124,7 @@ const BRAND_DEFAULTS: BrandConfig = {
   socials: [],
   maintenance: false,
   maintenanceText: "网站维护中,请稍后访问。",
+  floating: [],
 };
 
 // —— 功能开关 ——

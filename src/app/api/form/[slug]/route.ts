@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jsonOk, jsonErr, parseBody, getClientIp } from "@/lib/api";
-import { submitForm } from "@/server/form";
+import { submitForm, getFormBySlugPublic } from "@/server/form";
 import { rateLimit } from "@/lib/ugc/anti-spam";
 
 /**
@@ -12,6 +12,18 @@ import { rateLimit } from "@/lib/ugc/anti-spam";
 const schema = z.object({
   data: z.record(z.string(), z.unknown()),
 });
+
+/**
+ * 公开读取表单结构(V4.8.3):GET /api/form/[slug]
+ * 供前台「悬浮入口 → 表单」在弹层里就地渲染 —— 只返回启用中的表单与其字段定义
+ * (不含任何提交数据),表单停用后立即 404。
+ */
+export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
+  const { slug } = await ctx.params;
+  const form = await getFormBySlugPublic(slug);
+  if (!form) return jsonErr("表单不存在或未启用", 404);
+  return jsonOk(form);
+}
 
 export async function POST(req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;

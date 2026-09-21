@@ -29,7 +29,11 @@
     "contact": "Contact",
     "agreementRegister": "Terms of Service",
     "agreementPrivacy": "Privacy Policy",
-    "agreementCookies": "Cookie Policy"
+    "agreementCookies": "Cookie Policy",
+    "floatingOpen": "Contact us",
+    "floatingClose": "Close",
+    "floatingLoading": "Loading…",
+    "floatingLoadFailed": "The form is unavailable right now, please try again later"
   },
   "interaction": {
     "like": "Like",

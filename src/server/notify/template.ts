@@ -97,6 +97,7 @@ const FALLBACK_BRAND: BrandConfig = {
   copyright: `© ${new Date().getFullYear()} AitionOWS. All rights reserved.`,
   copyrightUrl: "",
   supportEmail: "",
+  floating: [],
   contactPhone: "",
   contactEmail: "",
   contactAddress: "",
