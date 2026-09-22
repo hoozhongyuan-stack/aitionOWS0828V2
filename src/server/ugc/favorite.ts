@@ -151,7 +151,8 @@ export async function listMyFavorites(userId: number, locale: string) {
       title: t?.title ?? c.slug,
       moduleType: c.category.moduleType,
       categoryName: cat?.name ?? c.category.slug,
-      coverUrl: c.coverUrl,
+      // 封面(V4.8.4):该语言翻译行专属封面优先,回退主表默认/中文封面
+      coverUrl: t?.coverUrl || c.coverUrl,
       favoriteCount: display.get(c.id)?.favorites ?? c.favoriteCount,
       favoritedAt: f.createdAt,
     });

@@ -322,6 +322,13 @@ export interface ContentInput {
      * 顶层 specs 仅写 Content.specs 兜底列,不触碰翻译行。
      */
     specs?: ProductSpec[] | null;
+    /**
+     * 该语言封面图(V4.8.4,写入语义与 specs 同款三态):
+     * 字符串=写入(空串归 NULL)/ null=清空(回退主封面)/
+     * undefined(缺省)=保留既有(快照回填,保护不传此字段的调用方,如 MCP 推文往返)。
+     * 中文页永远用主表 coverUrl;此字段仅非默认语言(现状=英文)有意义。
+     */
+    coverUrl?: string | null;
   }[];
 }
 
@@ -355,6 +362,19 @@ function resolveTranslationSpecs(
 ): string | null {
   if (value === undefined) return snapshot;
   return serializeSpecs(value) ?? null;
+}
+
+/**
+ * 翻译行封面三态归一(V4.8.4,与 specs 同款语义):
+ * undefined=快照回填保留既有;null/空串=清空(NULL,回退主封面);字符串=写入。
+ */
+function resolveTranslationCover(
+  value: string | null | undefined,
+  snapshot: string | null
+): string | null {
+  if (value === undefined) return snapshot;
+  const v = typeof value === "string" ? value.trim() : "";
+  return v || null;
 }
 
 /** 新建/更新内容(后台) */
@@ -447,16 +467,17 @@ export async function saveContent(
     ? await prisma.content.update({ where: { id: input.id }, data })
     : await prisma.content.create({ data });
 
-  // 翻译行重建前快照各语言旧 specs(deleteMany+recreate 会整行重建;
+  // 翻译行重建前快照各语言旧 specs 与封面(deleteMany+recreate 会整行重建;
   // 注:快照读在事务外,与删除间存在并发窗口;admin 单编辑者场景已评估接受(评审 Low-3)
   // V3.1 REQ-001:translations[].specs 缺省=保留既有,靠快照回填,不丢存量多语言规格)
-  const prevSpecs = new Map(
+  // V4.8.4:封面同款语义,快照一并回填(保护 UGC/MCP 等不传 coverUrl 的调用方)
+  const prevTranslation = new Map(
     (
       await prisma.contentTranslation.findMany({
         where: { contentId: content.id },
-        select: { locale: true, specs: true },
+        select: { locale: true, specs: true, coverUrl: true },
       })
-    ).map((r) => [r.locale, r.specs])
+    ).map((r) => [r.locale, r])
   );
 
   await prisma.$transaction([
@@ -472,7 +493,11 @@ export async function saveContent(
           seoTitle: t.seoTitle ?? null,
           seoKeywords: t.seoKeywords ?? null,
           seoDesc: t.seoDesc ?? null,
-          specs: resolveTranslationSpecs(t.specs, prevSpecs.get(t.locale) ?? null),
+          specs: resolveTranslationSpecs(t.specs, prevTranslation.get(t.locale)?.specs ?? null),
+          coverUrl: resolveTranslationCover(
+            t.coverUrl,
+            prevTranslation.get(t.locale)?.coverUrl ?? null
+          ),
         },
       })
     ),
@@ -688,7 +713,7 @@ export async function listPublishedByCategory(
         statsMode: true,
         statsBase: true,
         statsSalt: true,
-        translations: { select: { locale: true, title: true, summary: true } },
+        translations: { select: { locale: true, title: true, summary: true, coverUrl: true } },
       },
     }),
   ]);
@@ -781,7 +806,8 @@ export async function getPublishedBySlug(
   return {
     id: content.id,
     slug: content.slug,
-    coverUrl: content.coverUrl,
+    // 封面(V4.8.4):该语言翻译行专属封面优先,回退主表默认/中文封面(详情大图与 og:image 同源)
+    coverUrl: t.coverUrl || content.coverUrl,
     formId: content.formId,
     authorName: content.authorName,
     viewCount: display?.views ?? content.viewCount,
@@ -901,7 +927,7 @@ export async function searchPublished(
       authorName: true,
       publishAt: true,
       createdAt: true,
-      translations: { select: { locale: true, title: true, summary: true } },
+      translations: { select: { locale: true, title: true, summary: true, coverUrl: true } },
       category: {
         select: { moduleType: true, translations: { select: { locale: true, name: true } } },
       },
@@ -920,7 +946,7 @@ export async function searchPublished(
       slug: c.slug,
       title,
       summary: t?.summary ?? null,
-      coverUrl: c.coverUrl,
+      coverUrl: t?.coverUrl || c.coverUrl,
       authorName: c.authorName ?? null,
       publishedAt: c.publishAt ?? c.createdAt,
       moduleType: c.category.moduleType,
@@ -984,7 +1010,7 @@ export async function listForSitemap() {
   return { contents, categories };
 }
 
-/** 列表卡片数据形态(标题按语言兜底) */
+/** 列表卡片数据形态(标题按语言兜底;封面 V4.8.4 起按语言回退:该语言 translation.coverUrl → 主表 coverUrl) */
 function shapeCard(
   c: {
     id: number;
@@ -1000,7 +1026,7 @@ function shapeCard(
     pinExpiresAt?: Date | null;
     priceCents?: number | null;
     currency?: string | null;
-    translations: { locale: string; title: string; summary: string | null }[];
+    translations: { locale: string; title: string; summary: string | null; coverUrl?: string | null }[];
     category?: { moduleType: string };
   },
   locale: string,
@@ -1012,7 +1038,7 @@ function shapeCard(
   return {
     id: c.id,
     slug: c.slug,
-    coverUrl: c.coverUrl,
+    coverUrl: t?.coverUrl || c.coverUrl,
     authorName: c.authorName ?? null,
     viewCount: display?.views ?? c.viewCount,
     likeCount: display?.likes ?? c.likeCount,

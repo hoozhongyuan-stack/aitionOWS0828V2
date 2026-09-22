@@ -44,6 +44,8 @@ interface Translation {
   seoKeywords: string;
   seoDesc: string;
   specs: SpecRow[];
+  // 该语言专属封面(V4.8.4):仅非默认语言 Tab(现状=英文)暴露;空=回退主表「封面图(中文/默认)」
+  coverUrl: string;
 }
 interface Category {
   id: number;
@@ -72,6 +74,7 @@ function emptyTranslation(locale: string): Translation {
     seoKeywords: "",
     seoDesc: "",
     specs: [],
+    coverUrl: "",
   };
 }
 
@@ -235,6 +238,7 @@ export default function ContentEditPage() {
                     seoTitle: t.seoTitle ?? "",
                     seoKeywords: t.seoKeywords ?? "",
                     seoDesc: t.seoDesc ?? "",
+                    coverUrl: t.coverUrl ?? "",
                   }
                 : {}),
               specs: rows.length > 0 || code !== def ? rows : mainRows,
@@ -312,6 +316,8 @@ export default function ContentEditPage() {
           seoTitle: t.seoTitle || null,
           seoKeywords: t.seoKeywords || null,
           seoDesc: t.seoDesc || null,
+          // 每语言封面(V4.8.4):全量往返;空串传 null=清空回退主封面
+          coverUrl: t.coverUrl || null,
           ...(isProduct ? { specs: cleanSpecs(t.specs ?? []) } : {}),
         })),
       });
@@ -451,14 +457,26 @@ export default function ContentEditPage() {
             </div>
           )}
           <div className="space-y-2 sm:col-span-2">
-            <Label>封面图</Label>
+            <Label>封面图(中文/默认)</Label>
             <UploadField
               value={coverUrl}
               onChange={setCoverUrl}
-              label="封面图"
-              hint="建议尺寸 1200×675px(16:9),JPG/PNG/WebP,≤3MB"
+              label="封面图(中文/默认)"
+              hint="建议尺寸 1200×675px(16:9),JPG/PNG/WebP,≤3MB;英文页未上传专属封面时使用此图"
             />
           </div>
+          {/* 英文封面(V4.8.4):启用英文语言时展示;存翻译行,空=回退上方主封面 */}
+          {locales.includes("en") && (
+            <div className="space-y-2 sm:col-span-2">
+              <Label>英文封面(可选)</Label>
+              <UploadField
+                value={trans["en"]?.coverUrl ?? ""}
+                onChange={(v) => setT("en", { coverUrl: v })}
+                label="英文封面"
+                hint="仅英文页展示(如封面含中文字时上传英文版);不上传则英文页使用上方中文封面。注意:英文标题清空保存后,英文封面会一并清除"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -200,6 +200,10 @@ model ContentTranslation {
   // 迁移 20260903000000_v31_translation_specs 已把存量行回填为对应 Content.specs 的副本
   // (主表无 specs 则 NULL);编辑器按语言 Tab 全量往返,顶层 Content.specs 仍作兜底列。
   specs       String?
+  // 每语言封面图(V4.8.4):该语言专属封面;NULL=回退主表 Content.coverUrl(默认/中文封面)。
+  // 中文页永远用主表封面;编辑器仅非默认语言 Tab(现状=英文)暴露此字段。
+  // 写入三态与 specs 同款:undefined=快照回填保留既有/null=清空/字符串=写入(空串归 NULL)。
+  coverUrl    String?
 
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
 

@@ -86,6 +86,11 @@ const putSchema = z.object({
         .max(50, "规格参数最多 50 行")
         .nullable()
         .optional(),
+      // 每语言封面图(V4.8.4,三态与 specs 同款):字符串=写入(空串归 NULL)/
+      // null=清空回退主封面 / 缺省(undefined)=快照回填保留既有。
+      // ⚠️ 不可省略声明:zod 未声明的键会被静默剥除 → MCP 推文的 {...prev} 往返
+      // 与编辑器全量往返都会"保存不报错但英文封面丢失"(历史事故同款,必查)
+      coverUrl: z.string().nullable().optional(),
     })
   ),
 });

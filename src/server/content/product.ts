@@ -142,7 +142,9 @@ export async function getProductDetail(
   return {
     id: content.id,
     slug: content.slug,
-    coverUrl: content.coverUrl,
+    // 封面(V4.8.4):该语言翻译行专属封面优先,回退主表默认/中文封面;
+    // og 兜底链 gallery[0] → 此处 coverUrl 随解析值。图集 gallery 本身跨语言,不解析
+    coverUrl: t.coverUrl || content.coverUrl,
     formId: content.formId,
     authorName: content.authorName,
     favoriteCount: display?.favorites ?? content.favoriteCount,
