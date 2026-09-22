@@ -34,12 +34,13 @@ export async function createMedia(
     },
   });
   // 分享伴生(V4.7.4):JPG 版登记为独立资产(同尺寸),og:image 优先取它 —— 微信分享卡不吃 WebP
+  // 展示文件名同步 -share 约定(V4.8.4,物理路径已是 <uuid>-share.jpg)
   let shareUrl: string | undefined;
   if (saved.shareRelPath) {
     const share = await prisma.mediaAsset.create({
       data: {
         path: saved.shareRelPath,
-        filename: saved.filename.replace(/\.[^.]+$/, "") + ".jpg",
+        filename: saved.filename.replace(/\.[^.]+$/, "") + "-share.jpg",
         mime: "image/jpeg",
         size: saved.shareSize ?? 0,
         width: saved.width,

@@ -87,6 +87,12 @@ export async function saveUpload(input: {
   // sharp 均无法处理,原样保存)
   let shareRelPath: string | undefined;
   let shareSize: number | undefined;
+  // uuid 与日期目录先行,分享伴生命名派生自显示版同一 uuid(V4.8.4 修):
+  // og:image 的伴生匹配只认 <stem>-share.jpg / <stem>.jpg(open-graph.ts,与回填脚本同约定),
+  // 此前伴生用独立 UUID 命名 → 新上传封面的 og 永远匹配不到伴生,分享卡退化用 WebP 本体或兜底图
+  const now = new Date();
+  const dir = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const uuid = crypto.randomUUID();
   const isImage =
     input.mime.startsWith("image/") &&
     input.mime !== "image/gif" &&
@@ -107,8 +113,7 @@ export async function saveUpload(input: {
       width = variants.width;
       height = variants.height;
       if (variants.share) {
-        const now0 = new Date();
-        shareRelPath = `${now0.getFullYear()}/${String(now0.getMonth() + 1).padStart(2, "0")}/${crypto.randomUUID()}.jpg`;
+        shareRelPath = `${dir}/${uuid}-share.jpg`;
         const shareAbs = path.join(uploadRoot(), shareRelPath);
         await mkdir(path.dirname(shareAbs), { recursive: true });
         await writeFile(shareAbs, variants.share.buffer);
@@ -126,12 +131,12 @@ export async function saveUpload(input: {
     }
   }
 
-  const now = new Date();
+  // 扩展名在重编码定案后取(转 WebP 后必须是 .webp,内容与扩展名/mime 一致)
   const ext =
     EXT_BY_MIME[outMime] ||
     path.extname(input.originalName).replace(".", "").toLowerCase() ||
     "bin";
-  const rel = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${crypto.randomUUID()}.${ext}`;
+  const rel = `${dir}/${uuid}.${ext}`;
   const abs = path.join(uploadRoot(), rel);
   await mkdir(path.dirname(abs), { recursive: true });
   await writeFile(abs, buffer);

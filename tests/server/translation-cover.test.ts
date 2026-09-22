@@ -48,6 +48,7 @@ async function makeContent(
       categoryId: opts.categoryId ?? categoryId,
       status: "PUBLISHED",
       authorName: "封面测试",
+      publishAt: null,
       coverUrl: opts.coverUrl ?? null,
       translations: {
         create: [
@@ -118,6 +119,7 @@ describe("saveContent 翻译行封面三态写入(V4.8.4)", () => {
       categoryId,
       status: "PUBLISHED",
       authorName: "封面测试",
+      publishAt: null,
       coverUrl: "/uploads/zh-main.webp",
       translations: [
         { locale: "zh-CN", title: "中文标题", body: "<p>x</p>" },
@@ -140,6 +142,7 @@ describe("saveContent 翻译行封面三态写入(V4.8.4)", () => {
       categoryId,
       status: "PUBLISHED",
       authorName: "封面测试",
+      publishAt: null,
       coverUrl: "/uploads/zh-main.webp",
       translations: [
         { locale: "zh-CN", title: "中文标题改", body: "<p>x</p>" },
@@ -162,6 +165,7 @@ describe("saveContent 翻译行封面三态写入(V4.8.4)", () => {
       categoryId,
       status: "PUBLISHED",
       authorName: "封面测试",
+      publishAt: null,
       coverUrl: "/uploads/zh-main.webp",
       translations: [
         { locale: "zh-CN", title: "中文标题改", body: "<p>x</p>" },
@@ -180,6 +184,7 @@ describe("saveContent 翻译行封面三态写入(V4.8.4)", () => {
       categoryId,
       status: "PUBLISHED",
       authorName: "封面测试",
+      publishAt: null,
       coverUrl: "/uploads/zh-main.webp",
       translations: [{ locale: "zh-CN", title: "中文标题", body: "<p>x</p>" }],
     });
@@ -197,6 +202,7 @@ describe("saveContent 翻译行封面三态写入(V4.8.4)", () => {
       categoryId,
       status: "PUBLISHED",
       authorName: "封面测试",
+      publishAt: null,
       coverUrl: "/uploads/zh-main.webp",
       translations: [
         { locale: "zh-CN", title: "中文标题", body: "<p>x</p>" },
@@ -213,6 +219,7 @@ describe("saveContent 翻译行封面三态写入(V4.8.4)", () => {
       categoryId,
       status: "PUBLISHED",
       authorName: "封面测试",
+      publishAt: null,
       coverUrl: null,
       translations: [
         { locale: "zh-CN", title: "中文标题", body: "<p>x</p>" },
