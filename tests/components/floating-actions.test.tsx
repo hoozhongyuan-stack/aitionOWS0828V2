@@ -25,7 +25,7 @@ const TEL_ITEM: FloatingItem = {
   type: "tel",
   iconUrl: "/uploads/tel.png",
   label: "电话咨询",
-  href: "tel:18688720565",
+  href: "tel:0755-12345678",
 };
 const QR_ITEM: FloatingItem = {
   key: "qrcode-1",
@@ -81,7 +81,7 @@ describe("渲染", () => {
 
   it("电话项渲染为原生拨号链接(移动端点按即拨打,不依赖 JS)", async () => {
     await mount([TEL_ITEM]);
-    const link = body().querySelector<HTMLAnchorElement>('a[href="tel:18688720565"]');
+    const link = body().querySelector<HTMLAnchorElement>('a[href="tel:0755-12345678"]');
     expect(link).not.toBeNull();
     expect(link!.getAttribute("aria-label")).toBe("电话咨询");
     // 图标来自后台配置

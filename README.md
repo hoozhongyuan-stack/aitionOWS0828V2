@@ -170,8 +170,7 @@ data/ uploads/ backups/    运行时数据(卷挂载,重建容器不丢)
 
 | 渠道 | 信息 |
 |---|---|
-| 运营主体 | 数字中圆 · 胡中圆 |
-| 电话 | 18688720565 |
+| 运营主体 | 数字中圆 |
 | 邮箱 | leohoo@petalmail.com |
 | 客服邮箱 | leooohu@outlook.com |
 | 备案 | 粤ICP备2026086168号-2 |
@@ -188,4 +187,4 @@ Highlights: one-command deploy · admin panel with instant effect · **AI-search
 Licensed under **AGPL-3.0** (see [LICENSE](LICENSE)); a commercial license is available for closed-source use.
 
 Live demo (production, actively running): **https://www.aition.xin**
-Contact: 胡中圆 · leohoo@petalmail.com · +86 18688720565
+Contact: leohoo@petalmail.com

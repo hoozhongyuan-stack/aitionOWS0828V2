@@ -8,14 +8,14 @@ import { MAX_FLOATING_ENTRIES, telHref, normalizeFloatingEntries, buildFloatingI
 
 describe("telHref:号码净化", () => {
   it("纯数字与常见分隔符都保留", () => {
-    expect(telHref("18688720565")).toBe("tel:18688720565");
+    expect(telHref("0755-12345678")).toBe("tel:0755-12345678");
     expect(telHref("+86 186-8872 0565")).toBe("tel:+86 186-8872 0565");
     expect(telHref("(0755) 1234-5678")).toBe("tel:(0755) 1234-5678");
   });
 
   it("字母等杂字符被剔除(含伪协议)", () => {
     expect(telHref("javascript:alert(1)")).toBe("tel:(1)");
-    expect(telHref("电话:18688720565")).toBe("tel:18688720565");
+    expect(telHref("电话:0755-12345678")).toBe("tel:0755-12345678");
   });
 
   it("没有数字 → 视为无效(返回空串,该条不渲染)", () => {
@@ -28,7 +28,7 @@ describe("telHref:号码净化", () => {
 describe("normalizeFloatingEntries:脏配置清洗", () => {
   it("配置完整的三种类型都保留", () => {
     const out = normalizeFloatingEntries([
-      { type: "tel", iconUrl: "/uploads/a.png", label: "电话咨询", tel: "18688720565" },
+      { type: "tel", iconUrl: "/uploads/a.png", label: "电话咨询", tel: "0755-12345678" },
       { type: "qrcode", iconUrl: "/uploads/b.png", label: "微信", qrcodeUrl: "/uploads/qr.png" },
     ]);
     expect(out).toHaveLength(2);
@@ -37,7 +37,7 @@ describe("normalizeFloatingEntries:脏配置清洗", () => {
   });
 
   it("缺图标的条目被丢弃(避免渲染空按钮)", () => {
-    expect(normalizeFloatingEntries([{ type: "tel", iconUrl: "", tel: "18688720565" }])).toEqual([]);
+    expect(normalizeFloatingEntries([{ type: "tel", iconUrl: "", tel: "0755-12345678" }])).toEqual([]);
   });
 
   it("各类型缺关键字段都被丢弃", () => {

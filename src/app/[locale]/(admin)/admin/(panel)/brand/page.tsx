@@ -367,7 +367,7 @@ export default function BrandPage() {
                     <Input
                       value={f.tel}
                       onChange={(e) => update({ tel: e.target.value })}
-                      placeholder="例如 18688720565"
+                      placeholder="例如 0755-12345678"
                       className="max-w-60"
                     />
                     <p className="text-xs text-muted-foreground">

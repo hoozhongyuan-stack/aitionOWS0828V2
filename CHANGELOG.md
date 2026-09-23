@@ -52,7 +52,7 @@ V4.7.3:对外信任信号(llms.txt 自述 + 结构化数据增强 + 地址一致
 - 283 测试全绿(新增:llms 信任自述 2 条 —— 含备案行与缺省回落;Organization 5 条 ——
   identifier/description/地址单一来源/SEO 回落兼容/sameAs 空值省略);lint、tsc 清零;
   生产构建通过
-- 本地实测(填入用户提供的真实值):llms.txt 自述段输出「酒业数智增长观察站…/运营主体:胡中圆 ·
+- 本地实测(填入用户提供的真实值):llms.txt 自述段输出「酒业数智增长观察站…/运营主体:数字中圆 ·
   服务区域:中国 / 备案信息:粤ICP备…(查询链接)/ 内容范围:…」;结构化数据带 description、
   identifier、streetAddress=品牌地址(与页脚逐字一致);页脚无 AitionOWS 字样、无玩笑地址
 

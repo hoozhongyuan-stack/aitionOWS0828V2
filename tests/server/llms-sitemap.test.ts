@@ -163,14 +163,14 @@ describe("buildLlmsText 纯函数组装(新模块 @/server/content/llms 直测)"
     const text = buildLlmsText({
       ...baseInput,
       tagline: "酒业数智增长观察站",
-      ownerName: "胡中圆",
+      ownerName: "张三",
       serviceArea: "中国",
       icp: "粤ICP备2026086168号",
       contactPhone: "400-000-0000",
       contactEmail: "hi@geo.test",
     });
     expect(text).toContain("> 酒业数智增长观察站");
-    expect(text).toContain("运营主体:胡中圆");
+    expect(text).toContain("运营主体:张三");
     expect(text).toContain("服务区域:中国");
     expect(text).toContain("备案信息:粤ICP备2026086168号");
     expect(text).toContain("https://beian.miit.gov.cn/");
